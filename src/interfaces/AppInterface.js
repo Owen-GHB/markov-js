@@ -11,6 +11,65 @@ export class AppInterface {
         this.serializer = new ModelSerializer();
     }
 
+    async handleCommand(command) {
+        switch (command.name) {
+            case 'train':
+                return await this.handleTrain(command.args);
+            case 'generate':
+                return await this.handleGenerate(command.args);
+            default:
+                return {
+                    error: `Unknown command: ${command.name}`,
+                    output: 'Type "help()" for available commands.'
+                };
+        }
+    }
+
+    async handleTrain(args) {
+        try {
+            const { stats, modelName, filename } = await this.train(args);
+            return {
+                error: null,
+                output: [
+                    `📚 Trained from "${filename}" → "${modelName}"`,
+                    `📊 States: ${stats.totalStates.toLocaleString()}`,
+                    `📊 Vocabulary: ${stats.vocabularySize.toLocaleString()}`
+                ].join('\n')
+            };
+        } catch (error) {
+            return { 
+                error: `Training failed: ${error.message}`,
+                output: 'Usage: train({filename: "text.txt", modelName: "model.json"})'
+            };
+        }
+    }
+
+    async handleGenerate(args) {
+        try {
+            const { results } = await this.generate(args);
+            const output = ['🎲 Generated text:', '─'.repeat(50)];
+
+            results.forEach((result, i) => {
+                if (result.error) {
+                    output.push(`❌ Sample ${i+1}: ${result.error}`);
+                } else {
+                    output.push(
+                        result.text,
+                        `(Length: ${result.length} tokens)`,
+                        '─'.repeat(50)
+                    );
+                }
+            });
+
+            return { error: null, output: output.join('\n') };
+        } catch (error) {
+            return { 
+                error: `Generation failed: ${error.message}`,
+                output: 'Usage: generate({modelName: "model.json", length: 100})'
+            };
+        }
+    }
+
     /**
      * Train a model from corpus text
      * @param {Object} params - {filename: string, modelName: string, order?: number}

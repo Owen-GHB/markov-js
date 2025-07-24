@@ -1,6 +1,5 @@
 import readline from 'readline';
 import { AppInterface } from './AppInterface.js';
-import { MarkovModel } from '../core/models/MarkovModel.js';
 import { CommandParser } from './CommandParser.js';
 
 export class MarkovCLI {
@@ -55,8 +54,18 @@ export class MarkovCLI {
     async handleInput(input) {
         if (!input) return { error: null, output: null };
         try {
-            const command = this.commandParser.parse(input);
-            return await this.handleCommand(command);
+            let command = this.commandParser.parse(input);
+            command.args = this.withDefaults(command);
+            switch (command.name) {
+                case 'help':
+                    return { error: null, output: this.displayWelcome() };
+                case 'exit':
+                    this.rl.close();
+                    return { error: null, output: 'Exiting CLI...' };
+                default:
+                    return await this.app.handleCommand(command);
+            }
+            
         } catch (error) {
             return { error: error.message, output: null };
         }
@@ -78,21 +87,6 @@ export class MarkovCLI {
         ].join('\n');
     }
 
-    async handleCommand(command) {
-        switch (command.name) {
-            case 'train':
-                return await this.handleTrain(this.withDefaults(command));
-            case 'generate':
-                return await this.handleGenerate(this.withDefaults(command));
-            case 'help':
-                return { error: null, output: this.displayWelcome() };
-            default:
-                return {
-                    error: `Unknown command: ${command.name}`,
-                    output: 'Type "help()" for available commands.'
-                };
-        }
-    }
     /**
      * Apply CLI defaults to command arguments
      * @param {Object} command - Parsed command object
@@ -115,51 +109,6 @@ export class MarkovCLI {
         }
         
         return args;
-    }
-
-    async handleTrain(args) {
-        try {
-            const { stats, modelName, filename } = await this.app.train(args);
-            return {
-                error: null,
-                output: [
-                    `📚 Trained from "${filename}" → "${modelName}"`,
-                    `📊 States: ${stats.totalStates.toLocaleString()}`,
-                    `📊 Vocabulary: ${stats.vocabularySize.toLocaleString()}`
-                ].join('\n')
-            };
-        } catch (error) {
-            return { 
-                error: `Training failed: ${error.message}`,
-                output: 'Usage: train({filename: "text.txt", modelName: "model.json"})'
-            };
-        }
-    }
-
-    async handleGenerate(args) {
-        try {
-            const { results } = await this.app.generate(args);
-            const output = ['🎲 Generated text:', '─'.repeat(50)];
-
-            results.forEach((result, i) => {
-                if (result.error) {
-                    output.push(`❌ Sample ${i+1}: ${result.error}`);
-                } else {
-                    output.push(
-                        result.text,
-                        `(Length: ${result.length} tokens)`,
-                        '─'.repeat(50)
-                    );
-                }
-            });
-
-            return { error: null, output: output.join('\n') };
-        } catch (error) {
-            return { 
-                error: `Generation failed: ${error.message}`,
-                output: 'Usage: generate({modelName: "model.json", length: 100})'
-            };
-        }
     }
 
     start() {
