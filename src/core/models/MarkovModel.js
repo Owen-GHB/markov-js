@@ -197,7 +197,7 @@ export class MarkovModel extends TextModel {
      * @returns {string} Generated text
      */
     generate(options) {
-        // This will be properly implemented later
-        return "Not implemented";
+        const generator = new TextGenerator(this);
+        return generator.generate(options);
     }
 }

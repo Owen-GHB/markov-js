@@ -96,10 +96,9 @@ export class TextProcessor {
      * @returns {string[]} - Sentence tokens
      */
     tokenizeBySentence(text) {
-        // Simple sentence splitting - can be enhanced with more sophisticated rules
-        return text.split(/[.!?]+/)
-            .map(sentence => sentence.trim())
-            .filter(sentence => sentence.length > 0);
+        return text.split(/(?<!\w\.\w.)(?<![A-Z][a-z]\.)(?<=\.|\?|\!)\s+/)
+            .map(s => s.trim())
+            .filter(s => s.length > 0);
     }
 
     /**

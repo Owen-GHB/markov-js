@@ -170,6 +170,15 @@ export class FileHandler {
      * @returns {string} - Full resolved path.
      */
     resolveCorpusPath(filename) {
+        if (!filename || typeof filename !== 'string') {
+            throw new Error('Invalid filename');
+        }
+        
+        // Prevent directory traversal
+        if (filename.includes('../') || filename.includes('..\\')) {
+            throw new Error('Invalid path');
+        }
+        
         if (path.isAbsolute(filename)) {
             return filename;
         }

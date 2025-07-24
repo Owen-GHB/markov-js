@@ -13,7 +13,8 @@ export class MarkovCLI {
         this.rl = readline.createInterface({
             input: process.stdin,
             output: process.stdout,
-            prompt: 'markov> '
+            prompt: 'markov> ',
+            completer: (line) => this.commandCompleter(line)
         });
         
         this.setupEventHandlers();
@@ -43,6 +44,12 @@ export class MarkovCLI {
             console.log('\nUse "exit" or Ctrl+D to quit.');
             this.rl.prompt();
         });
+    }
+
+    commandCompleter(line) {
+        const commands = ['train', 'generate', 'help', 'exit'];
+        const hits = commands.filter(c => c.startsWith(line));
+        return [hits.length ? hits : commands, line];
     }
 
     async handleInput(input) {

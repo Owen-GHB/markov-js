@@ -157,7 +157,7 @@ export class TextGenerator {
         });
 
         // Normalize probabilities
-        const totalProb = scaledTransitions.reduce((sum, { probability }) => sum + probability, 0);
+        const totalProb = scaledTransitions.reduce((sum, { probability }) => sum + probability, 1e-10);
         const normalizedTransitions = scaledTransitions.map(({ token, probability, count }) => ({
             token,
             probability: probability / totalProb,
