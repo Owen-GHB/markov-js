@@ -25,3 +25,9 @@ jspm_packages/
 
 # Output of 'npm pack'
 *.tgz
+
+# Concatenated code for context window packing
+full_combined_codebase.js
+
+#utility for generating context window
+concatenate_codebase.py
