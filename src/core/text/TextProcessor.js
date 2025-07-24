@@ -1,5 +1,3 @@
-import { Tokenizers, Normalizers } from './TokenizationService.js';
-
 /**
  * Text preprocessing and tokenization utilities
  */
@@ -83,7 +81,7 @@ export class TextProcessor {
      */
     tokenizeByWord(text, preservePunctuation = true) {
         if (preservePunctuation) {
-            return Tokenizers.word(text);
+            return text.match(/\w+|[^\w\s]/g) || [];
         } else {
             // Extract only word characters
             return text.match(/\w+/g) || [];
@@ -107,7 +105,7 @@ export class TextProcessor {
      * @returns {string} - Text with normalized whitespace
      */
     normalizeWhitespace(text) {
-        return Normalizers.whitespace(text);
+        return text.replace(/\s+/g, ' ').trim();
     }
 
     /**
