@@ -27,7 +27,7 @@ jspm_packages/
 *.tgz
 
 # Concatenated code for context window packing
-full_combined_codebase.js
+full_codebase_combined.js
 
 #utility for generating context window
 concatenate_codebase.py
