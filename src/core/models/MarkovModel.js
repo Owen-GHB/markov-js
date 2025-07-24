@@ -16,8 +16,8 @@ export class MarkovModel extends TextModel {
     constructor(options = {}) {
         super(options);
         this.order = options.order || 2;
-        if (this.order < 1) {
-            throw new Error('Markov chain order must be at least 1');
+        if (!Number.isInteger(this.order) || this.order < 1) {
+            throw new Error('Markov chain order must be a positive integer');
         }
         
         // Map<string, Map<string, number>> - state -> {next_token: count}
@@ -37,6 +37,10 @@ export class MarkovModel extends TextModel {
      */
     train(tokens, options = {}) {
         const { caseSensitive = false, trackStartStates = false } = options;
+
+        if (!Array.isArray(tokens) || tokens.some(t => typeof t !== 'string')) {
+            throw new Error('Input tokens must be an array of strings.');
+        }
         
         if (tokens.length < this.order + 1) {
             throw new Error(`Need at least ${this.order + 1} tokens to build chain of order ${this.order}`);
@@ -179,14 +183,28 @@ export class MarkovModel extends TextModel {
      * @param {Object} data - Serialized model data
      */
     fromJSON(data) {
+        if (!data || typeof data !== 'object') {
+            throw new Error('Invalid JSON data: must be an object.');
+        }
+        if (!Number.isInteger(data.order) || data.order < 1) {
+            throw new Error('Invalid JSON data: order must be a positive integer.');
+        }
+        if (!data.chains || typeof data.chains !== 'object') {
+            throw new Error('Invalid JSON data: chains object is missing or invalid.');
+        }
+
         this.order = data.order;
         this.options = { order: data.order };
-        this.totalTokens = data.totalTokens;
+        this.totalTokens = data.totalTokens || 0;
         this.vocabulary = new Set(data.vocabulary || []);
         this.startStates = new Set(data.startStates || []);
         
         this.chains = new Map();
         for (const [state, transitions] of Object.entries(data.chains)) {
+            if (typeof transitions !== 'object') {
+                console.warn(`Skipping invalid transition for state "${state}": not an object.`);
+                continue;
+            }
             this.chains.set(state, new Map(Object.entries(transitions).map(([token, count]) => [token, Number(count)])));
         }
     }

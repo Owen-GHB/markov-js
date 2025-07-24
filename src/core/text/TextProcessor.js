@@ -30,8 +30,8 @@ export class TextProcessor {
             customFilters = []
         } = options;
 
-        if (!text || typeof text !== 'string') {
-            throw new Error('Input text must be a non-empty string');
+        if (!text || typeof text !== 'string' || text.trim().length === 0) {
+            throw new Error('Input text must be a non-empty string.');
         }
 
         // Apply preprocessing filters
