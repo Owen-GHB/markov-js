@@ -36,7 +36,7 @@ export class MarkovModel extends TextModel {
      * @param {boolean} options.trackStartStates - Whether to track sentence starts (default: true)
      */
     train(tokens, options = {}) {
-        const { caseSensitive = false, trackStartStates = true } = options;
+        const { caseSensitive = false, trackStartStates = false } = options;
         
         if (tokens.length < this.order + 1) {
             throw new Error(`Need at least ${this.order + 1} tokens to build chain of order ${this.order}`);
@@ -54,28 +54,24 @@ export class MarkovModel extends TextModel {
         // Build vocabulary
         processedTokens.forEach(token => this.vocabulary.add(token));
 
+        // Track sentence boundaries (assuming sentence-ending punctuation)
+        const sentenceEndings = new Set(['.', '!', '?']);
+        let isStartOfSentence = true;
+
         // Build n-gram chains
         for (let i = 0; i <= processedTokens.length - this.order - 1; i++) {
-            // Create state from n tokens
             const state = processedTokens.slice(i, i + this.order).join(' ');
             const nextToken = processedTokens[i + this.order];
-
-            // Track starting states (states that begin sentences/documents)
-            if (trackStartStates && i === 0) {
-                this.startStates.add(state);
-            }
-
-            // Initialize chain entry if not exists
+            
             if (!this.chains.has(state)) {
                 this.chains.set(state, new Map());
             }
-
-            // Update transition counts
             const transitions = this.chains.get(state);
             transitions.set(nextToken, (transitions.get(nextToken) || 0) + 1);
         }
 
         console.log(`Built Markov chain: ${this.chains.size} states, ${this.vocabulary.size} unique tokens`);
+        console.log(`Start states: ${this.startStates.size} (sentence beginnings)`);
     }
 
     /**

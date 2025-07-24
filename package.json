@@ -2,12 +2,12 @@
   "name": "markov-text-generator",
   "version": "1.0.0",
   "description": "Configurable Markov chain text generator with CLI interface",
-  "main": "src/cli/CLI.js",
+  "main": "markov-cli.js",
   "type": "module",
   "scripts": {
-    "start": "node src/cli/CLI.js",
+    "start": "node markov-cli.js",
     "test": "jest",
-    "dev": "nodemon src/cli/CLI.js"
+    "dev": "nodemon mrkov-cli.js"
   },
   "keywords": ["markov", "text-generation", "nlp", "cli"],
   "author": "Your Name",

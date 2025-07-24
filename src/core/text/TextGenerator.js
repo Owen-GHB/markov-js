@@ -113,27 +113,20 @@ export class TextGenerator {
      */
     initializeState(startWith, randomFn) {
         if (startWith) {
-            // Try to find a state that matches the starting text
             const startTokens = startWith.trim().split(/\s+/);
-            
             if (startTokens.length >= this.model.order) {
-                // Use the last n tokens as the starting state
                 const proposedState = startTokens.slice(-this.model.order).join(' ');
                 if (this.model.chains.has(proposedState)) {
                     return proposedState;
                 }
             }
-            
-            // Fallback: try to find any state containing the start text
-            for (const state of this.model.chains.keys()) {
-                if (state.includes(startWith.toLowerCase())) {
-                    return state;
-                }
-            }
         }
-
-        // Use random starting state
-        return this.model.getRandomStartState(randomFn);
+        
+        // Fallback to random state from chains
+        const states = Array.from(this.model.chains.keys());
+        return states.length > 0 
+            ? states[Math.floor(randomFn() * states.length)]
+            : null;
     }
 
     /**
@@ -281,21 +274,5 @@ export class TextGenerator {
             continuationText: result.text,
             fullText: existingText + ' ' + result.text
         };
-    }
-
-    /**
-     * Interactive generation with user feedback.
-     * @param {Object} options - Generation options.
-     * @param {Function} feedbackFn - Callback for user feedback on each token.
-     * @returns {Object} - Generation result.
-     */
-    generateInteractive(options = {}, feedbackFn = null) {
-        if (!feedbackFn) {
-            return this.generate(options);
-        }
-
-        // This would be used in CLI for step-by-step generation
-        // Implementation would depend on specific interactive requirements
-        throw new Error('Interactive generation not yet implemented');
     }
 }

@@ -2,11 +2,6 @@ import { Tokenizers, Normalizers } from './TokenizationService.js';
 
 /**
  * Text preprocessing and tokenization utilities
- * 
- * Design philosophy:
- * - Modular filters that can be composed
- * - Preserve original text structure when possible
- * - Easy to extend with custom preprocessing steps
  */
 export class TextProcessor {
     constructor() {
@@ -131,59 +126,13 @@ export class TextProcessor {
         return text;
     }
 
-
-    /**
-     * Custom filter: Remove or replace specific patterns.
-     * @param {string} text - Input text.
-     * @param {RegExp[]} patterns - Patterns to remove.
-     * @param {string} replacement - Replacement string (default: ' ').
-     * @returns {string} - Filtered text.
-     */
-    removePatterns(text, patterns = [], replacement = ' ') {
-        let result = text;
-        for (const pattern of patterns) {
-            result = result.replace(pattern, replacement);
-        }
-        return result;
-    }
-
-    /**
-     * Add sentence boundary markers for better generation.
-     * @param {string[]} tokens - Input tokens.
-     * @param {string} startMarker - Start of sentence marker.
-     * @param {string} endMarker - End of sentence marker.
-     * @returns {string[]} - Tokens with boundary markers.
-     */
-    addSentenceBoundaries(tokens, startMarker = '<START>', endMarker = '<END>') {
-        const result = [];
-        let currentSentence = [];
-        
-        for (const token of tokens) {
-            if (this.isSentenceEnd(token)) {
-                if (currentSentence.length > 0) {
-                    result.push(startMarker, ...currentSentence, token, endMarker);
-                    currentSentence = [];
-                }
-            } else {
-                currentSentence.push(token);
-            }
-        }
-        
-        // Handle remaining tokens
-        if (currentSentence.length > 0) {
-            result.push(startMarker, ...currentSentence, endMarker);
-        }
-        
-        return result;
-    }
-
     /**
      * Check if a token represents the end of a sentence.
      * @param {string} token - Token to check.
      * @returns {boolean} - True if token is sentence-ending punctuation.
      */
     isSentenceEnd(token) {
-        return /^[.!?]+$/.test(token);
+        return /^[.!?]+['"]?$/.test(token);
     }
 
     /**
@@ -203,21 +152,6 @@ export class TextProcessor {
             uniqueTokens: uniqueTokens.size,
             avgTokenLength: tokens.reduce((sum, token) => sum + token.length, 0) / tokens.length,
             vocabularyDiversity: uniqueTokens.size / tokens.length
-        };
-    }
-
-    /**
-     * Create a custom preprocessing pipeline.
-     * @param {Function[]} filters - Array of filter functions.
-     * @returns {Function} - Composed preprocessing function.
-     */
-    createPipeline(filters) {
-        return (text, options = {}) => {
-            let result = text;
-            for (const filter of filters) {
-                result = filter.call(this, result, options);
-            }
-            return result;
         };
     }
 }

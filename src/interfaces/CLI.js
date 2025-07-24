@@ -45,8 +45,11 @@ export class MarkovCLI {
      * Setup readline event handlers.
      */
     setupEventHandlers() {
-        this.rl.on('line', (input) => {
-            this.handleCommand(input.trim());
+        this.rl.on('line', async (input) => {
+            const { output, shouldExit } = await this.handleInput(input.trim());
+            if (output) console.log(output);
+            if (shouldExit) this.rl.close();
+            else this.rl.prompt();
         });
 
         this.rl.on('close', () => {
@@ -54,7 +57,6 @@ export class MarkovCLI {
             process.exit(0);
         });
 
-        // Handle Ctrl+C gracefully
         process.on('SIGINT', () => {
             console.log('\nUse "exit" or Ctrl+D to quit.');
             this.rl.prompt();
@@ -65,107 +67,120 @@ export class MarkovCLI {
      * Display welcome message and available commands.
      */
     displayWelcome() {
-        console.log('🔗 Markov Chain Text Generator');
-        console.log('=============================');
-        console.log('Available commands:');
-        console.log('  train("filename.txt", order=2)    - Build model from text file');
-        console.log('  generate(length=100, order=2)          - Generate text');
-        console.log('  save_model("model.json")               - Save current model');
-        console.log('  load_model("model.json")               - Load saved model');
-        console.log('  stats()                                - Show model statistics');
-        console.log('  help()                                 - Show this help');
-        console.log('  exit                                   - Quit program');
-        console.log('\nType a command to get started!\n');
-        this.rl.prompt();
+        return [
+            '🔗 Markov Chain Text Generator',
+            '=============================',
+            'Available commands:',
+            '  train({filename: "file.txt", order: 2})    - Build model',
+            '  generate({length: 100, temperature: 0.8})  - Generate text',
+            '  save_model({filename: "model.json"})       - Save model',
+            '  load_model({filename: "model.json"})       - Load model',
+            '  stats()                                   - Show stats',
+            '  help()                                    - Show help',
+            '  exit                                      - Quit program',
+            '',
+            'Type a command to get started!'
+        ].join('\n');
     }
 
     /**
-     * Main command handler
-     * @param {string} input - User input command
+     * Handle raw user input and transform it into command processing
+     * @param {string} input - Raw user input
+     * @returns {Promise<{output: string, shouldExit: boolean}>} - Result object
      */
-    async handleCommand(input) {
+    async handleInput(input) {
         if (!input) {
-            this.rl.prompt();
-            return;
+            return { output: '', shouldExit: false };
         }
 
         try {
             const command = this.commandParser.parse(input);
-            
-            switch (command.name) {
-                case 'train':
-                    await this.handleTrain(command.args);
-                    break;
-                case 'generate':
-                    await this.handleGenerate(command.args);
-                    break;
-                case 'save_model':
-                    await this.handleSaveModel(command.args);
-                    break;
-                case 'load_model':
-                    await this.handleLoadModel(command.args);
-                    break;
-                case 'stats':
-                    this.handleStats();
-                    break;
-                case 'help':
-                    this.displayWelcome();
-                    break;
-                case 'exit':
-                case 'quit':
-                    this.rl.close();
-                    return;
-                default:
-                    console.log(`❌ Unknown command: ${command.name}`);
-                    console.log('Type "help()" for available commands.');
-            }
+            return await this.handleCommand(command);
         } catch (error) {
-            console.log(`❌ Error: ${error.message}`);
+            return { 
+                output: `❌ Error: ${error.message}`,
+                shouldExit: false
+            };
         }
-
-        this.rl.prompt();
     }
 
     /**
-     * Handle build_dict command
-     * @param {Object} args - Command arguments
+     * Handle parsed command object
+     * @param {Object} command - Parsed command {name, args}
+     * @returns {Promise<{output: string, shouldExit: boolean}>} - Result object
      */
+    async handleCommand(command) {
+        switch (command.name) {
+            case 'train':
+                return {
+                    output: await this.handleTrain(command.args),
+                    shouldExit: false
+                };
+            case 'generate':
+                return {
+                    output: await this.handleGenerate(command.args),
+                    shouldExit: false
+                };
+            case 'save_model':
+                return {
+                    output: await this.handleSaveModel(command.args),
+                    shouldExit: false
+                };
+            case 'load_model':
+                return {
+                    output: await this.handleLoadModel(command.args),
+                    shouldExit: false
+                };
+            case 'stats':
+                return {
+                    output: this.handleStats(),
+                    shouldExit: false
+                };
+            case 'help':
+                return {
+                    output: this.displayWelcome(),
+                    shouldExit: false
+                };
+            case 'exit':
+            case 'quit':
+                return { output: 'Goodbye!', shouldExit: true };
+            default:
+                return {
+                    output: `❌ Unknown command: ${command.name}\nType "help()" for available commands.`,
+                    shouldExit: false
+                };
+        }
+    }
+
     async handleTrain(args) {
         const { filename, order = 2 } = args;
         
         if (!filename) {
-            throw new Error('Filename is required. Usage: build_dict("corpus.txt", order=2)');
+            throw new Error('Filename is required. Usage: train({filename: "corpus.txt", order: 2})');
         }
 
-        console.log(`📚 Building dictionary from "${filename}" with order ${order}...`);
         this.isTraining = true;
-
         try {
-            // Read file
             const text = await this.fileHandler.readTextFile(filename);
-            console.log(`📖 Read ${text.length} characters from file`);
-
-            // Tokenize
             const tokens = this.processor.tokenize(text, {
                 method: 'word',
                 preservePunctuation: true,
                 preserveCase: false
             });
             
-            const stats = this.processor.getTokenStats(tokens);
-            console.log(`🔤 Tokenized into ${stats.totalTokens} tokens (${stats.uniqueTokens} unique)`);
-
-            // Build model
-            this.model = new MarkovModel(order);
-            this.model.buildChain(tokens);
+            this.model = new MarkovModel({ order });
+            this.model.train(tokens, { caseSensitive: false, trackStartStates: false });
             this.generator = new TextGenerator(this.model);
             this.currentOrder = order;
 
-            console.log('✅ Model built successfully!');
-            this.displayModelStats();
-
-        } catch (error) {
-            throw new Error(`Failed to build dictionary: ${error.message}`);
+            const stats = this.model.getStats();
+            return [
+                `📚 Trained model from "${filename}" with order ${order}`,
+                `📊 Model Statistics:`,
+                `   States: ${stats.totalStates.toLocaleString()}`,
+                `   Vocabulary: ${stats.vocabularySize.toLocaleString()} unique tokens`,
+                `✅ Model ready for generation!`
+            ].join('\n');
         } finally {
             this.isTraining = false;
         }
@@ -174,27 +189,23 @@ export class MarkovCLI {
     /**
      * Handle generate command
      * @param {Object} args - Command arguments
+     * @returns {Promise<string>} - Generated output
      */
     async handleGenerate(args) {
         if (!this.model || !this.generator) {
-            throw new Error('No model loaded. Use build_dict() or load_model() first.');
+            throw new Error('No model loaded. Use train() or load_model() first.');
         }
 
         const { 
             length = 100, 
-            order = this.currentOrder,
             temperature = 1.0,
             startWith = null,
             samples = 1
         } = args;
 
-        if (order !== this.currentOrder) {
-            throw new Error(`Model was trained with order ${this.currentOrder}, cannot generate with order ${order}`);
-        }
-
-        console.log(`🎲 Generating ${samples} sample${samples > 1 ? 's' : ''} of ${length} tokens...`);
-
         try {
+            let output = [`🎲 Generating ${samples} sample${samples > 1 ? 's' : ''} of ${length} tokens...`];
+            
             if (samples === 1) {
                 const result = this.generator.generate({
                     maxLength: length,
@@ -202,11 +213,13 @@ export class MarkovCLI {
                     startWith: startWith
                 });
 
-                console.log('\n📝 Generated text:');
-                console.log('─'.repeat(50));
-                console.log(result.text);
-                console.log('─'.repeat(50));
-                console.log(`Length: ${result.length} tokens | Stopped early: ${result.stoppedEarly}`);
+                output.push(
+                    '\n📝 Generated text:',
+                    '─'.repeat(50),
+                    result.text,
+                    '─'.repeat(50),
+                    `Length: ${result.length} tokens | Stopped early: ${result.stoppedEarly}`
+                );
             } else {
                 const results = this.generator.generateSamples(samples, {
                     maxLength: length,
@@ -215,16 +228,16 @@ export class MarkovCLI {
                 });
 
                 results.forEach((result, index) => {
-                    console.log(`\n📝 Sample ${index + 1}:`);
-                    console.log('─'.repeat(30));
-                    if (result.error) {
-                        console.log(`❌ Error: ${result.error}`);
-                    } else {
-                        console.log(result.text);
-                        console.log(`(${result.length} tokens)`);
-                    }
+                    output.push(
+                        `\n📝 Sample ${index + 1}:`,
+                        '─'.repeat(30),
+                        result.error ? `❌ Error: ${result.error}` : result.text,
+                        result.error ? '' : `(${result.length} tokens)`
+                    );
                 });
             }
+
+            return output.join('\n');
         } catch (error) {
             throw new Error(`Generation failed: ${error.message}`);
         }
@@ -233,6 +246,7 @@ export class MarkovCLI {
     /**
      * Handle save_model command
      * @param {Object} args - Command arguments
+     * @returns {Promise<string>} - Operation result
      */
     async handleSaveModel(args) {
         if (!this.model) {
@@ -241,15 +255,13 @@ export class MarkovCLI {
 
         const { filename } = args;
         if (!filename) {
-            throw new Error('Filename is required. Usage: save_model("model.json")');
+            throw new Error('Filename is required. Usage: save_model({filename: "model.json"})');
         }
-
-        console.log(`💾 Saving model to "${filename}"...`);
 
         try {
             await this.serializer.saveModel(this.model, filename);
             this.lastModelPath = filename;
-            console.log('✅ Model saved successfully!');
+            return `💾 Model saved to "${filename}"\n✅ Model saved successfully!`;
         } catch (error) {
             throw new Error(`Failed to save model: ${error.message}`);
         }
@@ -258,14 +270,13 @@ export class MarkovCLI {
     /**
      * Handle load_model command
      * @param {Object} args - Command arguments
+     * @returns {Promise<string>} - Operation result
      */
     async handleLoadModel(args) {
         const { filename } = args;
         if (!filename) {
-            throw new Error('Filename is required. Usage: load_model("model.json")');
+            throw new Error('Filename is required. Usage: load_model({filename: "model.json"})');
         }
-
-        console.log(`📂 Loading model from "${filename}"...`);
 
         try {
             this.model = await this.serializer.loadModel(filename);
@@ -273,8 +284,11 @@ export class MarkovCLI {
             this.currentOrder = this.model.order;
             this.lastModelPath = filename;
 
-            console.log('✅ Model loaded successfully!');
-            this.displayModelStats();
+            return [
+                `📂 Model loaded from "${filename}"`,
+                '✅ Model loaded successfully!',
+                this.displayModelStats()
+            ].join('\n');
         } catch (error) {
             throw new Error(`Failed to load model: ${error.message}`);
         }
@@ -282,32 +296,33 @@ export class MarkovCLI {
 
     /**
      * Handle stats command
+     * @returns {string} - Statistics output
      */
     handleStats() {
         if (!this.model) {
-            console.log('❌ No model loaded.');
-            return;
+            return '❌ No model loaded.';
         }
-
-        this.displayModelStats();
+        return this.displayModelStats();
     }
 
     /**
      * Display current model statistics
      */
     displayModelStats() {
-        const stats = this.model.getStats();
-        console.log('\n📊 Model Statistics:');
-        console.log(`   Order: ${stats.order}`);
-        console.log(`   States: ${stats.totalStates.toLocaleString()}`);
-        console.log(`   Vocabulary: ${stats.vocabularySize.toLocaleString()} unique tokens`);
-        console.log(`   Training tokens: ${stats.totalTokens.toLocaleString()}`);
-        console.log(`   Start states: ${stats.startStates}`);
-        console.log(`   Avg transitions per state: ${stats.avgTransitionsPerState.toFixed(2)}`);
+        if (!this.model) return '❌ No model loaded.';
         
-        if (this.lastModelPath) {
-            console.log(`   Last saved/loaded: ${this.lastModelPath}`);
-        }
+        const stats = this.model.getStats();
+
+        return [
+        '📊 Model Statistics:',
+        `   Order: ${stats.order}`,
+        `   States: ${stats.totalStates.toLocaleString()}`,
+        `   Vocabulary: ${stats.vocabularySize.toLocaleString()} unique tokens`,
+        `   Training tokens: ${stats.totalTokens.toLocaleString()}`,
+        `   Start states: ${stats.startStates}`,
+        `   Avg transitions per state: ${stats.avgTransitionsPerState.toFixed(2)}`,
+        this.lastModelPath ? `   Last saved/loaded: ${this.lastModelPath}` : ''
+    ].join('\n');
     }
 
     /**
