@@ -1,4 +1,5 @@
 // src/core/TextProcessor.js
+import { Tokenizers, Normalizers } from './text/TokenizationService.js';
 
 /**
  * Text preprocessing and tokenization utilities
@@ -13,8 +14,7 @@ export class TextProcessor {
         // Default preprocessing pipeline
         this.defaultFilters = [
             this.normalizeWhitespace,
-            this.handlePunctuation,
-            this.filterEmptyTokens
+            this.handlePunctuation
         ];
     }
 
@@ -89,9 +89,7 @@ export class TextProcessor {
      */
     tokenizeByWord(text, preservePunctuation = true) {
         if (preservePunctuation) {
-            // Split on word boundaries but keep punctuation as separate tokens
-            // This regex captures words and punctuation separately
-            return text.match(/\w+|[^\w\s]/g) || [];
+            return Tokenizers.word(text);
         } else {
             // Extract only word characters
             return text.match(/\w+/g) || [];
@@ -116,12 +114,7 @@ export class TextProcessor {
      * @returns {string} - Text with normalized whitespace
      */
     normalizeWhitespace(text) {
-        return text
-            .replace(/\r\n/g, '\n')      // Normalize line endings
-            .replace(/\t/g, ' ')         // Convert tabs to spaces
-            .replace(/\n+/g, '\n')       // Collapse multiple newlines
-            .replace(/ +/g, ' ')         // Collapse multiple spaces
-            .trim();
+        return Normalizers.whitespace(text);
     }
 
     /**
@@ -139,14 +132,6 @@ export class TextProcessor {
         return text;
     }
 
-    /**
-     * Remove empty tokens and excessive whitespace
-     * @param {string} text - Input text
-     * @returns {string} - Cleaned text
-     */
-    filterEmptyTokens(text) {
-        return text.replace(/\s+/g, ' ').trim();
-    }
 
     /**
      * Custom filter: Remove or replace specific patterns

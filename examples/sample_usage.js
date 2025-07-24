@@ -41,7 +41,7 @@ async function basicExample() {
     console.log(`📝 Tokenized into ${tokens.length} tokens`);
     console.log(`🎯 Sample tokens: ${tokens.slice(0, 10).join(', ')}...`);
 
-    model.buildChain(tokens);
+    model.train(tokens);
     console.log(`🔗 Built model with ${model.chains.size} states`);
 
     // Generate text
@@ -96,7 +96,7 @@ async function fileBasedExample() {
             console.log(`\n🔗 Training model with order ${order}...`);
             
             const model = new MarkovModel(order);
-            model.buildChain(tokens);
+            model.train(tokens);
             
             const generator = new TextGenerator(model);
             const stats = model.getStats();
@@ -144,7 +144,7 @@ async function advancedGenerationExample() {
     const tokens = processor.tokenize(corpus);
     
     const model = new MarkovModel(3);
-    model.buildChain(tokens);
+    model.train(tokens);
     const generator = new TextGenerator(model);
 
     console.log('🎨 Experimenting with different generation parameters...\n');
@@ -197,7 +197,7 @@ async function modelPersistenceExample() {
     const tokens = processor.tokenize(text);
     
     const originalModel = new MarkovModel(2);
-    originalModel.buildChain(tokens);
+    originalModel.train(tokens);
     
     console.log('💾 Saving model...');
     await serializer.saveModel(originalModel, 'persistence_test.json');
