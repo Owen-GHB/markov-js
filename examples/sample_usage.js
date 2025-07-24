@@ -1,8 +1,8 @@
 // examples/sample_usage.js
 
-import { MarkovModel } from '../src/core/MarkovModel.js';
-import { TextProcessor } from '../src/core/TextProcessor.js';
-import { TextGenerator } from '../src/core/TextGenerator.js';
+import { MarkovModel } from '../src/core/models/MarkovModel.js';
+import { TextProcessor } from '../src/core/text/TextProcessor.js';
+import { TextGenerator } from '../src/core/text/TextGenerator.js';
 import { FileHandler } from '../src/io/FileHandler.js';
 import { ModelSerializer } from '../src/io/ModelSerializer.js';
 

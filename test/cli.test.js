@@ -17,8 +17,8 @@ async function testCli() {
     await fileHandler.ensureDirectoryExists('data/corpus');
     await fileHandler.writeTextFile(corpusPath, corpusContent);
 
-    // Test build_dict
-    const { model, generator } = await cli.handleBuildDict({ filename: corpusPath, order: 2 });
+    // Test train
+    const { model, generator } = await cli.handleTrain({ filename: corpusPath, order: 2 });
     cli.model = model;
     cli.generator = generator;
 
@@ -26,7 +26,7 @@ async function testCli() {
     assert(cli.generator instanceof TextGenerator, 'Generator should be a TextGenerator instance');
     assert.strictEqual(cli.model.order, 2, 'Model order should be 2');
 
-    console.log('✅ build_dict command test passed');
+    console.log('✅ train command test passed');
 
     // Test generate
     const result = cli.generator.generate({ maxLength: 5 });

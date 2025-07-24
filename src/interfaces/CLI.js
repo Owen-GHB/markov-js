@@ -1,10 +1,9 @@
 #!/usr/bin/env node
-// src/cli/CLI.js
 
 import readline from 'readline';
-import { MarkovModel } from '../core/MarkovModel.js';
-import { TextProcessor } from '../core/TextProcessor.js';
-import { TextGenerator } from '../core/TextGenerator.js';
+import { MarkovModel } from '../core/models/MarkovModel.js';
+import { TextProcessor } from '../core/text/TextProcessor.js';
+import { TextGenerator } from '../core/text/TextGenerator.js';
 import { FileHandler } from '../io/FileHandler.js';
 import { ModelSerializer } from '../io/ModelSerializer.js';
 import { CommandParser } from './CommandParser.js';
@@ -69,7 +68,7 @@ export class MarkovCLI {
         console.log('🔗 Markov Chain Text Generator');
         console.log('=============================');
         console.log('Available commands:');
-        console.log('  build_dict("filename.txt", order=2)    - Build model from text file');
+        console.log('  train("filename.txt", order=2)    - Build model from text file');
         console.log('  generate(length=100, order=2)          - Generate text');
         console.log('  save_model("model.json")               - Save current model');
         console.log('  load_model("model.json")               - Load saved model');
@@ -94,8 +93,8 @@ export class MarkovCLI {
             const command = this.commandParser.parse(input);
             
             switch (command.name) {
-                case 'build_dict':
-                    await this.handleBuildDict(command.args);
+                case 'train':
+                    await this.handleTrain(command.args);
                     break;
                 case 'generate':
                     await this.handleGenerate(command.args);
@@ -131,7 +130,7 @@ export class MarkovCLI {
      * Handle build_dict command
      * @param {Object} args - Command arguments
      */
-    async handleBuildDict(args) {
+    async handleTrain(args) {
         const { filename, order = 2 } = args;
         
         if (!filename) {

@@ -1,5 +1,4 @@
-// src/core/MarkovModel.js
-import { TextModel } from './models/ModelInterface.js';
+import { TextModel } from './ModelInterface.js';
 
 /**
  * Configurable Markov Chain Model for text generation

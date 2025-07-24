@@ -1,12 +1,9 @@
-// src/cli/CommandParser.js
-
 /**
  * Simple command parser for REPL-style interface
  * 
  * Supports function-like syntax:
- * - build_dict("file.txt", order=3)
+ * - train("file.txt", order=3)
  * - generate(length=50, temperature=0.8)
- * - save_model("my_model.json")
  */
 export class CommandParser {
     constructor() {

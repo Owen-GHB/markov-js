@@ -1,5 +1,3 @@
-// src/core/TextGenerator.js
-
 /**
  * Text generation engine using Markov models
  * 

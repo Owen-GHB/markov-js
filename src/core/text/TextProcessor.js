@@ -1,5 +1,4 @@
-// src/core/TextProcessor.js
-import { Tokenizers, Normalizers } from './text/TokenizationService.js';
+import { Tokenizers, Normalizers } from './TokenizationService.js';
 
 /**
  * Text preprocessing and tokenization utilities
