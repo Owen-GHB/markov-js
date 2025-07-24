@@ -19,6 +19,17 @@ export class FileHandler {
      */
     async readTextFile(filename) {
         const fullPath = this.resolveCorpusPath(filename);
+
+        try {
+            await fs.access(fullPath, fs.constants.R_OK);
+        } catch (error) {
+            if (error.code === 'ENOENT') {
+                throw new Error(`File not found: ${fullPath}`);
+            } else if (error.code === 'EACCES') {
+                throw new Error(`Permission denied to read file: ${fullPath}`);
+            }
+            throw new Error(`Cannot access file ${filename}: ${error.message}`);
+        }
         
         try {
             const stats = await fs.stat(fullPath);
@@ -29,14 +40,11 @@ export class FileHandler {
             const content = await fs.readFile(fullPath, this.encoding);
             
             if (!content.trim()) {
-                throw new Error(`File ${filename} is empty`);
+                throw new Error(`File ${filename} is empty or contains only whitespace`);
             }
             
             return content;
         } catch (error) {
-            if (error.code === 'ENOENT') {
-                throw new Error(`File not found: ${fullPath}`);
-            }
             throw new Error(`Failed to read file ${filename}: ${error.message}`);
         }
     }
@@ -67,9 +75,26 @@ export class FileHandler {
         const fullPath = this.resolveModelPath(filename);
         
         try {
+            await fs.access(fullPath, fs.constants.R_OK);
+        } catch (error) {
+            if (error.code === 'ENOENT') {
+                throw new Error(`Model file not found: ${fullPath}`);
+            } else if (error.code === 'EACCES') {
+                throw new Error(`Permission denied to read model file: ${fullPath}`);
+            }
+            throw new Error(`Cannot access model file ${filename}: ${error.message}`);
+        }
+
+        try {
             const stats = await fs.stat(fullPath);
             const content = await fs.readFile(fullPath, 'utf8');
-            const data = JSON.parse(content);
+
+            let data;
+            try {
+                data = JSON.parse(content);
+            } catch (jsonError) {
+                throw new Error(`Invalid JSON in model file: ${filename}. ${jsonError.message}`);
+            }
             
             return {
                 filename,
@@ -88,9 +113,6 @@ export class FileHandler {
         } catch (error) {
             if (error.code === 'ENOENT') {
                 throw new Error(`Model file not found: ${filename}`);
-            }
-            if (error instanceof SyntaxError) {
-                throw new Error(`Invalid JSON in model file: ${filename}`);
             }
             throw new Error(`Failed to get model info for ${filename}: ${error.message}`);
         }
