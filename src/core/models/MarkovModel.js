@@ -1,4 +1,5 @@
 import { TextModel } from './ModelInterface.js';
+import { random } from '../../utils/RNG.js';
 
 /**
  * Configurable Markov Chain Model for text generation
@@ -6,7 +7,6 @@ import { TextModel } from './ModelInterface.js';
  * Design decisions:
  * - Uses Map for O(1) lookup performance vs plain objects
  * - Stores transitions as frequency counts for flexibility
- * - Separates chain building from text generation for modularity
  */
 export class MarkovModel extends TextModel {
     /**
@@ -36,7 +36,7 @@ export class MarkovModel extends TextModel {
      * @param {boolean} options.trackStartStates - Whether to track sentence starts (default: true)
      */
     train(tokens, options = {}) {
-        const { caseSensitive = false, trackStartStates = false } = options;
+        const { caseSensitive = false, trackStartStates = true } = options;
 
         if (!Array.isArray(tokens) || tokens.some(t => typeof t !== 'string')) {
             throw new Error('Input tokens must be an array of strings.');
@@ -67,6 +67,14 @@ export class MarkovModel extends TextModel {
             const state = processedTokens.slice(i, i + this.order).join(' ');
             const nextToken = processedTokens[i + this.order];
             
+            // Track start states if enabled
+            if (trackStartStates && isStartOfSentence) {
+                this.startStates.add(state);
+            }
+
+            // Update sentence tracking
+            isStartOfSentence = sentenceEndings.has(nextToken);
+
             if (!this.chains.has(state)) {
                 this.chains.set(state, new Map());
             }
@@ -101,10 +109,10 @@ export class MarkovModel extends TextModel {
     /**
      * Sample next token based on transition probabilities
      * @param {string} state - Current state
-     * @param {Function} randomFn - Random function (default: Math.random)
+     * @param {Function} randomFn - Random function (default: random)
      * @returns {string|null} - Next token or null if no transitions available
      */
-    sampleNextToken(state, randomFn = Math.random) {
+    sampleNextToken(state, randomFn = random) {
         const transitions = this.getTransitions(state);
         
         if (transitions.length === 0) {
@@ -128,19 +136,37 @@ export class MarkovModel extends TextModel {
 
     /**
      * Get a random starting state for text generation
-     * @param {Function} randomFn - Random function (default: Math.random)
+     * @param {Function} randomFn - Random function (default: random)
      * @returns {string|null} - Starting state or null if none available
      */
-    getRandomStartState(randomFn = Math.random) {
-        if (this.startStates.size === 0) {
-            // Fallback to any available state
-            const allStates = Array.from(this.chains.keys());
-            if (allStates.length === 0) return null;
-            return allStates[Math.floor(randomFn() * allStates.length)];
+    getRandomStartState(randomFn = random) {
+        // First try to get a sentence-starting state if available
+        if (this.startStates.size > 0) {
+            const startStatesArray = Array.from(this.startStates);
+            return startStatesArray[Math.floor(randomFn() * startStatesArray.length)];
         }
         
-        const startStatesArray = Array.from(this.startStates);
-        return startStatesArray[Math.floor(randomFn() * startStatesArray.length)];
+        // Fallback to any available state
+        const allStates = Array.from(this.chains.keys());
+        if (allStates.length === 0) return null;
+        return allStates[Math.floor(randomFn() * allStates.length)];
+    }
+
+    /**
+     * Get all possible starting states (sentence beginnings)
+     * @returns {string[]} - Array of starting states
+     */
+    getStartStates() {
+        return Array.from(this.startStates);
+    }
+
+    /**
+     * Check if a given state is a known starting state
+     * @param {string} state - State to check
+     * @returns {boolean} - True if the state is a known starting state
+     */
+    isStartState(state) {
+        return this.startStates.has(state);
     }
 
     /**

@@ -1,3 +1,5 @@
+import { random } from '../../utils/RNG.js';
+
 /**
  * Text generation engine using Markov models
  * 
@@ -36,7 +38,7 @@ export class TextGenerator {
             stopTokens = ['.', '!', '?'],
             startWith = null,
             temperature = 1.0,
-            randomFn = Math.random,
+            randomFn = random,
             allowRepetition = true
         } = options;
 
