@@ -1,8 +1,11 @@
 /**
- * Base class for all text generation models
+ * Base class for all text generation models.
  * @abstract
  */
 export class TextModel {
+  /**
+   * @param {object} options - The model options.
+   */
   constructor(options = {}) {
     if (new.target === TextModel) {
       throw new Error('Cannot instantiate abstract TextModel');
@@ -12,7 +15,7 @@ export class TextModel {
 
   /**
    * @abstract
-   * @param {string[]} tokens - Training data
+   * @param {string[]} tokens - Training data.
    */
   train(tokens) {
     throw new Error('train() must be implemented by subclasses');
@@ -20,8 +23,8 @@ export class TextModel {
 
   /**
    * @abstract
-   * @param {object} options - Generation parameters
-   * @returns {string} Generated text
+   * @param {object} options - Generation parameters.
+   * @returns {string} Generated text.
    */
   generate(options) {
     throw new Error('generate() must be implemented by subclasses');
@@ -29,7 +32,7 @@ export class TextModel {
 
   /**
    * @abstract
-   * @returns {object} - Serializable model data
+   * @returns {object} - Serializable model data.
    */
   toJSON() {
     throw new Error('toJSON() must be implemented by subclasses');
@@ -37,7 +40,7 @@ export class TextModel {
 
   /**
    * @abstract
-   * @param {object} data - Serialized model data
+   * @param {object} data - Serialized model data.
    */
   fromJSON(data) {
     throw new Error('fromJSON() must be implemented by subclasses');
@@ -45,7 +48,7 @@ export class TextModel {
 
   /**
    * @abstract
-   * @returns {object} - Model statistics
+   * @returns {object} - Model statistics.
    */
   getStats() {
     throw new Error('getStats() must be implemented by subclasses');

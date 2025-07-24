@@ -1,9 +1,9 @@
 /**
- * Stateless interface core
+ * Stateless interface core.
  */
 export class AppInterface {
   /**
-   * @param {TextModel} model - Pre-initialized model instance
+   * @param {TextModel} model - Pre-initialized model instance.
    * @param {TextGenerator} generator
    */
   constructor(model, generator) {
@@ -12,7 +12,7 @@ export class AppInterface {
   }
 
   /**
-   * @returns {ModelStats} - Immutable stats object
+   * @returns {ModelStats} - Immutable stats object.
    */
   getStats() {
     return this.model.getStats();

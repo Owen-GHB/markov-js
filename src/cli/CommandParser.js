@@ -20,9 +20,9 @@ export class CommandParser {
     }
 
     /**
-     * Parse user input into command structure
-     * @param {string} input - Raw user input
-     * @returns {Object} - Parsed command with name and args
+     * Parse user input into command structure.
+     * @param {string} input - Raw user input.
+     * @returns {Object} - Parsed command with name and args.
      */
     parse(input) {
         if (!input || typeof input !== 'string') {
@@ -49,9 +49,9 @@ export class CommandParser {
     }
 
     /**
-     * Parse function arguments string
-     * @param {string} argsString - Arguments string from inside parentheses
-     * @returns {Object} - Parsed arguments object
+     * Parse function arguments string.
+     * @param {string} argsString - Arguments string from inside parentheses.
+     * @returns {Object} - Parsed arguments object.
      */
     parseArguments(argsString) {
         if (!argsString.trim()) {
@@ -83,9 +83,9 @@ export class CommandParser {
     }
 
     /**
-     * Split arguments string, respecting quoted strings
-     * @param {string} argsString - Arguments to split
-     * @returns {string[]} - Array of argument tokens
+     * Split arguments string, respecting quoted strings.
+     * @param {string} argsString - Arguments to split.
+     * @returns {string[]} - Array of argument tokens.
      */
     splitArguments(argsString) {
         const tokens = [];
@@ -121,9 +121,9 @@ export class CommandParser {
     }
 
     /**
-     * Parse a single value, handling different types
-     * @param {string} value - String value to parse
-     * @returns {*} - Parsed value (string, number, boolean, etc.)
+     * Parse a single value, handling different types.
+     * @param {string} value - String value to parse.
+     * @returns {*} - Parsed value (string, number, boolean, etc.).
      */
     parseValue(value) {
         const trimmed = value.trim();
@@ -166,9 +166,9 @@ export class CommandParser {
     }
 
     /**
-     * Get positional argument key based on command and index
-     * @param {number} index - Positional index
-     * @returns {string} - Argument key name
+     * Get positional argument key based on command and index.
+     * @param {number} index - Positional index.
+     * @returns {string} - Argument key name.
      */
     getPositionalKey(index) {
         // Map positional arguments to meaningful names
@@ -183,10 +183,10 @@ export class CommandParser {
     }
 
     /**
-     * Validate parsed command against expected signatures
-     * @param {Object} command - Parsed command
-     * @param {Object} expectedSignatures - Expected command signatures
-     * @returns {boolean} - True if valid
+     * Validate parsed command against expected signatures.
+     * @param {Object} command - Parsed command.
+     * @param {Object} expectedSignatures - Expected command signatures.
+     * @returns {boolean} - True if valid.
      */
     validate(command, expectedSignatures = {}) {
         const signature = expectedSignatures[command.name];
@@ -215,10 +215,10 @@ export class CommandParser {
     }
 
     /**
-     * Check if value matches expected type
-     * @param {*} value - Value to check
-     * @param {string} expectedType - Expected type name
-     * @returns {boolean} - True if type matches
+     * Check if value matches expected type.
+     * @param {*} value - Value to check.
+     * @param {string} expectedType - Expected type name.
+     * @returns {boolean} - True if type matches.
      */
     checkType(value, expectedType) {
         switch (expectedType.toLowerCase()) {
@@ -240,8 +240,8 @@ export class CommandParser {
     }
 
     /**
-     * Get help text for command syntax
-     * @returns {string} - Help text
+     * Get help text for command syntax.
+     * @returns {string} - Help text.
      */
     getHelpText() {
         return `
