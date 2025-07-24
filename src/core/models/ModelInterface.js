@@ -3,11 +3,11 @@
  * @abstract
  */
 export class TextModel {
-  constructor(order) {
+  constructor(options = {}) {
     if (new.target === TextModel) {
       throw new Error('Cannot instantiate abstract TextModel');
     }
-    this.order = order;
+    this.options = options;
   }
 
   /**

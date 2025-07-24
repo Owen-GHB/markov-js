@@ -11,12 +11,13 @@ import { TextModel } from './models/ModelInterface.js';
  */
 export class MarkovModel extends TextModel {
     /**
-     * @param {number} order - The order of the Markov chain (default: 2)
-     * @param {object} config - Additional model configuration
+     * @param {object} options - The model options.
+     * @param {number} options.order - The order of the Markov chain (default: 2)
      */
-    constructor(order = 2, config = {}) {
-        super(order);
-        if (order < 1) {
+    constructor(options = {}) {
+        super(options);
+        this.order = options.order || 2;
+        if (this.order < 1) {
             throw new Error('Markov chain order must be at least 1');
         }
         
@@ -26,7 +27,6 @@ export class MarkovModel extends TextModel {
         this.startStates = new Set();
         this.totalTokens = 0;
         this.vocabulary = new Set();
-        this.config = config;
     }
 
     /**
@@ -185,6 +185,7 @@ export class MarkovModel extends TextModel {
      */
     fromJSON(data) {
         this.order = data.order;
+        this.options = { order: data.order };
         this.totalTokens = data.totalTokens;
         this.vocabulary = new Set(data.vocabulary || []);
         this.startStates = new Set(data.startStates || []);

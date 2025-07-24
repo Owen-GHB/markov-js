@@ -78,7 +78,7 @@ export class ModelSerializer {
             this.validateModelData(modelData);
             
             // Create new model and load data
-            const model = new MarkovModel(modelData.order);
+            const model = new MarkovModel({ order: modelData.order });
             model.fromJSON(modelData);
             
             // Log metadata if available
