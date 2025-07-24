@@ -100,8 +100,8 @@ export class ModelSerializer {
     }
 
     /**
-     * Validate model data structure
-     * @param {Object} modelData - Model data to validate
+     * Validate model data structure.
+     * @param {Object} modelData - Model data to validate.
      */
     validateModelData(modelData) {
         if (!modelData || typeof modelData !== 'object') {
@@ -122,8 +122,8 @@ export class ModelSerializer {
     }
 
     /**
-     * List available saved models
-     * @returns {Promise<Array>} - Array of model info objects
+     * List available saved models.
+     * @returns {Promise<Array>} - Array of model info objects.
      */
     async listModels() {
         try {
@@ -175,9 +175,9 @@ export class ModelSerializer {
     }
 
     /**
-     * Delete a saved model file
-     * @param {string} filename - Model filename to delete
-     * @returns {Promise<boolean>} - True if deletion was successful
+     * Delete a saved model file.
+     * @param {string} filename - Model filename to delete.
+     * @returns {Promise<boolean>} - True if deletion was successful.
      */
     async deleteModel(filename) {
         const fullPath = this.fileHandler.resolveModelPath(filename);
@@ -194,9 +194,9 @@ export class ModelSerializer {
     }
 
     /**
-     * Check if a model file exists
-     * @param {string} filename - Model filename to check
-     * @returns {Promise<boolean>} - True if file exists
+     * Check if a model file exists.
+     * @param {string} filename - Model filename to check.
+     * @returns {Promise<boolean>} - True if file exists.
      */
     async modelExists(filename) {
         const fullPath = this.fileHandler.resolveModelPath(filename);

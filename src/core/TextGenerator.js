@@ -234,10 +234,10 @@ export class TextGenerator {
     }
 
     /**
-     * Generate multiple text samples
-     * @param {number} count - Number of samples to generate
-     * @param {Object} options - Generation options (same as generate())
-     * @returns {Array} - Array of generation results
+     * Generate multiple text samples.
+     * @param {number} count - Number of samples to generate.
+     * @param {Object} options - Generation options (same as generate()).
+     * @returns {Array} - Array of generation results.
      */
     generateSamples(count, options = {}) {
         const samples = [];
@@ -257,10 +257,10 @@ export class TextGenerator {
     }
 
     /**
-     * Generate text that continues from existing text
-     * @param {string} existingText - Text to continue from
-     * @param {Object} options - Generation options
-     * @returns {Object} - Generation result with continuation
+     * Generate text that continues from existing text.
+     * @param {string} existingText - Text to continue from.
+     * @param {Object} options - Generation options.
+     * @returns {Object} - Generation result with continuation.
      */
     continueText(existingText, options = {}) {
         const tokens = existingText.trim().split(/\s+/);
@@ -286,10 +286,10 @@ export class TextGenerator {
     }
 
     /**
-     * Interactive generation with user feedback
-     * @param {Object} options - Generation options
-     * @param {Function} feedbackFn - Callback for user feedback on each token
-     * @returns {Object} - Generation result
+     * Interactive generation with user feedback.
+     * @param {Object} options - Generation options.
+     * @param {Function} feedbackFn - Callback for user feedback on each token.
+     * @returns {Object} - Generation result.
      */
     generateInteractive(options = {}, feedbackFn = null) {
         if (!feedbackFn) {

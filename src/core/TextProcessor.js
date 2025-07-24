@@ -134,11 +134,11 @@ export class TextProcessor {
 
 
     /**
-     * Custom filter: Remove or replace specific patterns
-     * @param {string} text - Input text
-     * @param {RegExp[]} patterns - Patterns to remove
-     * @param {string} replacement - Replacement string (default: ' ')
-     * @returns {string} - Filtered text
+     * Custom filter: Remove or replace specific patterns.
+     * @param {string} text - Input text.
+     * @param {RegExp[]} patterns - Patterns to remove.
+     * @param {string} replacement - Replacement string (default: ' ').
+     * @returns {string} - Filtered text.
      */
     removePatterns(text, patterns = [], replacement = ' ') {
         let result = text;
@@ -149,11 +149,11 @@ export class TextProcessor {
     }
 
     /**
-     * Add sentence boundary markers for better generation
-     * @param {string[]} tokens - Input tokens
-     * @param {string} startMarker - Start of sentence marker
-     * @param {string} endMarker - End of sentence marker
-     * @returns {string[]} - Tokens with boundary markers
+     * Add sentence boundary markers for better generation.
+     * @param {string[]} tokens - Input tokens.
+     * @param {string} startMarker - Start of sentence marker.
+     * @param {string} endMarker - End of sentence marker.
+     * @returns {string[]} - Tokens with boundary markers.
      */
     addSentenceBoundaries(tokens, startMarker = '<START>', endMarker = '<END>') {
         const result = [];
@@ -179,18 +179,18 @@ export class TextProcessor {
     }
 
     /**
-     * Check if a token represents the end of a sentence
-     * @param {string} token - Token to check
-     * @returns {boolean} - True if token is sentence-ending punctuation
+     * Check if a token represents the end of a sentence.
+     * @param {string} token - Token to check.
+     * @returns {boolean} - True if token is sentence-ending punctuation.
      */
     isSentenceEnd(token) {
         return /^[.!?]+$/.test(token);
     }
 
     /**
-     * Get statistics about tokenized text
-     * @param {string[]} tokens - Array of tokens
-     * @returns {Object} - Token statistics
+     * Get statistics about tokenized text.
+     * @param {string[]} tokens - Array of tokens.
+     * @returns {Object} - Token statistics.
      */
     getTokenStats(tokens) {
         const wordTokens = tokens.filter(token => /\w/.test(token));
@@ -208,9 +208,9 @@ export class TextProcessor {
     }
 
     /**
-     * Create a custom preprocessing pipeline
-     * @param {Function[]} filters - Array of filter functions
-     * @returns {Function} - Composed preprocessing function
+     * Create a custom preprocessing pipeline.
+     * @param {Function[]} filters - Array of filter functions.
+     * @returns {Function} - Composed preprocessing function.
      */
     createPipeline(filters) {
         return (text, options = {}) => {

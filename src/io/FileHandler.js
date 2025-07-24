@@ -42,8 +42,8 @@ export class FileHandler {
     }
 
     /**
-     * Delete a saved model
-     * @param {string} filename - Model filename to delete
+     * Delete a saved model.
+     * @param {string} filename - Model filename to delete.
      */
     async deleteModel(filename) {
         const fullPath = this.resolveModelPath(filename);
@@ -59,9 +59,9 @@ export class FileHandler {
     }
 
     /**
-     * Get model file information without loading the full model
-     * @param {string} filename - Model filename
-     * @returns {Promise<Object>} - Model metadata and stats
+     * Get model file information without loading the full model.
+     * @param {string} filename - Model filename.
+     * @returns {Promise<Object>} - Model metadata and stats.
      */
     async getModelInfo(filename) {
         const fullPath = this.resolveModelPath(filename);
@@ -97,10 +97,10 @@ export class FileHandler {
     }
 
     /**
-     * Export model in different formats
-     * @param {MarkovModel} model - Model to export
-     * @param {string} filename - Output filename
-     * @param {string} format - Export format ('json', 'csv', 'txt')
+     * Export model in different formats.
+     * @param {MarkovModel} model - Model to export.
+     * @param {string} filename - Output filename.
+     * @param {string} format - Export format ('json', 'csv', 'txt').
      */
     async exportModel(model, filename, format = 'json') {
         switch (format.toLowerCase()) {
@@ -119,9 +119,9 @@ export class FileHandler {
     }
 
     /**
-     * Export model transitions to CSV format
-     * @param {MarkovModel} model - Model to export
-     * @param {string} filename - Output filename
+     * Export model transitions to CSV format.
+     * @param {MarkovModel} model - Model to export.
+     * @param {string} filename - Output filename.
      */
     async exportToCSV(model, filename) {
         const fullPath = this.resolveModelPath(filename.replace('.json', '.csv'));
@@ -141,9 +141,9 @@ export class FileHandler {
     }
 
     /**
-     * Export model as human-readable text
-     * @param {MarkovModel} model - Model to export
-     * @param {string} filename - Output filename
+     * Export model as human-readable text.
+     * @param {MarkovModel} model - Model to export.
+     * @param {string} filename - Output filename.
      */
     async exportToText(model, filename) {
         const fullPath = this.resolveModelPath(filename.replace('.json', '.txt'));
@@ -185,10 +185,10 @@ export class FileHandler {
     }
 
     /**
-     * Write text to file
-     * @param {string} filename - File name or path
-     * @param {string} content - Content to write
-     * @param {Object} options - Write options
+     * Write text to file.
+     * @param {string} filename - File name or path.
+     * @param {string} content - Content to write.
+     * @param {Object} options - Write options.
      */
     async writeTextFile(filename, content, options = {}) {
         const fullPath = this.resolveCorpusPath(filename);
@@ -207,8 +207,8 @@ export class FileHandler {
     }
 
     /**
-     * List available corpus files
-     * @returns {Promise<string[]>} - Array of corpus file names
+     * List available corpus files.
+     * @returns {Promise<string[]>} - Array of corpus file names.
      */
     async listCorpusFiles() {
         try {
@@ -227,9 +227,9 @@ export class FileHandler {
     }
 
     /**
-     * Get file information
-     * @param {string} filename - File name
-     * @returns {Promise<Object>} - File stats and info
+     * Get file information.
+     * @param {string} filename - File name.
+     * @returns {Promise<Object>} - File stats and info.
      */
     async getFileInfo(filename) {
         const fullPath = this.resolveCorpusPath(filename);
@@ -253,9 +253,9 @@ export class FileHandler {
     }
 
     /**
-     * Resolve corpus file path
-     * @param {string} filename - File name or path
-     * @returns {string} - Full resolved path
+     * Resolve corpus file path.
+     * @param {string} filename - File name or path.
+     * @returns {string} - Full resolved path.
      */
     resolveCorpusPath(filename) {
         if (path.isAbsolute(filename)) {
@@ -272,9 +272,9 @@ export class FileHandler {
     }
 
     /**
-     * Resolve model file path
-     * @param {string} filename - File name or path
-     * @returns {string} - Full resolved path
+     * Resolve model file path.
+     * @param {string} filename - File name or path.
+     * @returns {string} - Full resolved path.
      */
     resolveModelPath(filename) {
         if (!filename) {
@@ -291,8 +291,8 @@ export class FileHandler {
     }
 
     /**
-     * Ensure directory exists, create if needed
-     * @param {string} dirPath - Directory path
+     * Ensure directory exists, create if needed.
+     * @param {string} dirPath - Directory path.
      */
     async ensureDirectoryExists(dirPath) {
         if (!dirPath || typeof dirPath !== 'string') {
@@ -310,9 +310,9 @@ export class FileHandler {
     }
 
     /**
-     * Format file size in human-readable format
-     * @param {number} bytes - File size in bytes
-     * @returns {string} - Formatted size
+     * Format file size in human-readable format.
+     * @param {number} bytes - File size in bytes.
+     * @returns {string} - Formatted size.
      */
     formatFileSize(bytes) {
         const units = ['B', 'KB', 'MB', 'GB'];

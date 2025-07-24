@@ -43,7 +43,7 @@ export class MarkovCLI {
     }
 
     /**
-     * Setup readline event handlers
+     * Setup readline event handlers.
      */
     setupEventHandlers() {
         this.rl.on('line', (input) => {
@@ -63,7 +63,7 @@ export class MarkovCLI {
     }
 
     /**
-     * Display welcome message and available commands
+     * Display welcome message and available commands.
      */
     displayWelcome() {
         console.log('🔗 Markov Chain Text Generator');
