@@ -190,14 +190,4 @@ export class MarkovModel extends TextModel {
             this.chains.set(state, new Map(Object.entries(transitions).map(([token, count]) => [token, Number(count)])));
         }
     }
-
-    /**
-     * @override
-     * @param {object} options - Generation parameters
-     * @returns {string} Generated text
-     */
-    generate(options) {
-        const generator = new TextGenerator(this);
-        return generator.generate(options);
-    }
 }

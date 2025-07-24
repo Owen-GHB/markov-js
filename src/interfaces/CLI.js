@@ -23,14 +23,13 @@ export class MarkovCLI {
     setupEventHandlers() {
         this.rl.on('line', async (input) => {
             const trimmed = input.trim();
-            if (trimmed.toLowerCase() === 'exit') {
-                this.rl.close();
-                return;
+            if (trimmed) {
+                let command = this.commandParser.parse(trimmed);
+                command.args = this.withDefaults(command);
+                const { error, output } = await this.handleInput(command);
+                if (error) console.error(`❌ ${error}`);
+                if (output) console.log(output);
             }
-
-            const { error, output } = await this.handleInput(trimmed);
-            if (error) console.error(`❌ ${error}`);
-            if (output) console.log(output);
             this.rl.prompt();
         });
 
@@ -51,21 +50,17 @@ export class MarkovCLI {
         return [hits.length ? hits : commands, line];
     }
 
-    async handleInput(input) {
-        if (!input) return { error: null, output: null };
-        try {
-            let command = this.commandParser.parse(input);
-            command.args = this.withDefaults(command);
+    async handleInput(command) {
+        try {        
             switch (command.name) {
                 case 'help':
                     return { error: null, output: this.displayWelcome() };
                 case 'exit':
                     this.rl.close();
-                    return { error: null, output: 'Exiting CLI...' };
+                    return { error: null, output: null };
                 default:
                     return await this.app.handleCommand(command);
             }
-            
         } catch (error) {
             return { error: error.message, output: null };
         }

@@ -25,95 +25,79 @@ export class AppInterface {
         }
     }
 
-    async handleTrain(args) {
-        try {
-            const { stats, modelName, filename } = await this.train(args);
+    async handleTrain(params) {
+        const output = [];
+        const { filename, modelName, order = 2 } = params || {};
+
+        if (!filename || !modelName) {
             return {
-                error: null,
-                output: [
-                    `📚 Trained from "${filename}" → "${modelName}"`,
-                    `📊 States: ${stats.totalStates.toLocaleString()}`,
-                    `📊 Vocabulary: ${stats.vocabularySize.toLocaleString()}`
-                ].join('\n')
+                error: "Training failed: filename and modelName are required",
+                output: 'Usage: train({filename: "text.txt", modelName: "model.json"})'
             };
-        } catch (error) {
-            return { 
-                error: `Training failed: ${error.message}`,
+        }
+
+        try {
+            const text = await this.fileHandler.readTextFile(filename);
+            const tokens = this.processor.tokenize(text, {
+                method: 'word',
+                preservePunctuation: true,
+                preserveCase: false
+            });
+
+            const model = new MarkovModel({ order });
+            model.train(tokens);
+            await this.serializer.saveModel(model, modelName);
+
+            const stats = model.getStats();
+            output.push(
+                `📚 Trained from "${filename}" → "${modelName}"`,
+                `📊 States: ${stats.totalStates.toLocaleString()}`,
+                `📊 Vocabulary: ${stats.vocabularySize.toLocaleString()}`
+            );
+
+            return { error: null, output: output.join('\n') };
+        } catch (err) {
+            return {
+                error: `Training failed: ${err.message}`,
                 output: 'Usage: train({filename: "text.txt", modelName: "model.json"})'
             };
         }
     }
 
-    async handleGenerate(args) {
-        try {
-            const { results } = await this.generate(args);
-            const output = ['🎲 Generated text:', '─'.repeat(50)];
 
+    async handleGenerate(params) {
+        const { modelName, length = 100, temperature = 1.0, samples = 1 } = params || {};
+
+        if (!modelName) {
+            return {
+                error: "Generation failed: modelName is required",
+                output: 'Usage: generate({modelName: "model.json", length: 100})'
+            };
+        }
+
+        try {
+            const model = await this.serializer.loadModel(modelName);
+            const generator = new TextGenerator(model);
+
+            const results = (samples === 1)
+                ? [generator.generate({ maxLength: length, temperature })]
+                : generator.generateSamples(samples, { maxLength: length, temperature });
+
+            const output = ['🎲 Generated text:', '─'.repeat(50)];
             results.forEach((result, i) => {
                 if (result.error) {
-                    output.push(`❌ Sample ${i+1}: ${result.error}`);
+                    output.push(`❌ Sample ${i + 1}: ${result.error}`);
                 } else {
-                    output.push(
-                        result.text,
-                        `(Length: ${result.length} tokens)`,
-                        '─'.repeat(50)
-                    );
+                    output.push(result.text, `(Length: ${result.length} tokens)`, '─'.repeat(50));
                 }
             });
 
             return { error: null, output: output.join('\n') };
-        } catch (error) {
-            return { 
-                error: `Generation failed: ${error.message}`,
+        } catch (err) {
+            return {
+                error: `Generation failed: ${err.message}`,
                 output: 'Usage: generate({modelName: "model.json", length: 100})'
             };
         }
-    }
-
-    /**
-     * Train a model from corpus text
-     * @param {Object} params - {filename: string, modelName: string, order?: number}
-     * @throws {Error} If required parameters are missing
-     */
-    async train(params) {
-        if (!params.filename) throw new Error("filename is required");
-        if (!params.modelName) throw new Error("modelName is required");
-        
-        const { filename, modelName, order = 2 } = params;
-
-        const text = await this.fileHandler.readTextFile(filename);
-        const tokens = this.processor.tokenize(text, {
-            method: 'word',
-            preservePunctuation: true,
-            preserveCase: false
-        });
-        
-        const model = new MarkovModel({ order });
-        model.train(tokens);
-        await this.serializer.saveModel(model, modelName);
-
-        return {
-            stats: model.getStats(),
-            modelName,
-            filename
-        };
-    }
-
-    /**
-     * Generate text from a model
-     * @param {Object} params - {modelName: string, length?: number, ...}
-     * @throws {Error} If required parameters are missing
-     */
-    async generate(params) {
-        if (!params.modelName) throw new Error("modelName is required");
-        
-        const { modelName, length = 100, temperature = 1.0, samples = 1 } = params;
-        const model = await this.serializer.loadModel(modelName);
-        const generator = new TextGenerator(model);
-
-        if (samples === 1) {
-            return { results: [generator.generate({ maxLength: length, temperature })] };
-        }
-        return { results: generator.generateSamples(samples, { maxLength: length, temperature }) };
     }
 }

@@ -6,7 +6,6 @@ export class JSONAPI {
     }
 
     async handleInput(input) {
-        if (!input) return { error: "No input provided.", output: null };
         try {
             let command = JSON.parse(input);
             return await this.app.handleCommand(command);            
