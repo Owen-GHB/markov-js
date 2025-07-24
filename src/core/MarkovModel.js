@@ -1,4 +1,5 @@
 // src/core/MarkovModel.js
+import { TextModel } from './models/ModelInterface.js';
 
 /**
  * Configurable Markov Chain Model for text generation
@@ -8,16 +9,18 @@
  * - Stores transitions as frequency counts for flexibility
  * - Separates chain building from text generation for modularity
  */
-export class MarkovModel {
+export class MarkovModel extends TextModel {
     /**
-     * @param {number} order - The order of the Markov chain (default: 2)
+     * @param {object} options - The model options.
+     * @param {number} options.order - The order of the Markov chain (default: 2)
      */
-    constructor(order = 2) {
-        if (order < 1) {
+    constructor(options = {}) {
+        super(options);
+        this.order = options.order || 2;
+        if (this.order < 1) {
             throw new Error('Markov chain order must be at least 1');
         }
         
-        this.order = order;
         // Map<string, Map<string, number>> - state -> {next_token: count}
         this.chains = new Map();
         // Track all possible starting states (for generation)
@@ -27,13 +30,13 @@ export class MarkovModel {
     }
 
     /**
-     * Build the Markov chain from an array of tokens
+     * @override
      * @param {string[]} tokens - Array of preprocessed tokens
      * @param {Object} options - Additional options
      * @param {boolean} options.caseSensitive - Whether to preserve case (default: false)
      * @param {boolean} options.trackStartStates - Whether to track sentence starts (default: true)
      */
-    buildChain(tokens, options = {}) {
+    train(tokens, options = {}) {
         const { caseSensitive = false, trackStartStates = true } = options;
         
         if (tokens.length < this.order + 1) {
@@ -142,7 +145,7 @@ export class MarkovModel {
     }
 
     /**
-     * Get model statistics
+     * @override
      * @returns {Object} - Model statistics
      */
     getStats() {
@@ -158,7 +161,7 @@ export class MarkovModel {
     }
 
     /**
-     * Serialize model to JSON-compatible object
+     * @override
      * @returns {Object} - Serializable model data
      */
     toJSON() {
@@ -177,11 +180,12 @@ export class MarkovModel {
     }
 
     /**
-     * Load model from JSON data
+     * @override
      * @param {Object} data - Serialized model data
      */
     fromJSON(data) {
         this.order = data.order;
+        this.options = { order: data.order };
         this.totalTokens = data.totalTokens;
         this.vocabulary = new Set(data.vocabulary || []);
         this.startStates = new Set(data.startStates || []);
@@ -190,5 +194,15 @@ export class MarkovModel {
         for (const [state, transitions] of Object.entries(data.chains)) {
             this.chains.set(state, new Map(Object.entries(transitions).map(([token, count]) => [token, Number(count)])));
         }
+    }
+
+    /**
+     * @override
+     * @param {object} options - Generation parameters
+     * @returns {string} Generated text
+     */
+    generate(options) {
+        // This will be properly implemented later
+        return "Not implemented";
     }
 }
