@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 // Root entry point: ./markov-cli.js
-import { MarkovCLI } from './src/endpoints/CLI.js';
+import { MarkovCLI } from './src/entrypoints/CLI.js';
 
 // Initialize and start the CLI
 try {

@@ -91,14 +91,19 @@ export class MarkovCLI {
             '🔗 Markov Chain Text Generator',
             '=============================',
             'Available commands:',
-            '  train({filename: "file.txt", modelName: "model.json"})',
-            '  generate({modelName: "model.json"})',
-            '  help()',
-            '  exit',
+            '  train(file, modeltype, [order]) - Train model from text file',
+            '    modeltypes: "markov", "vlmm", "hmm"',
+            '    order: Markov order (default: 2)',
+            '  generate(model, [length])      - Generate text from model',
+            '  stats()                        - Show model statistics',
+            '  help()                         - Show this help message',
+            '  exit                           - Exit the program',
             '',
-            'Shortcuts (CLI only):',
-            `  train() - uses "${this.defaultCorpusName}" and "${this.defaultModelName}"`,
-            `  generate()/stats() - uses "${this.defaultModelName}"`
+            'Examples:',
+            '  train("corpus.txt", "markov", 2)',
+            '  train(file="corpus.txt", modeltype="vlmm")',
+            '  generate("model.json", 50)',
+            '  generate(model="model.json")'
         ].join('\n');
     }
 
