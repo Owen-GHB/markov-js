@@ -2,7 +2,6 @@
 
 import { MarkovModel } from '../src/core/models/MarkovModel.js';
 import { TextProcessor } from '../src/core/text/TextProcessor.js';
-import { TextGenerator } from '../src/core/text/TextGenerator.js';
 import { FileHandler } from '../src/io/FileHandler.js';
 import { ModelSerializer } from '../src/io/ModelSerializer.js';
 
@@ -28,8 +27,7 @@ async function basicExample() {
 
     // Initialize components
     const processor = new TextProcessor();
-    const model = new MarkovModel(2); // Order 2
-    const generator = new TextGenerator(model);
+    const model = new MarkovModel({ order: 2 }); // Order 2
 
     // Tokenize and build model
     const tokens = processor.tokenize(sampleText, {
@@ -47,7 +45,7 @@ async function basicExample() {
     // Generate text
     console.log('\n🎲 Generating text...');
     for (let i = 0; i < 3; i++) {
-        const result = generator.generate({
+        const result = model.generate({
             maxLength: 20,
             minLength: 10,
             temperature: 1.0
@@ -95,10 +93,9 @@ async function fileBasedExample() {
         for (const order of [2, 3]) {
             console.log(`\n🔗 Training model with order ${order}...`);
             
-            const model = new MarkovModel(order);
+            const model = new MarkovModel({ order });
             model.train(tokens);
             
-            const generator = new TextGenerator(model);
             const stats = model.getStats();
             
             console.log(`   States: ${stats.totalStates}`);
@@ -106,7 +103,7 @@ async function fileBasedExample() {
             
             // Generate samples
             console.log(`📝 Generated text (order ${order}):`);
-            const result = generator.generate({
+            const result = model.generate({
                 maxLength: 30,
                 temperature: 0.8
             });
@@ -143,16 +140,15 @@ async function advancedGenerationExample() {
     const processor = new TextProcessor();
     const tokens = processor.tokenize(corpus);
     
-    const model = new MarkovModel(3);
+    const model = new MarkovModel({ order: 3 });
     model.train(tokens);
-    const generator = new TextGenerator(model);
 
     console.log('🎨 Experimenting with different generation parameters...\n');
 
     // Different temperatures
     console.log('🌡️ Temperature Effects:');
     for (const temp of [0.5, 1.0, 1.5]) {
-        const result = generator.generate({
+        const result = model.generate({
             maxLength: 25,
             temperature: temp,
             minLength: 15
@@ -162,7 +158,7 @@ async function advancedGenerationExample() {
 
     // Starting with specific text
     console.log('\n🎯 Starting with specific text:');
-    const continuation = generator.generate({
+    const continuation = model.generate({
         maxLength: 20,
         startWith: "The sun rises",
         temperature: 1.0
@@ -171,7 +167,7 @@ async function advancedGenerationExample() {
 
     // Multiple samples
     console.log('\n📊 Multiple samples:');
-    const samples = generator.generateSamples(3, {
+    const samples = model.generateSamples(3, {
         maxLength: 15,
         temperature: 1.2
     });
@@ -196,7 +192,7 @@ async function modelPersistenceExample() {
     const text = "Hello world. World is beautiful. Beautiful world brings joy. Joy comes from beautiful things.";
     const tokens = processor.tokenize(text);
     
-    const originalModel = new MarkovModel(2);
+    const originalModel = new MarkovModel({ order: 2 });
     originalModel.train(tokens);
     
     console.log('💾 Saving model...');
@@ -205,22 +201,18 @@ async function modelPersistenceExample() {
     console.log('📂 Loading model...');
     const loadedModel = await serializer.loadModel('persistence_test.json');
     
-    // Verify they work the same
-    const originalGen = new TextGenerator(originalModel);
-    const loadedGen = new TextGenerator(loadedModel);
-    
     console.log('🔍 Comparing original vs loaded model:');
     
     // Use same random seed for comparison
     const seed = 0.12345;
     const mockRandom = () => seed;
     
-    const originalResult = originalGen.generate({
+    const originalResult = originalModel.generate({
         maxLength: 10,
         randomFn: mockRandom
     });
     
-    const loadedResult = loadedGen.generate({
+    const loadedResult = loadedModel.generate({
         maxLength: 10,
         randomFn: mockRandom
     });
