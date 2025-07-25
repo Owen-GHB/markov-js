@@ -1,4 +1,4 @@
-import { TextModel } from '../Interfaces.js';
+import { TextModel, GenerationContext, GenerationResult } from '../Interfaces.js';
 import { random } from '../../utils/RNG.js';
 
 /**
@@ -223,29 +223,29 @@ export class MarkovModel extends TextModel {
 
     /**
      * Generate text using the Markov model
-     * @param {Object} options - Generation options
-     * @param {number} options.maxLength - Maximum number of tokens to generate
-     * @param {number} options.minLength - Minimum number of tokens to generate
-     * @param {string[]} options.stopTokens - Tokens that end generation
-     * @param {string} options.startWith - Specific starting text (optional)
-     * @param {number} options.temperature - Randomness factor (0-2, default: 1)
-     * @param {Function} options.randomFn - Custom random function
-     * @param {boolean} options.allowRepetition - Allow immediate token repetition
-     * @returns {Object} - Generated text and metadata
+     * @param {GenerationContext} context - Generation options
+     * @param {number} context.max_tokens - Maximum number of tokens to generate
+     * @param {number} context.min_tokens - Minimum number of tokens to generate
+     * @param {string[]} context.stop - Tokens that end generation
+     * @param {string} context.prompt - Specific starting text (optional)
+     * @param {number} context.temperature - Randomness factor (0-2, default: 1)
+     * @param {Function} context.randomFn - Custom random function
+     * @param {boolean} context.allowRepetition - Allow immediate token repetition
+     * @returns {GenerationResult} - Generated text and metadata
      */
-    generate(options = {}) {
+    generate(context = new GenerationContext()) {
         const {
-            maxLength = 100,
-            minLength = 10,
-            stopTokens = ['.', '!', '?'],
-            startWith = null,
+            max_tokens = 100,
+            min_tokens = 10,
+            stop: stop_tokens = ['.', '!', '?'],
+            prompt = null,
             temperature = 1.0,
             randomFn = random,
-            allowRepetition = true
-        } = options;
+            allowRepetition = true // Not in context, but good to have
+        } = context;
 
-        if (maxLength < 1) {
-            throw new Error('maxLength must be at least 1');
+        if (max_tokens < 1) {
+            throw new Error('max_tokens must be at least 1');
         }
 
         if (this.chains.size === 0) {
@@ -253,7 +253,7 @@ export class MarkovModel extends TextModel {
         }
 
         const generatedTokens = [];
-        let currentState = this.initializeState(startWith, randomFn);
+        let currentState = this.initializeState(prompt, randomFn);
 
         if (!currentState) {
             throw new Error('Could not find a valid starting state');
@@ -264,9 +264,10 @@ export class MarkovModel extends TextModel {
         generatedTokens.push(...stateTokens);
 
         let attempts = 0;
-        const maxAttempts = maxLength * 3; // Prevent infinite loops
+        const maxAttempts = max_tokens * 3; // Prevent infinite loops
+        let finish_reason = 'length';
 
-        while (generatedTokens.length < maxLength && attempts < maxAttempts) {
+        while (generatedTokens.length < max_tokens && attempts < maxAttempts) {
             attempts++;
 
             const nextToken = this.sampleNextToken(currentState, temperature, randomFn);
@@ -291,7 +292,8 @@ export class MarkovModel extends TextModel {
             generatedTokens.push(nextToken);
 
             // Check stop conditions
-            if (generatedTokens.length >= minLength && stopTokens.includes(nextToken)) {
+            if (generatedTokens.length >= min_tokens && stop_tokens.includes(nextToken)) {
+                finish_reason = 'stop';
                 break;
             }
 
@@ -299,14 +301,15 @@ export class MarkovModel extends TextModel {
             currentState = this.updateState(currentState, nextToken);
         }
 
-        return {
-            text: this.postProcess(generatedTokens, options),
+        const finalText = this.postProcess(generatedTokens, context);
+        return new GenerationResult(finalText, {
             tokens: generatedTokens,
             length: generatedTokens.length,
+            model: 'markov',
+            finish_reason: finish_reason,
             finalState: currentState,
-            attempts: attempts,
-            stoppedEarly: generatedTokens.length < maxLength
-        };
+            attempts: attempts
+        });
     }
 
     /**
@@ -440,21 +443,20 @@ export class MarkovModel extends TextModel {
     /**
      * Generate multiple text samples.
      * @param {number} count - Number of samples to generate.
-     * @param {Object} options - Generation options (same as generate()).
-     * @returns {Array} - Array of generation results.
+     * @param {GenerationContext} context - Generation options (same as generate()).
+     * @returns {Array<GenerationResult>} - Array of generation results.
      */
-    generateSamples(count, options = {}) {
+    generateSamples(count, context = new GenerationContext()) {
         const samples = [];
         for (let i = 0; i < count; i++) {
             try {
-                samples.push(this.generate(options));
+                samples.push(this.generate(context));
             } catch (error) {
-                samples.push({
+                samples.push(new GenerationResult('', {
                     error: error.message,
-                    text: '',
-                    tokens: [],
-                    length: 0
-                });
+                    model: 'markov',
+                    finish_reason: 'error'
+                }));
             }
         }
         return samples;

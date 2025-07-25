@@ -38,10 +38,10 @@ export class TextModel {
 
   /**
    * @abstract
-   * @param {object} options - Generation parameters.
-   * @returns {string} Generated text.
+   * @param {GenerationContext} context - Generation parameters.
+   * @returns {GenerationResult} Generated text.
    */
-  generate(options) {
+  generate(context) {
     throw new Error('generate() must be implemented by subclasses');
   }
 
@@ -124,6 +124,6 @@ export class GenerationResult {
         this.tokens = metadata.tokens || [];
         this.length = metadata.length || text.split(/\s+/).length;
         this.model = metadata.model || 'unknown';
-        this.finish_reason = metadata.finish_reason || false;
+        this.finish_reason = metadata.finish_reason || 'unknown';
     }
 }
