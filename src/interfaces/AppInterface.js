@@ -1,6 +1,5 @@
 import { MarkovModel } from '../core/models/MarkovModel.js';
 import { TextProcessor } from '../core/text/TextProcessor.js';
-import { TextGenerator } from '../core/text/TextGenerator.js';
 import { FileHandler } from '../io/FileHandler.js';
 import { ModelSerializer } from '../io/ModelSerializer.js';
 
@@ -77,11 +76,10 @@ export class AppInterface {
 
         try {
             const model = await this.serializer.loadModel(modelName);
-            const generator = new TextGenerator(model);
 
             const results = (samples === 1)
-                ? [generator.generate({ maxLength: length, temperature })]
-                : generator.generateSamples(samples, { maxLength: length, temperature });
+                ? [model.generate({ maxLength: length, temperature })]
+                : model.generateSamples(samples, { maxLength: length, temperature });
 
             const output = ['🎲 Generated text:', '─'.repeat(50)];
             results.forEach((result, i) => {

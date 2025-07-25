@@ -107,34 +107,6 @@ export class MarkovModel extends TextModel {
     }
 
     /**
-     * Sample next token based on transition probabilities
-     * @param {string} state - Current state
-     * @param {Function} randomFn - Random function (default: random)
-     * @returns {string|null} - Next token or null if no transitions available
-     */
-    sampleNextToken(state, randomFn = random) {
-        const transitions = this.getTransitions(state);
-        
-        if (transitions.length === 0) {
-            return null;
-        }
-
-        // Weighted random selection
-        const rand = randomFn();
-        let cumulativeProbability = 0;
-        
-        for (const { token, probability } of transitions) {
-            cumulativeProbability += probability;
-            if (rand <= cumulativeProbability) {
-                return token;
-            }
-        }
-        
-        // Fallback to last token (should rarely happen due to floating point precision)
-        return transitions[transitions.length - 1].token;
-    }
-
-    /**
      * Get a random starting state for text generation
      * @param {Function} randomFn - Random function (default: random)
      * @returns {string|null} - Starting state or null if none available
@@ -233,5 +205,264 @@ export class MarkovModel extends TextModel {
             }
             this.chains.set(state, new Map(Object.entries(transitions).map(([token, count]) => [token, Number(count)])));
         }
+    }
+
+    /**
+     * Generate text using the Markov model
+     * @param {Object} options - Generation options
+     * @param {number} options.maxLength - Maximum number of tokens to generate
+     * @param {number} options.minLength - Minimum number of tokens to generate
+     * @param {string[]} options.stopTokens - Tokens that end generation
+     * @param {string} options.startWith - Specific starting text (optional)
+     * @param {number} options.temperature - Randomness factor (0-2, default: 1)
+     * @param {Function} options.randomFn - Custom random function
+     * @param {boolean} options.allowRepetition - Allow immediate token repetition
+     * @returns {Object} - Generated text and metadata
+     */
+    generate(options = {}) {
+        const {
+            maxLength = 100,
+            minLength = 10,
+            stopTokens = ['.', '!', '?'],
+            startWith = null,
+            temperature = 1.0,
+            randomFn = random,
+            allowRepetition = true
+        } = options;
+
+        if (maxLength < 1) {
+            throw new Error('maxLength must be at least 1');
+        }
+
+        if (this.chains.size === 0) {
+            throw new Error('Model has no trained data');
+        }
+
+        const generatedTokens = [];
+        let currentState = this.initializeState(startWith, randomFn);
+
+        if (!currentState) {
+            throw new Error('Could not find a valid starting state');
+        }
+
+        // Add initial state tokens to output
+        const stateTokens = currentState.split(' ');
+        generatedTokens.push(...stateTokens);
+
+        let attempts = 0;
+        const maxAttempts = maxLength * 3; // Prevent infinite loops
+
+        while (generatedTokens.length < maxLength && attempts < maxAttempts) {
+            attempts++;
+
+            const nextToken = this.sampleNextToken(currentState, temperature, randomFn);
+
+            if (!nextToken) {
+                // No valid transitions, try to find a new starting point
+                const newState = this.getRandomStartState(randomFn);
+                if (newState) {
+                    currentState = newState;
+                    continue;
+                } else {
+                    break; // No more options
+                }
+            }
+
+            // Check for repetition if not allowed
+            if (!allowRepetition && generatedTokens.length > 0 &&
+                generatedTokens[generatedTokens.length - 1] === nextToken) {
+                continue;
+            }
+
+            generatedTokens.push(nextToken);
+
+            // Check stop conditions
+            if (generatedTokens.length >= minLength && stopTokens.includes(nextToken)) {
+                break;
+            }
+
+            // Update state for next iteration
+            currentState = this.updateState(currentState, nextToken);
+        }
+
+        return {
+            text: this.postProcess(generatedTokens, options),
+            tokens: generatedTokens,
+            length: generatedTokens.length,
+            finalState: currentState,
+            attempts: attempts,
+            stoppedEarly: generatedTokens.length < maxLength
+        };
+    }
+
+    /**
+     * Initialize the starting state for generation
+     * @param {string|null} startWith - Optional starting text
+     * @param {Function} randomFn - Random function
+     * @returns {string|null} - Initial state
+     */
+    initializeState(startWith, randomFn) {
+        if (startWith) {
+            const startTokens = startWith.trim().split(/\s+/);
+            if (startTokens.length >= this.order) {
+                const proposedState = startTokens.slice(-this.order).join(' ');
+                if (this.chains.has(proposedState)) {
+                    return proposedState;
+                }
+            }
+        }
+
+        // Fallback to random state from chains
+        const states = Array.from(this.chains.keys());
+        return states.length > 0
+            ? states[Math.floor(randomFn() * states.length)]
+            : null;
+    }
+
+    /**
+     * Sample next token with temperature control
+     * @param {string} currentState - Current model state
+     * @param {number} temperature - Randomness factor (0-2)
+     * @param {Function} randomFn - Random function
+     * @returns {string|null} - Next token or null
+     */
+    sampleNextToken(currentState, temperature, randomFn) {
+        const transitions = this.getTransitions(currentState);
+
+        if (transitions.length === 0) {
+            return null;
+        }
+
+        if (temperature === 0) {
+            // Deterministic: always pick the most likely token
+            return transitions.reduce((best, current) =>
+                current.probability > best.probability ? current : best
+            ).token;
+        }
+
+        // Apply temperature scaling to probabilities
+        const scaledTransitions = transitions.map(({ token, probability, count }) => {
+            const scaledProb = Math.pow(probability, 1 / temperature);
+            return { token, probability: scaledProb, count };
+        });
+
+        // Normalize probabilities
+        const totalProb = scaledTransitions.reduce((sum, { probability }) => sum + probability, 1e-10);
+        const normalizedTransitions = scaledTransitions.map(({ token, probability, count }) => ({
+            token,
+            probability: probability / totalProb,
+            count
+        }));
+
+        // Sample from the adjusted distribution
+        const rand = randomFn();
+        let cumulativeProb = 0;
+
+        for (const { token, probability } of normalizedTransitions) {
+            cumulativeProb += probability;
+            if (rand <= cumulativeProb) {
+                return token;
+            }
+        }
+
+        // Fallback
+        return normalizedTransitions[normalizedTransitions.length - 1].token;
+    }
+
+    /**
+     * Update the current state with a new token
+     * @param {string} currentState - Current state
+     * @param {string} newToken - New token to add
+     * @returns {string} - Updated state
+     */
+    updateState(currentState, newToken) {
+        const stateTokens = currentState.split(' ');
+        const newStateTokens = [...stateTokens.slice(1), newToken];
+        return newStateTokens.join(' ');
+    }
+
+    /**
+     * Post-process generated tokens into readable text
+     * @param {string[]} tokens - Generated tokens
+     * @param {Object} options - Processing options
+     * @returns {string} - Formatted text
+     */
+    postProcess(tokens, options = {}) {
+        if (tokens.length === 0) {
+            return '';
+        }
+
+        let text = tokens.join(' ');
+
+        // Basic punctuation cleanup
+        text = text
+            // Remove spaces before punctuation
+            .replace(/\s+([.!?;:,'")\]}])/g, '$1')
+            // Add spaces after punctuation (but not at end)
+            .replace(/([.!?;:,])(\w)/g, '$1 $2')
+            // Handle quotes and parentheses
+            .replace(/\s+(['"])/g, ' $1')
+            .replace(/(['"()])\s+/g, '$1 ')
+            // Capitalize after sentence endings
+            .replace(/([.!?])\s+(\w)/g, (match, punct, letter) => `${punct} ${letter.toUpperCase()}`)
+            // Capitalize first letter
+            .replace(/^\w/, match => match.toUpperCase())
+            // Clean up extra spaces
+            .replace(/\s+/g, ' ')
+            .trim();
+
+        return text;
+    }
+
+    /**
+     * Generate multiple text samples.
+     * @param {number} count - Number of samples to generate.
+     * @param {Object} options - Generation options (same as generate()).
+     * @returns {Array} - Array of generation results.
+     */
+    generateSamples(count, options = {}) {
+        const samples = [];
+        for (let i = 0; i < count; i++) {
+            try {
+                samples.push(this.generate(options));
+            } catch (error) {
+                samples.push({
+                    error: error.message,
+                    text: '',
+                    tokens: [],
+                    length: 0
+                });
+            }
+        }
+        return samples;
+    }
+
+    /**
+     * Generate text that continues from existing text.
+     * @param {string} existingText - Text to continue from.
+     * @param {Object} options - Generation options.
+     * @returns {Object} - Generation result with continuation.
+     */
+    continueText(existingText, options = {}) {
+        const tokens = existingText.trim().split(/\s+/);
+
+        if (tokens.length < this.order) {
+            throw new Error(`Need at least ${this.order} tokens to continue text`);
+        }
+
+        // Use the last n tokens to determine starting state
+        const startState = tokens.slice(-this.order).join(' ');
+
+        const result = this.generate({
+            ...options,
+            startWith: tokens.slice(-this.order).join(' ')
+        });
+
+        return {
+            ...result,
+            originalText: existingText,
+            continuationText: result.text,
+            fullText: existingText + ' ' + result.text
+        };
     }
 }
