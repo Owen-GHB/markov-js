@@ -317,7 +317,7 @@ export class MarkovModel extends TextModel {
      */
     initializeState(startWith, randomFn) {
         if (startWith) {
-            const startTokens = startWith.trim().split(/\s+/);
+            const startTokens = startWith.toLowerCase().trim().split(/\s+/);
             if (startTokens.length >= this.order) {
                 const proposedState = startTokens.slice(-this.order).join(' ');
                 if (this.chains.has(proposedState)) {
