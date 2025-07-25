@@ -115,11 +115,10 @@ export class MarkovCLI {
     withDefaults(command) {
         const args = command.args || {};
         // For training commands
-        if (command.name === 'train' && !args.filename && !args.modelName) {
+        if (command.name === 'train' && !args.filename) {
             return { 
                 ...args, 
-                filename: this.defaultCorpus,
-                modelName: this.defaultModel 
+                filename: this.defaultCorpus 
             };
         }
         
