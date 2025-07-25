@@ -20,7 +20,7 @@ export class AppInterface {
             default:
                 return {
                     error: `Unknown command: ${command.name}`,
-                    output: 'Type "help()" for available commands.'
+                    output: null
                 };
         }
     }
@@ -32,7 +32,7 @@ export class AppInterface {
         if (!filename || !modelName) {
             return {
                 error: "Training failed: filename and modelName are required",
-                output: 'Usage: train({filename: "text.txt", modelName: "model.json"})'
+                output: null
             };
         }
 
@@ -59,7 +59,7 @@ export class AppInterface {
         } catch (err) {
             return {
                 error: `Training failed: ${err.message}`,
-                output: 'Usage: train({filename: "text.txt", modelName: "model.json"})'
+                output: null
             };
         }
     }
@@ -71,7 +71,7 @@ export class AppInterface {
         if (!modelName) {
             return {
                 error: "Generation failed: modelName is required",
-                output: 'Usage: generate({modelName: "model.json", length: 100})'
+                output: null
             };
         }
 
@@ -101,7 +101,7 @@ export class AppInterface {
         } catch (err) {
             return {
                 error: `Generation failed: ${err.message}`,
-                output: 'Usage: generate({modelName: "model.json", length: 100})'
+                output: null
             };
         }
     }
