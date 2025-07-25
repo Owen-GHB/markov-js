@@ -6,7 +6,7 @@ export class MarkovCLI {
     constructor() {
         this.app = new AppInterface();
         this.commandParser = new CommandParser();
-        this.defaultModel = 'sample.json';
+        this.currentModel = null;
         this.defaultCorpus = 'sample.txt';
         this.defaultModelType = 'markov';
         
@@ -42,49 +42,59 @@ export class MarkovCLI {
         const trimmed = input.trim();
         if (!trimmed) return;
 
-        const parseResult = this.commandParser.parse(trimmed);
-        if (parseResult.error) {
-            console.error(`❌ ${parseResult.error}`);
+        const parsedResult = this.commandParser.parse(trimmed);
+        if (parsedResult.error) {
+            console.error(`❌ ${parsedResult.error}`);
             return;
         }
 
         const command = {
-            ...parseResult.command,
-            args: this.withDefaults(parseResult.command)
+            ...parsedResult.command,
+            args: this.withDefaults(parsedResult.command)
         };
 
         try {
             let result;
 
-            switch (command.name) {
-                case 'help':
+        switch (command.name) {
+            case 'help':
+                result = {
+                    error: null,
+                    output: this.commandParser.getHelpText()
+                };
+                break;
+            case 'exit':
+                this.rl.close();
+                return;
+            case 'train':
+                this.currentModel = command.args?.modelName || `${command.args.file.replace(/\.[^/.]+$/, '')}.json`;
+                result = await this.app.handleTrain(command.args);
+                break;
+            case 'generate':
+                if (!command.args.modelName) {
                     result = {
-                        error: null,
-                        output: this.commandParser.getHelpText()
+                        error: 'Error: no model selected',
+                        output: null
                     };
-                    break;
-                case 'exit':
-                    this.rl.close();
-                    return;
-                case 'train':
-                    result = await this.app.handleTrain(command.args);
-                    break;
-                case 'generate':
+                } else {
+                    this.currentModel = command.args.modelName;
                     result = await this.app.handleGenerate(command.args);
-                    break;
-                case 'stats':
-                    result = await this.app.handleStats?.(command.args) ?? {
-                        error: 'Stats not implemented',
-                        output: null
-                    };
-                    break;
-                default:
-                    result = {
-                        error: `Unknown command: ${command.name}`,
-                        output: null
-                    };
-                    break;
-            }
+                }
+                break;
+            case 'stats':
+                result = await this.app.handleStats?.(command.args) ?? {
+                    error: 'Stats not implemented',
+                    output: null
+                };
+                break;
+            default:
+                result = {
+                    error: `Unknown command: ${command.name}`,
+                    output: null
+                };
+                break;
+        }
+
 
             if (result.error) console.error(`❌ ${result.error}`);
             if (result.output) console.log(result.output);
@@ -116,8 +126,7 @@ export class MarkovCLI {
         if (command.name === 'generate') {
             return {
                 ...args,
-                modelName: args.modelName || this.defaultModel,
-                modelType: args.modelType || this.defaultModelType
+                modelName: args.modelName || this.currentModel
             };
         }
 
