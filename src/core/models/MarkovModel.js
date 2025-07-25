@@ -66,17 +66,14 @@ export class MarkovModel extends TextModel {
         for (let i = 0; i <= processedTokens.length - this.order - 1; i++) {
             const state = processedTokens.slice(i, i + this.order).join(' ');
             const nextToken = processedTokens[i + this.order];
-            
-            // Track start states if enabled
+
             if (trackStartStates && isStartOfSentence) {
                 this.startStates.add(state);
             }
-
-            // Update sentence tracking
-            isStartOfSentence = sentenceEndings.has(nextToken);
+            isStartOfSentence = sentenceEndings.has(processedTokens[i]);
 
             if (!this.chains.has(state)) {
-                this.chains.set(state, new Map());
+                this.chains.set(state, new Map());               
             }
             const transitions = this.chains.get(state);
             transitions.set(nextToken, (transitions.get(nextToken) || 0) + 1);
