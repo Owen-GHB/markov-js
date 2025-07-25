@@ -3,7 +3,7 @@
  * 
  * Supports both function-style and object-style syntax:
  * - train("corpus.txt", "markov", 2)
- * - train({file: "corpus.txt", modeltype: "markov", order: 2})
+ * - train({file: "corpus.txt", modelType: "markov", order: 2})
  * - generate("model.json", 50)
  * - generate({model: "model.json", length: 50})
  */
@@ -92,11 +92,11 @@ export class CommandParser {
         const argPairs = argsString.split(',').map(s => s.trim()).filter(Boolean);
         
         if (name.toLowerCase() === 'train') {
-            // Handle train command: file, modeltype, [order]
+            // Handle train command: file, modelType, [order]
             if (argPairs.length > 0 && !argPairs[0].includes('=')) {
                 args.file = this.normalizeValue(argPairs[0]);
                 if (argPairs.length > 1 && !argPairs[1].includes('=')) {
-                    args.modeltype = this.normalizeValue(argPairs[1]);
+                    args.modelType = this.normalizeValue(argPairs[1]);
                     if (argPairs.length > 2 && !argPairs[2].includes('=')) {
                         args.order = Number(argPairs[2]);
                     }
@@ -158,7 +158,7 @@ Command Syntax:
 
 Examples:
   • train("corpus.txt", "markov", 2)
-  • train(file="corpus.txt", modeltype="vlmm")
+  • train(file="corpus.txt", modelType="vlmm")
   • generate("model.json", 50)
   • generate(model="model.json", length=100)
   • stats()

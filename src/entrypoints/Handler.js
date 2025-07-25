@@ -1,5 +1,6 @@
 import { MarkovModel } from '../models/Markov/Model.js';
 import { VLMModel } from '../models/VLMM/Model.js';
+import { HMModel } from '../models/HMM/Model.js';
 import { GenerationContext } from '../models/Interfaces.js';
 import { Tokenizer } from '../models/Tokenizer.js';
 import { FileHandler } from '../io/FileHandler.js';
@@ -28,30 +29,47 @@ export class AppInterface {
 
     async handleTrain(params) {
         const output = [];
-        const { filename, modelName, order = 2 } = params || {};
+        const { file, modelType, order = 2 } = params || {};
+        const modelName = params?.modelName || `${file}.json`;
 
-        if (!filename || !modelName) {
+        if (!file) {
             return {
-                error: "Training failed: filename and modelName are required",
+                error: "Training failed: file parameter is required",
                 output: null
             };
         }
 
         try {
-            const text = await this.fileHandler.readTextFile(filename);
+            const text = await this.fileHandler.readTextFile(file);
             const tokens = this.processor.tokenize(text, {
                 method: 'word',
                 preservePunctuation: true,
                 preserveCase: false
             });
 
-            const model = new VLMModel({ order });
+            let model;
+            switch (modelType) {
+                case 'markov':
+                    model = new MarkovModel({ order });
+                    break;
+                case 'vlmm':
+                    model = new VLMModel({ order });
+                    break;
+                case 'hmm':
+                    model = new HMModel({ order });
+                    break;
+                default:
+                    return {
+                        error: `Unknown model type: ${modelType}`,
+                        output: null
+                    };
+            }
             model.train(tokens);
             await this.serializer.saveModel(model, modelName);
 
             const stats = model.getStats();
             output.push(
-                `📚 Trained from "${filename}" → "${modelName}"`,
+                `📚 Trained from "${file}" → "${modelName}"`,
                 `📊 Vocabulary: ${stats.vocabularySize.toLocaleString()}`
             );
 

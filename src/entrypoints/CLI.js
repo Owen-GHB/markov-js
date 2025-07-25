@@ -6,8 +6,8 @@ export class MarkovCLI {
     constructor() {
         this.app = new AppInterface();
         this.commandParser = new CommandParser();
-        this.defaultModelName = 'sample.json';
-        this.defaultCorpusName = 'sample.txt';
+        this.defaultModel = 'sample.json';
+        this.defaultCorpus = 'sample.txt';
         
         this.rl = readline.createInterface({
             input: process.stdin,
@@ -91,8 +91,8 @@ export class MarkovCLI {
             '🔗 Markov Chain Text Generator',
             '=============================',
             'Available commands:',
-            '  train(file, modeltype, [order]) - Train model from text file',
-            '    modeltypes: "markov", "vlmm", "hmm"',
+            '  train(file, modelType, [order]) - Train model from text file',
+            '    modelTypes: "markov", "vlmm", "hmm"',
             '    order: Markov order (default: 2)',
             '  generate(model, [length])      - Generate text from model',
             '  stats()                        - Show model statistics',
@@ -101,7 +101,7 @@ export class MarkovCLI {
             '',
             'Examples:',
             '  train("corpus.txt", "markov", 2)',
-            '  train(file="corpus.txt", modeltype="vlmm")',
+            '  train(file="corpus.txt", modelType="vlmm")',
             '  generate("model.json", 50)',
             '  generate(model="model.json")'
         ].join('\n');
@@ -118,14 +118,14 @@ export class MarkovCLI {
         if (command.name === 'train' && !args.filename && !args.modelName) {
             return { 
                 ...args, 
-                filename: this.defaultCorpusName,
-                modelName: this.defaultModelName 
+                filename: this.defaultCorpus,
+                modelName: this.defaultModel 
             };
         }
         
         // For model operations
         if ((command.name === 'generate') && !args.modelName) {
-            return { ...args, modelName: this.defaultModelName };
+            return { ...args, modelName: this.defaultModel };
         }
         
         return args;
