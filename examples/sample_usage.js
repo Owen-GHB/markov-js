@@ -1,8 +1,9 @@
 // examples/sample_usage.js
 
 import { MarkovModel } from '../src/models/Markov/Model.js';
+import { VLMModel } from '../src/models/VLMM/Model.js';
 import { GenerationContext } from '../src/models/Interfaces.js';
-import { Tokenizer } from '../src/models/Markov/Tokenizer.js';
+import { Tokenizer } from '../src/models/Tokenizer.js';
 import { FileHandler } from '../src/io/FileHandler.js';
 import { ModelSerializer } from '../src/io/ModelSerializer.js';
 
@@ -143,7 +144,7 @@ async function advancedGenerationExample() {
     const processor = new Tokenizer();
     const tokens = processor.tokenize(corpus);
     
-    const model = new MarkovModel({ order: 3 });
+    const model = new VLMModel({ order: 3 });
     model.train(tokens);
 
     console.log('🎨 Experimenting with different generation parameters...\n');

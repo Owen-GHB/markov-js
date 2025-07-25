@@ -16,7 +16,10 @@ export class CommandParser {
 
     parse(input) {
         if (!input || typeof input !== 'string') {
-            throw new Error('Invalid input');
+            return { 
+                error: 'Invalid input: must be a non-empty string',
+                command: null
+            };
         }
 
         const trimmed = input.trim();
@@ -29,29 +32,47 @@ export class CommandParser {
                 try {
                     const jsonArgs = JSON.parse(argsString);
                     return {
-                        name: name.toLowerCase(),
-                        args: this.normalizeArgs(jsonArgs)
+                        error: null,
+                        command: {
+                            name: name.toLowerCase(),
+                            args: this.normalizeArgs(jsonArgs)
+                        }
                     };
                 } catch (jsonError) {
                     // If JSON fails, parse as JS object literal with proper property wrapping
                     const wrappedArgsString = argsString.replace(/([{,]\s*)([a-zA-Z_$][\w$]*)(\s*:)/g, '$1"$2"$3');
                     const args = JSON.parse(wrappedArgsString);
                     return {
-                        name: name.toLowerCase(),
-                        args: this.normalizeArgs(args)
+                        error: null,
+                        command: {
+                            name: name.toLowerCase(),
+                            args: this.normalizeArgs(args)
+                        }
                     };
                 }
             } catch (e) {
-                throw new Error(`Invalid object syntax: ${argsString}`);
+                return {
+                    error: `Invalid object syntax: ${argsString}`,
+                    command: null
+                };
             }
         }
 
         const simpleMatch = trimmed.match(this.patterns.simpleCommand);
         if (simpleMatch) {
-            return { name: simpleMatch[1].toLowerCase(), args: {} };
+            return { 
+                error: null,
+                command: { 
+                    name: simpleMatch[1].toLowerCase(), 
+                    args: {} 
+                }
+            };
         }
 
-        throw new Error(`Could not parse command: ${input}`);
+        return {
+            error: `Could not parse command: ${input}`,
+            command: null
+        };
     }
 
     normalizeArgs(args) {

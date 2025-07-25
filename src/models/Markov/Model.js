@@ -32,6 +32,7 @@ export class MarkovModel extends TextModel {
         this.startStates = new Set();
         this.totalTokens = 0;
         this.vocabulary = new Set();
+        this.modelType = 'markov';
     }
 
     getCapabilities() {
@@ -41,7 +42,7 @@ export class MarkovModel extends TextModel {
             supportsConditionalGeneration: true,
             supportsBatchGeneration: true,
             maxOrder: 10,
-            modelType: 'markov'
+            modelType: this.modelType
         };
     }
 
@@ -178,6 +179,7 @@ export class MarkovModel extends TextModel {
     toJSON() {
         return {
             order: this.order,
+            modelType: this.modelType,
             chains: Object.fromEntries(
                 Array.from(this.chains.entries()).map(([state, transitions]) => [
                     state,

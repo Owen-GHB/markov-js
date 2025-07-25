@@ -1,6 +1,7 @@
 import { MarkovModel } from '../models/Markov/Model.js';
+import { VLMModel } from '../models/VLMM/Model.js';
 import { GenerationContext } from '../models/Interfaces.js';
-import { Tokenizer } from '../models/Markov/Tokenizer.js';
+import { Tokenizer } from '../models/Tokenizer.js';
 import { FileHandler } from '../io/FileHandler.js';
 import { ModelSerializer } from '../io/ModelSerializer.js';
 
@@ -44,14 +45,13 @@ export class AppInterface {
                 preserveCase: false
             });
 
-            const model = new MarkovModel({ order });
+            const model = new VLMModel({ order });
             model.train(tokens);
             await this.serializer.saveModel(model, modelName);
 
             const stats = model.getStats();
             output.push(
                 `📚 Trained from "${filename}" → "${modelName}"`,
-                `📊 States: ${stats.totalStates.toLocaleString()}`,
                 `📊 Vocabulary: ${stats.vocabularySize.toLocaleString()}`
             );
 
@@ -94,6 +94,7 @@ export class AppInterface {
                     output.push(`❌ Sample ${i + 1}: ${result.error}`);
                 } else {
                     output.push(result.text, `(Length: ${result.length} tokens)`, '─'.repeat(50));
+                    output.push(`(Finish reason: ${result.finish_reason})`);
                 }
             });
 

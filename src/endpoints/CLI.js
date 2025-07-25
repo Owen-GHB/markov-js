@@ -24,11 +24,47 @@ export class MarkovCLI {
         this.rl.on('line', async (input) => {
             const trimmed = input.trim();
             if (trimmed) {
-                let command = this.commandParser.parse(trimmed);
-                command.args = this.withDefaults(command);
-                const { error, output } = await this.handleInput(command);
-                if (error) console.error(`❌ ${error}`);
-                if (output) console.log(output);
+                // Parse the command
+                const parseResult = this.commandParser.parse(trimmed);
+                
+                if (parseResult.error) {
+                    console.error(`❌ ${parseResult.error}`);
+                    this.rl.prompt();
+                    return;
+                }
+                
+                // Create command with defaults
+                const command = {
+                    ...parseResult.command,
+                    args: this.withDefaults(parseResult.command)
+                };
+
+                try {        
+                    let result;
+                    switch (command.name) {
+                        case 'help':
+                            result = { 
+                                error: null, 
+                                output: this.displayWelcome() 
+                            };
+                            break;
+                        case 'exit':
+                            this.rl.close();
+                            result = { 
+                                error: null, 
+                                output: null 
+                            };
+                            break;
+                        default:
+                            result = await this.app.handleCommand(command);
+                            break;
+                    }
+
+                    if (result.error) console.error(`❌ ${result.error}`);
+                    if (result.output) console.log(result.output);
+                } catch (error) {
+                    console.error(`❌ Error processing command: ${error.message}`);
+                }
             }
             this.rl.prompt();
         });
@@ -48,22 +84,6 @@ export class MarkovCLI {
         const commands = ['train', 'generate', 'help', 'exit'];
         const hits = commands.filter(c => c.startsWith(line));
         return [hits.length ? hits : commands, line];
-    }
-
-    async handleInput(command) {
-        try {        
-            switch (command.name) {
-                case 'help':
-                    return { error: null, output: this.displayWelcome() };
-                case 'exit':
-                    this.rl.close();
-                    return { error: null, output: null };
-                default:
-                    return await this.app.handleCommand(command);
-            }
-        } catch (error) {
-            return { error: error.message, output: null };
-        }
     }
 
     displayWelcome() {

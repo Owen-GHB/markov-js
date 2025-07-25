@@ -1,10 +1,12 @@
 import path from 'path';
 import fs from 'fs/promises';
+import { TextModel } from '../models/Interfaces.js';
 import { MarkovModel } from '../models/Markov/Model.js';
+import { VLMModel } from '../models/VLMM/Model.js';
 import { FileHandler } from './FileHandler.js';
 
 /**
- * Handle saving and loading Markov models
+ * Handle saving and loading Text models
  * Supports JSON format with compression and metadata
  */
 export class ModelSerializer {
@@ -15,13 +17,13 @@ export class ModelSerializer {
     }
 
     /**
-     * Save a Markov model to file
-     * @param {MarkovModel} model - Model to save
+     * Save a Text model to file
+     * @param {TextModel} model - Model to save
      * @param {string} filename - Output filename
      * @param {Object} options - Save options
      */
     async saveModel(model, filename, options = {}) {
-        if (!model || !(model instanceof MarkovModel)) {
+        if (!model || !(model instanceof TextModel)) {
             throw new Error('Invalid model provided');
         }
 
@@ -41,10 +43,7 @@ export class ModelSerializer {
             // Metadata (if enabled)
             ...(this.includeMetadata && {
                 metadata: {
-                    version: '1.0',
-                    created: new Date().toISOString(),
-                    nodeVersion: process.version,
-                    generator: 'markov-text-generator'
+                    created: new Date().toISOString()
                 }
             })
         };
@@ -63,9 +62,9 @@ export class ModelSerializer {
     }
 
     /**
-     * Load a Markov model from file
+     * Load a Text model from file
      * @param {string} filename - Model filename
-     * @returns {Promise<MarkovModel>} - Loaded model
+     * @returns {Promise<TextModel>} - Loaded model
      */
     async loadModel(filename) {
         const fullPath = this.fileHandler.resolveModelPath(filename);
@@ -77,11 +76,21 @@ export class ModelSerializer {
             // Validate model data structure
             this.validateModelData(modelData);
             
-            // Create new model and load data
-            const model = new MarkovModel({ order: modelData.order });
+            // Determine the correct model type
+            let model;
+            switch (modelData.modelType) {
+                case 'markov':
+                    model = new MarkovModel({ order: modelData.order });
+                    break;
+                case 'vlmm':
+                    model = new VLMModel({ order: modelData.order });
+                    break;
+                default:
+                    throw new Error(`Unsupported model type: ${modelData.modelType}`);
+            }
+
             model.fromJSON(modelData);
-            
-            // Log metadata if available
+
             if (modelData.metadata) {
                 console.log(`Loaded model created: ${modelData.metadata.created}`);
             }
@@ -110,10 +119,6 @@ export class ModelSerializer {
         
         if (typeof modelData.order !== 'number' || modelData.order < 1) {
             throw new Error('Invalid model data: missing or invalid order');
-        }
-        
-        if (!modelData.chains || typeof modelData.chains !== 'object') {
-            throw new Error('Invalid model data: missing or invalid chains');
         }
         
         if (!Array.isArray(modelData.vocabulary)) {
