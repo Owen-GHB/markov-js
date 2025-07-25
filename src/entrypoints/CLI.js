@@ -17,7 +17,7 @@ export class MarkovCLI {
         });
         
         this.setupEventHandlers();
-        console.log(this.displayWelcome());
+        console.log(this.commandParser.getHelpText());
     }
 
     setupEventHandlers() {
@@ -45,7 +45,7 @@ export class MarkovCLI {
                         case 'help':
                             result = { 
                                 error: null, 
-                                output: this.displayWelcome() 
+                                output: this.commandParser.getHelpText() 
                             };
                             break;
                         case 'exit':
@@ -84,27 +84,6 @@ export class MarkovCLI {
         const commands = ['train', 'generate', 'help', 'exit'];
         const hits = commands.filter(c => c.startsWith(line));
         return [hits.length ? hits : commands, line];
-    }
-
-    displayWelcome() {
-        return [
-            '🔗 Markov Chain Text Generator',
-            '=============================',
-            'Available commands:',
-            '  train(file, modelType, [order]) - Train model from text file',
-            '    modelTypes: "markov", "vlmm", "hmm"',
-            '    order: Markov order (default: 2)',
-            '  generate(model, [length])      - Generate text from model',
-            '  stats()                        - Show model statistics',
-            '  help()                         - Show this help message',
-            '  exit                           - Exit the program',
-            '',
-            'Examples:',
-            '  train("corpus.txt", "markov", 2)',
-            '  train(file="corpus.txt", modelType="vlmm")',
-            '  generate("model.json", 50)',
-            '  generate(model="model.json")'
-        ].join('\n');
     }
 
     /**

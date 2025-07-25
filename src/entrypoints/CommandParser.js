@@ -151,18 +151,23 @@ export class CommandParser {
 
     getHelpText() {
         return `
-Command Syntax:
-  • Function style: command(param1, param2, name=value)
-  • Object style: command({name: value, name2: value2})
-  • Simple style: command
+🔗 Markov Chain Text Generator
+=============================
 
-Examples:
-  • train("corpus.txt", "markov", 2)
-  • train(file="corpus.txt", modelType="vlmm")
-  • generate("model.json", 50)
-  • generate(model="model.json", length=100)
-  • stats()
-  • help()
-        `.trim();
+Available commands:
+train(file, modelType, [order]) - Train model from text file
+    modelTypes: "markov", "vlmm", "hmm"
+    order: Markov order (default: 2)
+generate(model, [length])      - Generate text from model
+stats()                        - Show model statistics
+help()                         - Show this help message
+exit                           - Exit the program
+
+Command Syntax:
+• Function style: command(param1, param2, name=value)
+• Object style: command({name: value, name2: value2})
+• Simple style: command
+`;
     }
+
 }
