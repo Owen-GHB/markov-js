@@ -326,6 +326,12 @@ export class MarkovModel extends TextModel {
             }
         }
 
+        // Try to get a known sentence-starting state
+        const randomStartState = this.getRandomStartState(randomFn);
+        if (randomStartState) {
+            return randomStartState;
+        }
+
         // Fallback to random state from chains
         const states = Array.from(this.chains.keys());
         return states.length > 0
