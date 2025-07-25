@@ -37,29 +37,4 @@ export class TextProcessor {
             vocabularyDiversity: uniqueTokens.size / tokens.length
         };
     }
-
-    /**
-     * Post-process generated tokens into readable text
-     * @param {string[]} tokens - Generated tokens
-     * @param {Object} options - Processing options
-     * @returns {string} Formatted text
-     */
-    postProcess(tokens, options = {}) {
-        if (tokens.length === 0) return '';
-
-        let text = tokens.join(' ');
-
-        // Basic punctuation cleanup
-        text = text
-            .replace(/\s+([.!?;:,'")\]}])/g, '$1')
-            .replace(/([.!?;:,])(\w)/g, '$1 $2')
-            .replace(/\s+(['"])/g, ' $1')
-            .replace(/(['"()])\s+/g, '$1 ')
-            .replace(/([.!?])\s+(\w)/g, (_, punct, letter) => `${punct} ${letter.toUpperCase()}`)
-            .replace(/^\w/, match => match.toUpperCase())
-            .replace(/\s+/g, ' ')
-            .trim();
-
-        return text;
-    }
 }

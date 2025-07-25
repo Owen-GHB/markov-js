@@ -433,33 +433,4 @@ export class MarkovModel extends TextModel {
         }
         return samples;
     }
-
-    /**
-     * Generate text that continues from existing text.
-     * @param {string} existingText - Text to continue from.
-     * @param {Object} options - Generation options.
-     * @returns {Object} - Generation result with continuation.
-     */
-    continueText(existingText, options = {}) {
-        const tokens = existingText.trim().split(/\s+/);
-
-        if (tokens.length < this.order) {
-            throw new Error(`Need at least ${this.order} tokens to continue text`);
-        }
-
-        // Use the last n tokens to determine starting state
-        const startState = tokens.slice(-this.order).join(' ');
-
-        const result = this.generate({
-            ...options,
-            startWith: tokens.slice(-this.order).join(' ')
-        });
-
-        return {
-            ...result,
-            originalText: existingText,
-            continuationText: result.text,
-            fullText: existingText + ' ' + result.text
-        };
-    }
 }
