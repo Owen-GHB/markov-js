@@ -1,6 +1,7 @@
 // examples/sample_usage.js
 
 import { MarkovModel } from '../src/models/Markov/Model.js';
+import { GenerationContext } from '../src/models/Interfaces.js';
 import { Tokenizer } from '../src/models/Markov/Tokenizer.js';
 import { FileHandler } from '../src/io/FileHandler.js';
 import { ModelSerializer } from '../src/io/ModelSerializer.js';
@@ -45,11 +46,12 @@ async function basicExample() {
     // Generate text
     console.log('\n🎲 Generating text...');
     for (let i = 0; i < 3; i++) {
-        const result = model.generate({
-            maxLength: 20,
-            minLength: 10,
+        const context = new GenerationContext({
+            max_tokens: 20,
+            min_tokens: 10,
             temperature: 1.0
         });
+        const result = model.generate(context);
         
         console.log(`${i + 1}. ${result.text}`);
     }
@@ -103,10 +105,11 @@ async function fileBasedExample() {
             
             // Generate samples
             console.log(`📝 Generated text (order ${order}):`);
-            const result = model.generate({
-                maxLength: 30,
+            const context = new GenerationContext({
+                max_tokens: 30,
                 temperature: 0.8
             });
+            const result = model.generate(context);
             console.log(`   "${result.text}"`);
             
             // Save model for demo
@@ -148,29 +151,32 @@ async function advancedGenerationExample() {
     // Different temperatures
     console.log('🌡️ Temperature Effects:');
     for (const temp of [0.5, 1.0, 1.5]) {
-        const result = model.generate({
-            maxLength: 25,
+        const context = new GenerationContext({
+            max_tokens: 25,
             temperature: temp,
-            minLength: 15
+            min_tokens: 15
         });
+        const result = model.generate(context);
         console.log(`   Temp ${temp}: "${result.text}"`);
     }
 
     // Starting with specific text
     console.log('\n🎯 Starting with specific text:');
-    const continuation = model.generate({
-        maxLength: 20,
-        startWith: "The sun rises",
+    const continuationContext = new GenerationContext({
+        max_tokens: 20,
+        prompt: "The sun rises",
         temperature: 1.0
     });
+    const continuation = model.generate(continuationContext);
     console.log(`   "${continuation.text}"`);
 
     // Multiple samples
     console.log('\n📊 Multiple samples:');
-    const samples = model.generateSamples(3, {
-        maxLength: 15,
+    const samplesContext = new GenerationContext({
+        max_tokens: 15,
         temperature: 1.2
     });
+    const samples = model.generateSamples(3, samplesContext);
     
     samples.forEach((sample, i) => {
         console.log(`   ${i + 1}. "${sample.text}" (${sample.length} tokens)`);
@@ -207,15 +213,14 @@ async function modelPersistenceExample() {
     const seed = 0.12345;
     const mockRandom = () => seed;
     
-    const originalResult = originalModel.generate({
-        maxLength: 10,
+    const context = new GenerationContext({
+        max_tokens: 10,
         randomFn: mockRandom
     });
     
-    const loadedResult = loadedModel.generate({
-        maxLength: 10,
-        randomFn: mockRandom
-    });
+    const originalResult = originalModel.generate(context);
+
+    const loadedResult = loadedModel.generate(context);
     
     console.log(`   Original: "${originalResult.text}"`);
     console.log(`   Loaded:   "${loadedResult.text}"`);

@@ -1,4 +1,5 @@
 import { MarkovModel } from '../models/Markov/Model.js';
+import { GenerationContext } from '../models/Interfaces.js';
 import { Tokenizer } from '../models/Markov/Tokenizer.js';
 import { FileHandler } from '../io/FileHandler.js';
 import { ModelSerializer } from '../io/ModelSerializer.js';
@@ -65,7 +66,7 @@ export class AppInterface {
 
 
     async handleGenerate(params) {
-        const { modelName, length = 100, temperature = 1.0, samples = 1 } = params || {};
+        const { modelName, length = 100, temperature = 1.0, samples = 1, ...rest } = params || {};
 
         if (!modelName) {
             return {
@@ -77,9 +78,15 @@ export class AppInterface {
         try {
             const model = await this.serializer.loadModel(modelName);
 
+            const context = new GenerationContext({
+                max_tokens: length,
+                temperature: temperature,
+                ...rest
+            });
+
             const results = (samples === 1)
-                ? [model.generate({ maxLength: length, temperature })]
-                : model.generateSamples(samples, { maxLength: length, temperature });
+                ? [model.generate(context)]
+                : model.generateSamples(samples, context);
 
             const output = ['🎲 Generated text:', '─'.repeat(50)];
             results.forEach((result, i) => {
