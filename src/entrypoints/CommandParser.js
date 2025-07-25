@@ -91,8 +91,9 @@ export class CommandParser {
         const args = {};
         const argPairs = argsString.split(',').map(s => s.trim()).filter(Boolean);
         
+        // Handle different command patterns
         if (name.toLowerCase() === 'train') {
-            // Handle train command: file, modelType, [order]
+            // Existing train command handling
             if (argPairs.length > 0 && !argPairs[0].includes('=')) {
                 args.file = this.normalizeValue(argPairs[0]);
                 if (argPairs.length > 1 && !argPairs[1].includes('=')) {
@@ -102,13 +103,20 @@ export class CommandParser {
                     }
                 }
             }
-        } else if (name.toLowerCase() === 'generate') {
-            // Handle generate command: model, [length]
+        } 
+        else if (name.toLowerCase() === 'generate') {
+            // Existing generate command handling
             if (argPairs.length > 0 && !argPairs[0].includes('=')) {
                 args.model = this.normalizeValue(argPairs[0]);
                 if (argPairs.length > 1 && !argPairs[1].includes('=')) {
                     args.length = Number(argPairs[1]);
                 }
+            }
+        }
+        else if (name.toLowerCase() === 'delete' || name.toLowerCase() === 'use') {
+            // Handle delete and use commands which take a single filename
+            if (argPairs.length > 0 && !argPairs[0].includes('=')) {
+                args.modelName = this.normalizeValue(argPairs[0]);
             }
         }
 
@@ -159,6 +167,10 @@ train(file, modelType, [order]) - Train model from text file
     modelTypes: "markov", "vlmm", "hmm"
     order: Markov order (default: 2)
 generate(model, [length])      - Generate text from model
+listModels()                   - List available saved models
+listCorpus()                   - List available corpus files
+delete("modelName.json")       - Delete a saved model
+use("modelName.json")          - Set current model to use
 stats()                        - Show model statistics
 help()                         - Show this help message
 exit                           - Exit the program

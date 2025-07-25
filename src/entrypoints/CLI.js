@@ -56,45 +56,67 @@ export class MarkovCLI {
         try {
             let result;
 
-        switch (command.name) {
-            case 'help':
-                result = {
-                    error: null,
-                    output: this.commandParser.getHelpText()
-                };
-                break;
-            case 'exit':
-                this.rl.close();
-                return;
-            case 'train':
-                this.currentModel = command.args?.modelName || `${command.args.file.replace(/\.[^/.]+$/, '')}.json`;
-                result = await this.app.handleTrain(command.args);
-                break;
-            case 'generate':
-                if (!command.args.modelName) {
+            switch (command.name) {
+                case 'help':
                     result = {
-                        error: 'Error: no model selected',
+                        error: null,
+                        output: this.commandParser.getHelpText()
+                    };
+                    break;
+                case 'exit':
+                    this.rl.close();
+                    return;
+                case 'train':
+                    this.currentModel = command.args?.modelName || `${command.args.file.replace(/\.[^/.]+$/, '')}.json`;
+                    result = await this.app.handleTrain(command.args);
+                    break;
+                case 'generate':
+                    if (!command.args.modelName) {
+                        result = {
+                            error: 'Error: no model selected',
+                            output: null
+                        };
+                    } else {
+                        this.currentModel = command.args.modelName;
+                        result = await this.app.handleGenerate(command.args);
+                    }
+                    break;
+                case 'listmodels':
+                    result = await this.app.handleListModels();
+                    break;
+                case 'listcorpus':
+                    result = await this.app.handleListCorpus();
+                    break;
+                case 'delete':
+                    result = await this.app.handleDeleteModel(command.args);
+                    break;
+                case 'use':
+                    if (!command.args.modelName) {
+                        result = {
+                            error: 'Model name is required (e.g., use("model.json"))',
+                            output: null
+                        };
+                    } else {
+                        this.currentModel = command.args.modelName;
+                        result = {
+                            error: null,
+                            output: `✅ Using model: ${this.currentModel}`
+                        };
+                    }
+                    break;
+                case 'stats':
+                    result = await this.app.handleStats?.(command.args) ?? {
+                        error: 'Stats not implemented',
                         output: null
                     };
-                } else {
-                    this.currentModel = command.args.modelName;
-                    result = await this.app.handleGenerate(command.args);
-                }
-                break;
-            case 'stats':
-                result = await this.app.handleStats?.(command.args) ?? {
-                    error: 'Stats not implemented',
-                    output: null
-                };
-                break;
-            default:
-                result = {
-                    error: `Unknown command: ${command.name}`,
-                    output: null
-                };
-                break;
-        }
-
+                    break;
+                default:
+                    result = {
+                        error: `Unknown command: ${command.name}`,
+                        output: null
+                    };
+                    break;
+            }
 
             if (result.error) console.error(`❌ ${result.error}`);
             if (result.output) console.log(result.output);
@@ -103,9 +125,9 @@ export class MarkovCLI {
         }
     }
 
-
     commandCompleter(line) {
-        const commands = ['train', 'generate', 'help', 'exit'];
+        const commands = ['train', 'generate', 'help', 'exit', 
+                        'listmodels', 'listcorpus', 'delete', 'use', 'stats'];
         const hits = commands.filter(c => c.startsWith(line));
         return [hits.length ? hits : commands, line];
     }
