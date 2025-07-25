@@ -30,7 +30,7 @@ export class AppInterface {
     async handleTrain(params) {
         const output = [];
         const { file, modelType, order = 2 } = params || {};
-        const modelName = params?.modelName || `${file}.json`;
+        const modelName = params?.modelName || `${file.replace(/\.[^/.]+$/, '')}.json`;
 
         if (!file) {
             return {
