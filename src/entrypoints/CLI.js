@@ -6,7 +6,7 @@ export class MarkovCLI {
     constructor() {
         this.app = new AppInterface();
         this.commandParser = new CommandParser();
-        this.defaultModel = 'sample.json';
+        this.currentModel = 'sample.json';
         this.defaultCorpus = 'sample.txt';
         
         this.rl = readline.createInterface({
@@ -22,50 +22,7 @@ export class MarkovCLI {
 
     setupEventHandlers() {
         this.rl.on('line', async (input) => {
-            const trimmed = input.trim();
-            if (trimmed) {
-                // Parse the command
-                const parseResult = this.commandParser.parse(trimmed);
-                
-                if (parseResult.error) {
-                    console.error(`❌ ${parseResult.error}`);
-                    this.rl.prompt();
-                    return;
-                }
-                
-                // Create command with defaults
-                const command = {
-                    ...parseResult.command,
-                    args: this.withDefaults(parseResult.command)
-                };
-
-                try {        
-                    let result;
-                    switch (command.name) {
-                        case 'help':
-                            result = { 
-                                error: null, 
-                                output: this.commandParser.getHelpText() 
-                            };
-                            break;
-                        case 'exit':
-                            this.rl.close();
-                            result = { 
-                                error: null, 
-                                output: null 
-                            };
-                            break;
-                        default:
-                            result = await this.app.handleCommand(command);
-                            break;
-                    }
-
-                    if (result.error) console.error(`❌ ${result.error}`);
-                    if (result.output) console.log(result.output);
-                } catch (error) {
-                    console.error(`❌ Error processing command: ${error.message}`);
-                }
-            }
+            await this.handleLine(input);
             this.rl.prompt();
         });
 
@@ -79,6 +36,62 @@ export class MarkovCLI {
             this.rl.prompt();
         });
     }
+
+    async handleLine(input) {
+        const trimmed = input.trim();
+        if (!trimmed) return;
+
+        const parseResult = this.commandParser.parse(trimmed);
+        if (parseResult.error) {
+            console.error(`❌ ${parseResult.error}`);
+            return;
+        }
+
+        const command = {
+            ...parseResult.command,
+            args: this.withDefaults(parseResult.command)
+        };
+
+        try {
+            let result;
+
+            switch (command.name) {
+                case 'help':
+                    result = {
+                        error: null,
+                        output: this.commandParser.getHelpText()
+                    };
+                    break;
+                case 'exit':
+                    this.rl.close();
+                    return;
+                case 'train':
+                    result = await this.app.handleTrain(command.args);
+                    break;
+                case 'generate':
+                    result = await this.app.handleGenerate(command.args);
+                    break;
+                case 'stats':
+                    result = await this.app.handleStats?.(command.args) ?? {
+                        error: 'Stats not implemented',
+                        output: null
+                    };
+                    break;
+                default:
+                    result = {
+                        error: `Unknown command: ${command.name}`,
+                        output: null
+                    };
+                    break;
+            }
+
+            if (result.error) console.error(`❌ ${result.error}`);
+            if (result.output) console.log(result.output);
+        } catch (error) {
+            console.error(`❌ Error processing command: ${error.message}`);
+        }
+    }
+
 
     commandCompleter(line) {
         const commands = ['train', 'generate', 'help', 'exit'];

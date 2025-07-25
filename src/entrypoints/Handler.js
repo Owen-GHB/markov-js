@@ -13,6 +13,7 @@ export class AppInterface {
         this.serializer = new ModelSerializer();
     }
 
+    // retained for future compatibility
     async handleCommand(command) {
         switch (command.name) {
             case 'train':
