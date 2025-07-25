@@ -1,5 +1,3 @@
-// ===== FILE: src/utils/RNG.js =====
-
 /**
  * Optimized Xorshift32 PRNG
  */

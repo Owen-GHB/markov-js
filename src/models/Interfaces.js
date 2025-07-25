@@ -71,37 +71,6 @@ export class TextModel {
 }
 
 /**
- * Training data container that can hold different data structures
- */
-export class TrainingData {
-    constructor(tokens, options = {}) {
-        this.tokens = tokens;
-        this.sequences = options.sequences || null; // For HMM observable sequences
-        this.labels = options.labels || null;       // For supervised learning
-        this.metadata = options.metadata || {};
-        this.preprocessing = options.preprocessing || {};
-    }
-
-    // Factory methods for different model types
-    static forMarkov(tokens, options = {}) {
-        return new TrainingData(tokens, { ...options, type: 'markov' });
-    }
-
-    static forHMM(observableSequences, hiddenStates = null, options = {}) {
-        return new TrainingData(observableSequences, {
-            ...options,
-            sequences: observableSequences,
-            labels: hiddenStates,
-            type: 'hmm'
-        });
-    }
-
-    static forVLMM(tokens, options = {}) {
-        return new TrainingData(tokens, { ...options, type: 'vlmm' });
-    }
-}
-
-/**
  * Generation context for different model types
  */
 export class GenerationContext {

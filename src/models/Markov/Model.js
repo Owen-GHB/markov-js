@@ -241,7 +241,7 @@ export class MarkovModel extends TextModel {
             prompt = null,
             temperature = 1.0,
             randomFn = random,
-            allowRepetition = true // Not in context, but good to have
+            allowRepetition = true
         } = context;
 
         if (max_tokens < 1) {
