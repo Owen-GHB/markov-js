@@ -6,8 +6,9 @@ export class MarkovCLI {
     constructor() {
         this.app = new AppInterface();
         this.commandParser = new CommandParser();
-        this.currentModel = 'sample.json';
+        this.defaultModel = 'sample.json';
         this.defaultCorpus = 'sample.txt';
+        this.defaultModelType = 'markov';
         
         this.rl = readline.createInterface({
             input: process.stdin,
@@ -99,26 +100,27 @@ export class MarkovCLI {
         return [hits.length ? hits : commands, line];
     }
 
-    /**
-     * Apply CLI defaults to command arguments
-     * @param {Object} command - Parsed command object
-     * @returns {Object} - Command with defaults applied
-     */
     withDefaults(command) {
         const args = command.args || {};
+
         // For training commands
-        if (command.name === 'train' && !args.filename) {
+        if (command.name === 'train') {
             return { 
-                ...args, 
-                filename: this.defaultCorpus 
+                ...args,
+                file: args.file || this.defaultCorpus,
+                modelType: args.modelType || this.defaultModelType
             };
         }
-        
-        // For model operations
-        if ((command.name === 'generate') && !args.modelName) {
-            return { ...args, modelName: this.defaultModel };
+
+        // For generate commands
+        if (command.name === 'generate') {
+            return {
+                ...args,
+                modelName: args.modelName || this.defaultModel,
+                modelType: args.modelType || this.defaultModelType
+            };
         }
-        
+
         return args;
     }
 
