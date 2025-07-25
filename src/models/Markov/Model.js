@@ -1,10 +1,16 @@
-import { TextModel } from './Interfaces.js';
-import { random } from '../utils/RNG.js';
+import { TextModel } from '../Interfaces.js';
+import { random } from '../../utils/RNG.js';
 
 /**
  * Configurable Markov Chain Model for text generation
- * 
- * Design decisions:
+ * - Supports variable order (n-grams)
+ * - Handles case sensitivity and punctuation
+ * - Tracks starting states for sentence beginnings
+ * - Generates text with temperature control
+ * - Provides detailed statistics
+ * - Serializes to/from JSON format
+ * - Supports multiple generation options
+ * - Allows for flexible tokenization and training
  * - Uses Map for O(1) lookup performance vs plain objects
  * - Stores transitions as frequency counts for flexibility
  */
@@ -26,6 +32,17 @@ export class MarkovModel extends TextModel {
         this.startStates = new Set();
         this.totalTokens = 0;
         this.vocabulary = new Set();
+    }
+
+    getCapabilities() {
+        return {
+            supportsTemperature: true,
+            supportsConstraints: true,
+            supportsConditionalGeneration: true,
+            supportsBatchGeneration: true,
+            maxOrder: 10,
+            modelType: 'markov'
+        };
     }
 
     /**

@@ -1,5 +1,5 @@
-import { MarkovModel } from '../models/MarkovModel.js';
-import { Tokenizer } from '../models/Tokenizer.js';
+import { MarkovModel } from '../models/Markov/Model.js';
+import { Tokenizer } from '../models/Markov/Tokenizer.js';
 import { FileHandler } from '../io/FileHandler.js';
 import { ModelSerializer } from '../io/ModelSerializer.js';
 

@@ -1,6 +1,6 @@
 import path from 'path';
 import fs from 'fs/promises';
-import { MarkovModel } from '../models/MarkovModel.js';
+import { MarkovModel } from '../models/Markov/Model.js';
 import { FileHandler } from './FileHandler.js';
 
 /**
