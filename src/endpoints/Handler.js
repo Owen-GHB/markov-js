@@ -1,5 +1,5 @@
-import { MarkovModel } from '../core/models/MarkovModel.js';
-import { Tokenizer } from '../core/text/Tokenizer.js';
+import { MarkovModel } from '../models/MarkovModel.js';
+import { Tokenizer } from '../models/Tokenizer.js';
 import { FileHandler } from '../io/FileHandler.js';
 import { ModelSerializer } from '../io/ModelSerializer.js';
 

@@ -1,7 +1,7 @@
 // examples/sample_usage.js
 
-import { MarkovModel } from '../src/core/models/MarkovModel.js';
-import { Tokenizer } from '../src/core/text/Tokenizer.js';
+import { MarkovModel } from '../src/models/MarkovModel.js';
+import { Tokenizer } from '../src/models/Tokenizer.js';
 import { FileHandler } from '../src/io/FileHandler.js';
 import { ModelSerializer } from '../src/io/ModelSerializer.js';
 
