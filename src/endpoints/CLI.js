@@ -1,5 +1,5 @@
 import readline from 'readline';
-import { AppInterface } from './AppInterface.js';
+import { AppInterface } from './Handler.js';
 import { CommandParser } from './CommandParser.js';
 
 export class MarkovCLI {

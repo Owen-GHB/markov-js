@@ -1,4 +1,4 @@
-import { TextModel } from './ModelInterface.js';
+import { TextModel } from './Interfaces.js';
 import { random } from '../../utils/RNG.js';
 
 /**

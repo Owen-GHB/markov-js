@@ -1,4 +1,4 @@
-import { AppInterface } from './AppInterface.js';
+import { AppInterface } from './Handler.js';
 
 export class JSONAPI {
     constructor() {
