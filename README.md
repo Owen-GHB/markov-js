@@ -44,11 +44,11 @@ A modular, extensible Markov chain text generator with a clean CLI interface.
 ## Programmatic Usage
 
 ```javascript
-import { MarkovModel, TextProcessor, TextGenerator } from './src/index.js';
+import { MarkovModel, Tokenizer, TextGenerator } from './src/index.js';
 
 // Process text
-const processor = new TextProcessor();
-const tokens = processor.tokenize(text, { method: 'word' });
+const tokenizer = new Tokenizer();
+const tokens = tokenizer.tokenize(text, { method: 'word' });
 
 // Train model
 const model = new MarkovModel({order:3});
@@ -70,7 +70,7 @@ console.log(result.text);
 src/
 ├── core/
 │   ├── MarkovModel.js      # Core Markov chain implementation
-│   ├── TextProcessor.js    # Tokenization and preprocessing
+│   ├── Tokenizer.js        # Tokenization and preprocessing
 │   └── TextGenerator.js    # Text generation algorithms
 ├── io/
 │   ├── FileHandler.js      # File I/O operations

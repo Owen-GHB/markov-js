@@ -1,11 +1,11 @@
 import { MarkovModel } from '../core/models/MarkovModel.js';
-import { TextProcessor } from '../core/text/TextProcessor.js';
+import { Tokenizer } from '../core/text/Tokenizer.js';
 import { FileHandler } from '../io/FileHandler.js';
 import { ModelSerializer } from '../io/ModelSerializer.js';
 
 export class AppInterface {
     constructor() {
-        this.processor = new TextProcessor();
+        this.processor = new Tokenizer();
         this.fileHandler = new FileHandler();
         this.serializer = new ModelSerializer();
     }

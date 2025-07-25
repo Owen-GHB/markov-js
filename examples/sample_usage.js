@@ -1,7 +1,7 @@
 // examples/sample_usage.js
 
 import { MarkovModel } from '../src/core/models/MarkovModel.js';
-import { TextProcessor } from '../src/core/text/TextProcessor.js';
+import { Tokenizer } from '../src/core/text/Tokenizer.js';
 import { FileHandler } from '../src/io/FileHandler.js';
 import { ModelSerializer } from '../src/io/ModelSerializer.js';
 
@@ -26,7 +26,7 @@ async function basicExample() {
     `;
 
     // Initialize components
-    const processor = new TextProcessor();
+    const processor = new Tokenizer();
     const model = new MarkovModel({ order: 2 }); // Order 2
 
     // Tokenize and build model
@@ -60,7 +60,7 @@ async function fileBasedExample() {
     console.log('=====================');
 
     const fileHandler = new FileHandler();
-    const processor = new TextProcessor();
+    const processor = new Tokenizer();
     const serializer = new ModelSerializer();
 	
 	// Ensure models directory exists
@@ -137,7 +137,7 @@ async function advancedGenerationExample() {
         To explore the world is to discover beauty in unexpected places.
     `;
 
-    const processor = new TextProcessor();
+    const processor = new Tokenizer();
     const tokens = processor.tokenize(corpus);
     
     const model = new MarkovModel({ order: 3 });
@@ -183,7 +183,7 @@ async function modelPersistenceExample() {
 
     const fileHandler = new FileHandler();
     const serializer = new ModelSerializer();
-    const processor = new TextProcessor();
+    const processor = new Tokenizer();
 
     // Ensure models directory exists
     await fileHandler.ensureDirectoryExists(fileHandler.defaultModelDir);
