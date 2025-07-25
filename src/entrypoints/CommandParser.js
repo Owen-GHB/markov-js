@@ -92,35 +92,93 @@ export class CommandParser {
         const argPairs = argsString.split(',').map(s => s.trim()).filter(Boolean);
         
         // Handle different command patterns
-        if (name.toLowerCase() === 'train') {
-            // Existing train command handling
+        const commandName = name.toLowerCase();
+        
+        if (commandName === 'train') {
+            // Required params: file, modelType
             if (argPairs.length > 0 && !argPairs[0].includes('=')) {
                 args.file = this.normalizeValue(argPairs[0]);
-                if (argPairs.length > 1 && !argPairs[1].includes('=')) {
-                    args.modelType = this.normalizeValue(argPairs[1]);
-                    if (argPairs.length > 2 && !argPairs[2].includes('=')) {
-                        args.order = Number(argPairs[2]);
-                    }
-                }
+            } else {
+                return {
+                    error: 'First parameter (file) must be provided without key',
+                    command: null
+                };
             }
-        } 
-        else if (name.toLowerCase() === 'generate') {
-            // Existing generate command handling
-            if (argPairs.length > 0 && !argPairs[0].includes('=')) {
-                args.model = this.normalizeValue(argPairs[0]);
-                if (argPairs.length > 1 && !argPairs[1].includes('=')) {
-                    args.length = Number(argPairs[1]);
+            
+            if (argPairs.length > 1 && !argPairs[1].includes('=')) {
+                args.modelType = this.normalizeValue(argPairs[1]);
+            } else if (argPairs.length > 1) {
+                return {
+                    error: 'Second parameter (modelType) must be provided without key',
+                    command: null
+                };
+            }
+            
+            // Optional params must use key=value syntax
+            for (let i = 2; i < argPairs.length; i++) {
+                if (!argPairs[i].includes('=')) {
+                    return {
+                        error: `Optional parameters must use key=value syntax (got "${argPairs[i]}")`,
+                        command: null
+                    };
                 }
+                const [key, value] = argPairs[i].split('=').map(s => s.trim());
+                args[key] = this.normalizeValue(value);
             }
         }
-        else if (name.toLowerCase() === 'delete' || name.toLowerCase() === 'use') {
-            // Handle delete and use commands which take a single filename
+        else if (commandName === 'generate') {
+            // Required param: model
+            if (argPairs.length > 0 && !argPairs[0].includes('=')) {
+                args.model = this.normalizeValue(argPairs[0]);
+            } else {
+                return {
+                    error: 'First parameter (model) must be provided without key',
+                    command: null
+                };
+            }
+            
+            // Optional params must use key=value syntax
+            for (let i = 1; i < argPairs.length; i++) {
+                if (!argPairs[i].includes('=')) {
+                    return {
+                        error: `Optional parameters must use key=value syntax (got "${argPairs[i]}")`,
+                        command: null
+                    };
+                }
+                const [key, value] = argPairs[i].split('=').map(s => s.trim());
+                args[key] = this.normalizeValue(value);
+            }
+        }
+        else if (commandName === 'delete' || commandName === 'use') {
+            // Only required param: modelName
             if (argPairs.length > 0 && !argPairs[0].includes('=')) {
                 args.modelName = this.normalizeValue(argPairs[0]);
+            } else if (argPairs.length > 0) {
+                return {
+                    error: 'Parameter must be provided without key (e.g., delete("model.json"))',
+                    command: null
+                };
+            }
+            
+            // No optional params for these commands
+            if (argPairs.length > 1) {
+                return {
+                    error: `${commandName} command only accepts one parameter`,
+                    command: null
+                };
+            }
+        }
+        else if (commandName === 'listmodels' || commandName === 'listcorpus') {
+            // No parameters allowed
+            if (argPairs.length > 0) {
+                return {
+                    error: `${commandName} command doesn't accept any parameters`,
+                    command: null
+                };
             }
         }
 
-        // Process any named parameters
+        // Process any remaining named parameters (for other commands)
         for (const pair of argPairs) {
             if (pair.includes('=')) {
                 const [key, value] = pair.split('=').map(s => s.trim());
@@ -131,7 +189,7 @@ export class CommandParser {
         return {
             error: null,
             command: {
-                name: name.toLowerCase(),
+                name: commandName,
                 args
             }
         };
@@ -163,21 +221,33 @@ export class CommandParser {
 =============================
 
 Available commands:
-train(file, modelType, [order]) - Train model from text file
-    modelTypes: "markov", "vlmm", "hmm"
-    order: Markov order (default: 2)
-generate(model, [length])      - Generate text from model
-listModels()                   - List available saved models
-listCorpus()                   - List available corpus files
-delete("modelName.json")       - Delete a saved model
-use("modelName.json")          - Set current model to use
-stats()                        - Show model statistics
-help()                         - Show this help message
-exit                           - Exit the program
+train(file, modelType, [options]) - Train model from text file
+    Required:
+        file - Corpus file to train from
+        modelType - "markov", "vlmm", or "hmm"
+    Options (key=value):
+        order=N - Markov order (default: 2)
+        modelName=name.json - Save as specific filename
+
+generate(model, [options]) - Generate text from model
+    Required:
+        model - Model file to use
+    Options (key=value):
+        length=N - Number of tokens to generate (default: 100)
+        temperature=N - Randomness factor (0-2, default: 1)
+        prompt="text" - Starting text for generation
+
+listModels() - List available saved models
+listCorpus() - List available corpus files
+delete("modelName.json") - Delete a saved model
+use("modelName.json") - Set current model to use
+stats() - Show model statistics
+help() - Show this help message
+exit - Exit the program
 
 Command Syntax:
-• Function style: command(param1, param2, name=value)
-• Object style: command({name: value, name2: value2})
+• Function style: command(param1, param2, key=value)
+• Object style: command({param1: value, key: value})
 • Simple style: command
 `;
     }
