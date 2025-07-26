@@ -336,7 +336,7 @@ export class HMModel extends TextModel {
      * @returns {GenerationResult} - Generated text and metadata
      */
     generate(context = new GenerationContext()) {
-        const { max_tokens = 100, min_tokens = 10, stop_tokens = ['.', '!', '?'] } = context;
+        const { max_tokens = 100, min_tokens = 50, stop_tokens = ['.', '!', '?'] } = context;
         
         if (!this.transitions || !this.emissions) {
             throw new Error('Model has not been trained');

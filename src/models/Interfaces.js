@@ -101,7 +101,7 @@ export class TextModel {
 export class GenerationContext {
     constructor(options = {}) {
         this.max_tokens = options.max_tokens || 100;
-        this.min_tokens = options.min_tokens || 10;
+        this.min_tokens = options.min_tokens || 50;
         this.temperature = options.temperature || 1.0;
         this.stop = options.stop || ['.', '!', '?'];
         this.prompt = options.prompt || null;

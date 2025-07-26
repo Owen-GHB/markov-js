@@ -261,7 +261,7 @@ export class MarkovModel extends TextModel {
     generate(context = new GenerationContext()) {
         const {
             max_tokens = 100,
-            min_tokens = 10,
+            min_tokens = 50,
             stop: stop_tokens = ['.', '!', '?'],
             prompt = null,
             temperature = 1.0,
