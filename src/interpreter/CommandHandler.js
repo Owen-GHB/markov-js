@@ -169,7 +169,7 @@ listCorpus() - List available corpus files
 delete("modelName.json") - Delete a saved model
 use("modelName.json") - Set current model to use
 stats() - Show model statistics
-pgb_search(author|title|subject="query") - Search Project Gutenberg
+pgb_search("query") - Search Project Gutenberg by title/author
 pgb_info(id_or_title) - Get book details from Project Gutenberg
 pgb_download(id|title, [file="filename.txt"]) - Download book from Project Gutenberg
 help() - Show this help message

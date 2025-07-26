@@ -9,54 +9,22 @@ export class PGBHandler {
     }
 
     async handleSearch(params) {
-        const { author, title, subject } = params;
+        const { search } = params;
         
-        if (!author && !title && !subject) {
+        if (!search) {
             return {
-                error: 'Please specify at least one search parameter (author, title, or subject)',
+                error: 'Please specify a search term',
                 output: null
             };
         }
 
         try {
-            // Build search query based on parameters
-            let searchQuery = '';
-            if (author) searchQuery += author;
-            if (title) searchQuery += (searchQuery ? ' ' : '') + title;
-            if (subject) searchQuery += (searchQuery ? ' ' : '') + subject;
-
-            const url = `${this.API_BASE}/books/?search=${encodeURIComponent(searchQuery)}`;
+            const url = `${this.API_BASE}/books/?search=${encodeURIComponent(search)}`;
             const data = await getJSON(url);
 
             if (!data.results || data.results.length === 0) {
                 return {
-                    error: 'No books found matching your criteria',
-                    output: null
-                };
-            }
-
-            // Filter results based on specific parameters
-            const filteredResults = data.results.filter(book => {
-                let matches = true;
-                if (author) {
-                    matches = matches && book.authors.some(a => 
-                        a.name.toLowerCase().includes(author.toLowerCase())
-                    );
-                }
-                if (title) {
-                    matches = matches && book.title.toLowerCase().includes(title.toLowerCase());
-                }
-                if (subject) {
-                    matches = matches && (book.subjects || []).some(s => 
-                        s.toLowerCase().includes(subject.toLowerCase())
-                    );
-                }
-                return matches;
-            });
-
-            if (filteredResults.length === 0) {
-                return {
-                    error: 'No books found matching all your criteria',
+                    error: 'No books found matching your search',
                     output: null
                 };
             }
@@ -64,10 +32,14 @@ export class PGBHandler {
             const output = [
                 '📚 Search Results:',
                 '──────────────────',
-                ...filteredResults.map(book => 
+                `Displaying ${Math.min(data.results.length, 32)} of ${data.count} matching books`,
+                '',
+                ...data.results.map(book => 
                     `• ID: ${book.id} - "${book.title}"` + 
                     (book.authors.length ? ` by ${book.authors[0].name}` : '')
-                )
+                ),
+                '',
+                data.next ? '(More results available)' : ''
             ];
 
             return {

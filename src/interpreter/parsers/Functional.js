@@ -96,23 +96,13 @@ export function parseFunctionStyle([, name, argsString]) {
         }
     }
     else if (commandName === 'pgb_search') {
-        // Only key=value params allowed
-        for (const pair of argPairs) {
-            if (!pair.includes('=')) {
-                return {
-                    error: 'pgb_search requires key=value parameters (author, title, or subject)',
-                    command: null
-                };
-            }
-            const [key, value] = pair.split('=').map(s => s.trim());
-            if (!['author', 'title', 'subject'].includes(key)) {
-                return {
-                    error: `Invalid search parameter: ${key}. Use author, title, or subject`,
-                    command: null
-                };
-            }
-            args[key] = ParserUtils.normalizeValue(value);
+        if (argPairs.length !== 1 || argPairs[0].includes('=')) {
+            return {
+                error: 'pgb_search requires exactly one unkeyed search term',
+                command: null
+            };
         }
+        args.search = ParserUtils.normalizeValue(argPairs[0]);
     }
     else if (commandName === 'pgb_info') {
         if (argPairs.length !== 1) {
