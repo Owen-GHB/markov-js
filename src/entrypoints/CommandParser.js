@@ -224,20 +224,43 @@ export class CommandParser {
     }
 
     /**
-     * Normalize a single value
+     * Normalize a single value with a single return point
      * @param {*} value - The value to normalize
      * @returns {*} - The normalized value
      */
     normalizeValue(value) {
+        let result = value;
+        
         if (typeof value === 'string') {
             const trimmed = value.trim();
-            if ((trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+            let unquoted = trimmed;
+            
+            // Remove surrounding quotes if they match
+            if ((trimmed.startsWith('"') && trimmed.endsWith('"')) || 
                 (trimmed.startsWith("'") && trimmed.endsWith("'"))) {
-                return trimmed.slice(1, -1);
+                unquoted = trimmed.slice(1, -1);
             }
-            return value;
+            
+            // Check for numbers (only if unquoted string matches exactly)
+            if (/^-?\d+$/.test(unquoted)) {
+                result = parseInt(unquoted, 10);
+            } 
+            else if (/^-?\d+\.\d+$/.test(unquoted)) {
+                result = parseFloat(unquoted);
+            }
+            else if (unquoted === 'true') {
+                result = true;
+            }
+            else if (unquoted === 'false') {
+                result = false;
+            }
+            else if (unquoted !== trimmed) {
+                // Only return unquoted version if it was actually quoted
+                result = unquoted;
+            }
         }
-        return value;
+        
+        return result;
     }
 
 }
