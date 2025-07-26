@@ -2,7 +2,7 @@ import readline from 'readline';
 import { AppInterface } from './Handler.js';
 import { CommandParser } from './CommandParser.js';
 
-export class MarkovCLI {
+export class MarkovREPL {
     constructor() {
         this.app = new AppInterface();
         this.commandParser = new CommandParser();
@@ -35,22 +35,22 @@ export class MarkovCLI {
                 args: this.withDefaults(parsedResult.command)
             };
 
-            switch (commandName) {
+            switch (command.name) {
                 case 'train':
-                    this.currentModel = args?.modelName || `${args.file.replace(/\.[^/.]+$/, '')}.json`;
+                    this.currentModel = command.args?.modelName || `${command.args.file.replace(/\.[^/.]+$/, '')}.json`;
                     break;
                 case 'generate':
-                    if (args?.modelName) this.currentModel = args.modelName;
+                    if (command.args?.modelName) this.currentModel = command.args.modelName;
                     break;
                 case 'use':
-                    if (args?.modelName) this.currentModel = args.modelName;
+                    if (command.args?.modelName) this.currentModel = command.args.modelName;
                     break;
                 case 'exit':
                     this.rl.close();
                     return;
             }
 
-            result = await this.handleCommand(input);
+            let result = await this.app.handleCommand(command);
             if (result.error) console.error(`❌ ${result.error}`);
             if (result.output) console.log(result.output);
             this.rl.prompt();

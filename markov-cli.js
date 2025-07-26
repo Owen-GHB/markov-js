@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 
 // Root entry point: ./markov-cli.js
-import { MarkovCLI } from './src/entrypoints/CLI.js';
+import { MarkovREPL } from './src/entrypoints/REPL.js';
 
-// Initialize and start the CLI
+// Initialize and start the REPL
 try {
-  const cli = new MarkovCLI();
+  const cli = new MarkovREPL();
   cli.start();
 } catch (error) {
-  console.error('❌ Failed to start Markov CLI:', error.message);
+  console.error('❌ Failed to start Markov REPL:', error.message);
   process.exit(1);
 }
