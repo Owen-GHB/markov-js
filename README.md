@@ -1,100 +1,187 @@
 # Markov Chain Text Generator
 
-A modular, extensible Markov chain text generator with a clean CLI interface.
+A versatile text generation tool implementing Markov chains, Variable-Length Markov Models (VLMM), and Hidden Markov Models (HMM) with a command-line interface.
+
+---
 
 ## Features
 
-* **Configurable Order**: Support for different Markov chain orders (2, 3, 4+)
-* **Flexible Input**: Process any plain text file as training corpus
-* **Multiple Generation Modes**: Length-based, stop-condition, temperature control
-* **Model Persistence**: Save and load trained models as JSON
-* **Clean CLI**: REPL-style interface with function-like commands
-* **Extensible Architecture**: Easy to add custom preprocessing and generation strategies
+### Multiple Model Types
 
-## Quick Start
+* Standard Markov chains (n-gram)
+* Variable-Length Markov Models (VLMM)
+* Hidden Markov Models (HMM)
 
-1. **Add training text:**
-   Place your text files in `data/corpus/` (e.g., `data/corpus/shakespeare.txt`)
+### Flexible Generation
 
-2. **Start the CLI:**
+* Temperature control for randomness
+* Length constraints
+* Prompt-based generation
+* Multiple samples generation
 
-   ```bash
-   npm start
-   ```
+### Command Line Interface
 
-3. **Train and generate:**
+* Interactive REPL mode
+* Multiple command syntax styles
+* Tab completion
 
-   ```
-   markov> train("shakespeare.txt", order=3)
-   markov> generate(length=100)
-   markov> save_model("shakespeare_model.json")
-   ```
+### Model Management
 
-## CLI Commands
+* Save/load trained models
+* List available models
+* Delete models
+* Model statistics
 
-| Command                         | Description                | Example                                |
-| ------------------------------- | -------------------------- | -------------------------------------- |
-| `train(file, order)`            | Train model from text file | `train("corpus.txt", order=3)`         |
-| `generate(length, temperature)` | Generate text              | `generate(length=50, temperature=0.8)` |
-| `save_model(filename)`          | Save trained model         | `save_model("my_model.json")`          |
-| `load_model(filename)`          | Load saved model           | `load_model("my_model.json")`          |
-| `stats()`                       | Show model statistics      | `stats()`                              |
-| `help()`                        | Show available commands    | `help()`                               |
+---
 
-## Programmatic Usage
+## Installation
+
+1. Ensure you have **Node.js (v14+)** installed.
+2. Clone this repository.
+3. Make the CLI executable:
+
+```bash
+chmod +x markov-cli.js
+```
+
+---
+
+## Usage
+
+### Running the CLI
+
+```bash
+./markov-cli.js
+# or
+node markov-cli.js
+```
+
+### Basic Commands
+
+| Command                             | Description                 | Example                                  |
+| ----------------------------------- | --------------------------- | ---------------------------------------- |
+| `train(file, modelType, [options])` | Train a new model           | `train("sample.txt", "markov", order=3)` |
+| `generate(model, [options])`        | Generate text from model    | `generate("model.json", length=50)`      |
+| `listModels()`                      | List available models       | `listModels()`                           |
+| `listCorpus()`                      | List available corpus files | `listCorpus()`                           |
+| `delete("model.json")`              | Delete a model              | `delete("old_model.json")`               |
+| `use("model.json")`                 | Set current model           | `use("model.json")`                      |
+| `stats()`                           | Show model statistics       | `stats()`                                |
+| `help()`                            | Show help                   | `help()`                                 |
+| `exit`                              | Exit the CLI                | `exit`                                   |
+
+---
+
+## Command Syntax Styles
+
+### Function Style
 
 ```javascript
-import { MarkovModel, Tokenizer, TextGenerator } from './src/index.js';
-
-// Process text
-const tokenizer = new Tokenizer();
-const tokens = tokenizer.tokenize(text, { method: 'word' });
-
-// Train model
-const model = new MarkovModel({order:3});
-model.train(tokens);
-
-// Generate text
-const generator = new TextGenerator(model);
-const result = generator.generate({
-    maxLength: 100,
-    temperature: 1.0
-});
-
-console.log(result.text);
+train("sample.txt", "markov", order=3)
+generate("model.json", length=50, temperature=1.2)
 ```
 
-## Architecture
+### Object Style
 
+```javascript
+train({ file: "sample.txt", modelType: "markov", order: 3 })
+generate({ model: "model.json", length: 50 })
 ```
-src/
-├── core/
-│   ├── MarkovModel.js      # Core Markov chain implementation
-│   ├── Tokenizer.js        # Tokenization and preprocessing
-│   └── TextGenerator.js    # Text generation algorithms
-├── io/
-│   ├── FileHandler.js      # File I/O operations
-│   └── ModelSerializer.js  # Model persistence
-├── cli/
-│   ├── CLI.js              # Main CLI interface
-│   └── CommandParser.js    # Command parsing utilities
-└── utils/
-    └── helpers.js          # Utility functions
+
+### Simple Style
+
+```javascript
+listModels()
+exit
 ```
+
+---
+
+## Training Options
+
+| Parameter   | Description                      | Default                      |
+| ----------- | -------------------------------- | ---------------------------- |
+| `file`      | Corpus file to train from        | **Required**                 |
+| `modelType` | Type of model (`"markov"`, etc.) | **Required**                 |
+| `order`     | Markov order (n-gram size)       | `2`                          |
+| `modelName` | Custom filename to save as       | Derived from corpus filename |
+
+---
+
+## Generation Options
+
+| Parameter     | Description                    | Default      |
+| ------------- | ------------------------------ | ------------ |
+| `model`       | Model file to use              | **Required** |
+| `length`      | Max tokens to generate         | `100`        |
+| `min_tokens`  | Minimum tokens to generate     | `10`         |
+| `temperature` | Randomness factor (range: 0–2) | `1.0`        |
+| `prompt`      | Starting text for generation   | None         |
+| `samples`     | Number of samples to generate  | `1`          |
+
+---
 
 ## Examples
 
-See `examples/sample_usage.js` for comprehensive usage examples:
+### Training a Model
 
-```bash
-node examples/sample_usage.js
+```javascript
+// Train a 3rd-order Markov model
+train("sample.txt", "markov", order=3)
+
+// Train a VLMM model with custom name
+train("poems.txt", "vlmm", modelName="poems_vlmm.json")
 ```
 
-## Configuration
+### Generating Text
 
-The system uses sensible defaults but can be configured:
+```javascript
+// Basic generation
+generate("model.json")
 
-* **Corpus Directory**: `./data/corpus` (configurable)
-* **Models Directory**: `./data/models` (configurable)
-* **Default Order**: 2 (configurable per model)
-* **File Encoding**: UTF-8
+// Generate with specific parameters
+generate("model.json", length=50, temperature=1.2)
+
+// Generate with a prompt
+generate("model.json", prompt="The quick brown fox")
+```
+
+---
+
+## Model Types
+
+### Markov Chains
+
+* Fixed-length n-gram models
+* Fast training and generation
+* Good for most general purposes
+
+### Variable-Length Markov Models (VLMM)
+
+* Adaptive context length
+* More memory efficient for certain patterns
+* Better for data with variable-length dependencies
+
+### Hidden Markov Models (HMM)
+
+* Models hidden states that emit observable tokens
+* Supports Baum-Welch (EM) algorithm for unsupervised learning
+* Includes Viterbi algorithm for most likely state sequence
+
+---
+
+## File Structure
+
+```
+data/
+  corpus/      # Default location for text files
+  models/      # Default location for saved models
+
+src/
+  entrypoints/ # CLI and API interfaces
+  io/          # File handling and serialization
+  models/      # Model implementations
+  utils/       # Utility functions
+
+examples/      # Example scripts
+```

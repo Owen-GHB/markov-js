@@ -18,12 +18,41 @@ export class MarkovCLI {
         });
         
         this.setupEventHandlers();
-        console.log(this.commandParser.getHelpText());
+        console.log(this.app.getHelpText());
     }
 
     setupEventHandlers() {
         this.rl.on('line', async (input) => {
-            await this.handleLine(input);
+            input = input.trim();
+            const parsedResult = this.commandParser.parse(input);
+            if (parsedResult.error) {
+                console.error(`❌ ${parsedResult.error}`);
+                return;
+            }
+
+            const command = {
+                ...parsedResult.command,
+                args: this.withDefaults(parsedResult.command)
+            };
+
+            switch (commandName) {
+                case 'train':
+                    this.currentModel = args?.modelName || `${args.file.replace(/\.[^/.]+$/, '')}.json`;
+                    break;
+                case 'generate':
+                    if (args?.modelName) this.currentModel = args.modelName;
+                    break;
+                case 'use':
+                    if (args?.modelName) this.currentModel = args.modelName;
+                    break;
+                case 'exit':
+                    this.rl.close();
+                    return;
+            }
+
+            result = await this.handleCommand(input);
+            if (result.error) console.error(`❌ ${result.error}`);
+            if (result.output) console.log(result.output);
             this.rl.prompt();
         });
 
@@ -36,93 +65,6 @@ export class MarkovCLI {
             console.log('\nUse "exit" or Ctrl+D to quit.');
             this.rl.prompt();
         });
-    }
-
-    async handleLine(input) {
-        const trimmed = input.trim();
-        if (!trimmed) return;
-
-        const parsedResult = this.commandParser.parse(trimmed);
-        if (parsedResult.error) {
-            console.error(`❌ ${parsedResult.error}`);
-            return;
-        }
-
-        const command = {
-            ...parsedResult.command,
-            args: this.withDefaults(parsedResult.command)
-        };
-
-        try {
-            let result;
-
-            switch (command.name) {
-                case 'help':
-                    result = {
-                        error: null,
-                        output: this.commandParser.getHelpText()
-                    };
-                    break;
-                case 'exit':
-                    this.rl.close();
-                    return;
-                case 'train':
-                    this.currentModel = command.args?.modelName || `${command.args.file.replace(/\.[^/.]+$/, '')}.json`;
-                    result = await this.app.handleTrain(command.args);
-                    break;
-                case 'generate':
-                    if (!command.args.modelName) {
-                        result = {
-                            error: 'Error: no model selected',
-                            output: null
-                        };
-                    } else {
-                        this.currentModel = command.args.modelName;
-                        result = await this.app.handleGenerate(command.args);
-                    }
-                    break;
-                case 'listmodels':
-                    result = await this.app.handleListModels();
-                    break;
-                case 'listcorpus':
-                    result = await this.app.handleListCorpus();
-                    break;
-                case 'delete':
-                    result = await this.app.handleDeleteModel(command.args);
-                    break;
-                case 'use':
-                    if (!command.args.modelName) {
-                        result = {
-                            error: 'Model name is required (e.g., use("model.json"))',
-                            output: null
-                        };
-                    } else {
-                        this.currentModel = command.args.modelName;
-                        result = {
-                            error: null,
-                            output: `✅ Using model: ${this.currentModel}`
-                        };
-                    }
-                    break;
-                case 'stats':
-                    result = await this.app.handleStats?.(command.args) ?? {
-                        error: 'Stats not implemented',
-                        output: null
-                    };
-                    break;
-                default:
-                    result = {
-                        error: `Unknown command: ${command.name}`,
-                        output: null
-                    };
-                    break;
-            }
-
-            if (result.error) console.error(`❌ ${result.error}`);
-            if (result.output) console.log(result.output);
-        } catch (error) {
-            console.error(`❌ Error processing command: ${error.message}`);
-        }
     }
 
     commandCompleter(line) {
