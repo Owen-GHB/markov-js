@@ -112,6 +112,10 @@ export class ModelSerializer {
      * Validate model data structure.
      * @param {Object} modelData - Model data to validate.
      */
+    /**
+     * Validate the structure of model data
+     * @param {Object} modelData - The model data to validate
+     */
     validateModelData(modelData) {
         if (!modelData || typeof modelData !== 'object') {
             throw new Error('Invalid model data: not an object');
@@ -202,6 +206,11 @@ export class ModelSerializer {
      * Check if a model file exists.
      * @param {string} filename - Model filename to check.
      * @returns {Promise<boolean>} - True if file exists.
+     */
+    /**
+     * Check if a model file exists
+     * @param {string} filename - The filename to check
+     * @returns {Promise<boolean>} - True if the model exists, false otherwise
      */
     async modelExists(filename) {
         const fullPath = this.fileHandler.resolveModelPath(filename);

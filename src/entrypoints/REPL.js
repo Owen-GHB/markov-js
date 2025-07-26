@@ -21,6 +21,9 @@ export class MarkovREPL {
         console.log(this.app.getHelpText());
     }
 
+    /**
+     * Set up event handlers for the REPL
+     */
     setupEventHandlers() {
         this.rl.on('line', async (input) => {
             input = input.trim();
@@ -67,13 +70,23 @@ export class MarkovREPL {
         });
     }
 
+    /**
+     * Command completer for the REPL
+     * @param {string} line - The current line
+     * @returns {[string[], string]} - The completions and the line
+     */
     commandCompleter(line) {
-        const commands = ['train', 'generate', 'help', 'exit', 
+        const commands = ['train', 'generate', 'help', 'exit',
                         'listmodels', 'listcorpus', 'delete', 'use', 'stats'];
         const hits = commands.filter(c => c.startsWith(line));
         return [hits.length ? hits : commands, line];
     }
 
+    /**
+     * Add default values to a command
+     * @param {Object} command - The command object
+     * @returns {Object} - The command arguments with defaults
+     */
     withDefaults(command) {
         const args = command.args || {};
 
@@ -97,6 +110,9 @@ export class MarkovREPL {
         return args;
     }
 
+    /**
+     * Start the REPL
+     */
     start() {
         this.rl.prompt();
     }
