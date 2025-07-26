@@ -35,6 +35,10 @@ export class MarkovModel extends TextModel {
         this.modelType = 'markov';
     }
 
+    /**
+     * Get model capabilities
+     * @returns {Object}
+     */
     getCapabilities() {
         return {
             supportsTemperature: true,
@@ -106,6 +110,11 @@ export class MarkovModel extends TextModel {
      * @param {string} state - Current state (n-gram)
      * @returns {Array<{token: string, probability: number}>}
      */
+    /**
+     * Get all possible next tokens for a given state
+     * @param {string} state - The current state
+     * @returns {Array<{token: string, probability: number}>} - The possible next tokens
+     */
     getTransitions(state) {
         if (!this.chains.has(state)) {
             return [];
@@ -126,6 +135,11 @@ export class MarkovModel extends TextModel {
      * @param {Function} randomFn - Random function (default: random)
      * @returns {string|null} - Starting state or null if none available
      */
+    /**
+     * Get a random starting state
+     * @param {Function} [randomFn=random] - The random function to use
+     * @returns {string|null} - A random starting state
+     */
     getRandomStartState(randomFn = random) {
         // First try to get a sentence-starting state if available
         if (this.startStates.size > 0) {
@@ -143,6 +157,10 @@ export class MarkovModel extends TextModel {
      * Get all possible starting states (sentence beginnings)
      * @returns {string[]} - Array of starting states
      */
+    /**
+     * Get all start states
+     * @returns {string[]} - An array of all start states
+     */
     getStartStates() {
         return Array.from(this.startStates);
     }
@@ -151,6 +169,11 @@ export class MarkovModel extends TextModel {
      * Check if a given state is a known starting state
      * @param {string} state - State to check
      * @returns {boolean} - True if the state is a known starting state
+     */
+    /**
+     * Check if a state is a start state
+     * @param {string} state - The state to check
+     * @returns {boolean} - True if the state is a start state
      */
     isStartState(state) {
         return this.startStates.has(state);
@@ -320,6 +343,12 @@ export class MarkovModel extends TextModel {
      * @param {Function} randomFn - Random function
      * @returns {string|null} - Initial state
      */
+    /**
+     * Initialize the state for generation
+     * @param {string|null} startWith - The text to start with
+     * @param {Function} randomFn - The random function to use
+     * @returns {string|null} - The initial state
+     */
     initializeState(startWith, randomFn) {
         if (startWith) {
             if (!this.caseSensitive) {
@@ -353,6 +382,13 @@ export class MarkovModel extends TextModel {
      * @param {number} temperature - Randomness factor (0-2)
      * @param {Function} randomFn - Random function
      * @returns {string|null} - Next token or null
+     */
+    /**
+     * Sample the next token
+     * @param {string} currentState - The current state
+     * @param {number} temperature - The temperature to use
+     * @param {Function} randomFn - The random function to use
+     * @returns {string|null} - The next token
      */
     sampleNextToken(currentState, temperature, randomFn) {
         const transitions = this.getTransitions(currentState);
@@ -403,6 +439,12 @@ export class MarkovModel extends TextModel {
      * @param {string} newToken - New token to add
      * @returns {string} - Updated state
      */
+    /**
+     * Update the current state with a new token
+     * @param {string} currentState - The current state
+     * @param {string} newToken - The new token
+     * @returns {string} - The updated state
+     */
     updateState(currentState, newToken) {
         const stateTokens = currentState.split(' ');
         const newStateTokens = [...stateTokens.slice(1), newToken];
@@ -414,6 +456,12 @@ export class MarkovModel extends TextModel {
      * @param {string[]} tokens - Generated tokens
      * @param {Object} options - Processing options
      * @returns {string} - Formatted text
+     */
+    /**
+     * Post-process the generated tokens
+     * @param {string[]} tokens - The tokens to process
+     * @param {Object} [options={}] - The options to use
+     * @returns {string} - The processed text
      */
     postProcess(tokens, options = {}) {
         if (tokens.length === 0) {
@@ -447,6 +495,12 @@ export class MarkovModel extends TextModel {
      * @param {number} count - Number of samples to generate.
      * @param {GenerationContext} context - Generation options (same as generate()).
      * @returns {Array<GenerationResult>} - Array of generation results.
+     */
+    /**
+     * Generate multiple samples
+     * @param {number} count - The number of samples to generate
+     * @param {GenerationContext} [context=new GenerationContext()] - The generation context
+     * @returns {GenerationResult[]} - The generated samples
      */
     generateSamples(count, context = new GenerationContext()) {
         const samples = [];

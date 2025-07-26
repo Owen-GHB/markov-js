@@ -17,6 +17,10 @@ export class TextModel {
    * Get model-specific capabilities
    * @returns {Object} - Supported features and parameters
    */
+  /**
+   * Get model capabilities
+   * @returns {Object}
+   */
   getCapabilities() {
       return {
           supportsTemperature: false,
@@ -32,6 +36,10 @@ export class TextModel {
    * @abstract
    * @param {string[]} tokens - Training data.
    */
+  /**
+   * Train the model
+   * @param {string[]} tokens - The tokens to train on
+   */
   train(tokens) {
     throw new Error('train() must be implemented by subclasses');
   }
@@ -41,6 +49,11 @@ export class TextModel {
    * @param {GenerationContext} context - Generation parameters.
    * @returns {GenerationResult} Generated text.
    */
+  /**
+   * Generate text from the model
+   * @param {GenerationContext} context - The generation context
+   * @returns {GenerationResult}
+   */
   generate(context) {
     throw new Error('generate() must be implemented by subclasses');
   }
@@ -48,6 +61,10 @@ export class TextModel {
   /**
    * @abstract
    * @returns {object} - Serializable model data.
+   */
+  /**
+   * Convert the model to a JSON object
+   * @returns {Object}
    */
   toJSON() {
     throw new Error('toJSON() must be implemented by subclasses');
@@ -57,6 +74,10 @@ export class TextModel {
    * @abstract
    * @param {object} data - Serialized model data.
    */
+  /**
+   * Load the model from a JSON object
+   * @param {Object} data - The JSON object
+   */
   fromJSON(data) {
     throw new Error('fromJSON() must be implemented by subclasses');
   }
@@ -64,6 +85,10 @@ export class TextModel {
   /**
    * @abstract
    * @returns {object} - Model statistics.
+   */
+  /**
+   * Get model statistics
+   * @returns {Object}
    */
   getStats() {
     throw new Error('getStats() must be implemented by subclasses');

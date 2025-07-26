@@ -18,6 +18,10 @@ export class VLMModel extends TextModel {
         this.modelType = 'vlmm';
     }
 
+    /**
+     * Get model capabilities
+     * @returns {Object}
+     */
     getCapabilities() {
         return {
             supportsTemperature: true,
@@ -185,6 +189,12 @@ export class VLMModel extends TextModel {
         };
     }
 
+    /**
+     * Post-process generated tokens into readable text
+     * @param {string[]} tokens - The tokens to process
+     * @param {Object} [context={}] - The generation context
+     * @returns {string} - The processed text
+     */
     postProcess(tokens, context = {}) {
         if (tokens.length === 0) return '';
         let text = tokens.join(' ');
@@ -202,6 +212,12 @@ export class VLMModel extends TextModel {
         return text;
     }
 
+    /**
+     * Generate multiple samples from the model
+     * @param {number} count - The number of samples to generate
+     * @param {GenerationContext} [context=new GenerationContext()] - The generation context
+     * @returns {GenerationResult[]} - The generated samples
+     */
     generateSamples(count, context = new GenerationContext()) {
         const results = [];
         for (let i = 0; i < count; i++) {
