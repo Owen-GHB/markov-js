@@ -1,8 +1,8 @@
-import { AppInterface } from './Handler.js';
+import { CommandHandler } from '../interpreter/CommandHandler.js';
 
 export class JSONAPI {
     constructor() {
-        this.app = new AppInterface();
+        this.app = new CommandHandler();
     }
 
     /**

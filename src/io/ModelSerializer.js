@@ -203,11 +203,6 @@ export class ModelSerializer {
     }
 
     /**
-     * Check if a model file exists.
-     * @param {string} filename - Model filename to check.
-     * @returns {Promise<boolean>} - True if file exists.
-     */
-    /**
      * Check if a model file exists
      * @param {string} filename - The filename to check
      * @returns {Promise<boolean>} - True if the model exists, false otherwise

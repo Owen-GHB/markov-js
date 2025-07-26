@@ -1,10 +1,10 @@
 import readline from 'readline';
-import { AppInterface } from './Handler.js';
-import { CommandParser } from './CommandParser.js';
+import { CommandHandler } from '../interpreter/CommandHandler.js';
+import { CommandParser } from '../interpreter/CommandParser.js';
 
 export class MarkovREPL {
     constructor() {
-        this.app = new AppInterface();
+        this.handler = new CommandHandler();
         this.commandParser = new CommandParser();
         this.currentModel = null;
         this.defaultCorpus = 'sample.txt';
@@ -18,7 +18,7 @@ export class MarkovREPL {
         });
         
         this.setupEventHandlers();
-        console.log(this.app.getHelpText());
+        console.log(this.handler.getHelpText());
     }
 
     /**
@@ -53,7 +53,7 @@ export class MarkovREPL {
                     return;
             }
 
-            let result = await this.app.handleCommand(command);
+            let result = await this.handler.handleCommand(command);
             if (result.error) console.error(`❌ ${result.error}`);
             if (result.output) console.log(result.output);
             this.rl.prompt();

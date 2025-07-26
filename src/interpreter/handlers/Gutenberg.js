@@ -1,0 +1,236 @@
+import { getJSON, downloadFile } from '../../utils/GutendexAPI.js';
+import fs from 'fs';
+import { FileHandler } from '../../io/FileHandler.js';
+
+export class PGBHandler {
+    constructor() {
+        this.API_BASE = 'https://gutendex.com';
+        this.fileHandler = new FileHandler();
+    }
+
+    async handleSearch(params) {
+        const { author, title, subject } = params;
+        
+        if (!author && !title && !subject) {
+            return {
+                error: 'Please specify at least one search parameter (author, title, or subject)',
+                output: null
+            };
+        }
+
+        try {
+            // Build search query based on parameters
+            let searchQuery = '';
+            if (author) searchQuery += author;
+            if (title) searchQuery += (searchQuery ? ' ' : '') + title;
+            if (subject) searchQuery += (searchQuery ? ' ' : '') + subject;
+
+            const url = `${this.API_BASE}/books/?search=${encodeURIComponent(searchQuery)}`;
+            const data = await getJSON(url);
+
+            if (!data.results || data.results.length === 0) {
+                return {
+                    error: 'No books found matching your criteria',
+                    output: null
+                };
+            }
+
+            // Filter results based on specific parameters
+            const filteredResults = data.results.filter(book => {
+                let matches = true;
+                if (author) {
+                    matches = matches && book.authors.some(a => 
+                        a.name.toLowerCase().includes(author.toLowerCase())
+                    );
+                }
+                if (title) {
+                    matches = matches && book.title.toLowerCase().includes(title.toLowerCase());
+                }
+                if (subject) {
+                    matches = matches && (book.subjects || []).some(s => 
+                        s.toLowerCase().includes(subject.toLowerCase())
+                    );
+                }
+                return matches;
+            });
+
+            if (filteredResults.length === 0) {
+                return {
+                    error: 'No books found matching all your criteria',
+                    output: null
+                };
+            }
+
+            const output = [
+                '📚 Search Results:',
+                '──────────────────',
+                ...filteredResults.map(book => 
+                    `• ID: ${book.id} - "${book.title}"` + 
+                    (book.authors.length ? ` by ${book.authors[0].name}` : '')
+                )
+            ];
+
+            return {
+                error: null,
+                output: output.join('\n')
+            };
+        } catch (error) {
+            return {
+                error: `Search failed: ${error.message}`,
+                output: null
+            };
+        }
+    }
+
+    async handleInfo(params) {
+        const { id, title } = params;
+        
+        if (!id && !title) {
+            return {
+                error: 'Please specify either an ID or title',
+                output: null
+            };
+        }
+
+        try {
+            let book;
+            if (id) {
+                // Direct ID lookup
+                const bookData = await getJSON(`${this.API_BASE}/books/${id}`);
+                if (!bookData || bookData.detail === "Not found") {
+                    return {
+                        error: `No book found with ID "${id}"`,
+                        output: null
+                    };
+                }
+                book = bookData;
+            } else {
+                // Title search fallback
+                const searchResults = await getJSON(`${this.API_BASE}/books/?search=${encodeURIComponent(title)}`);
+                if (!searchResults.results || searchResults.results.length === 0) {
+                    return {
+                        error: `No book found with title "${title}"`,
+                        output: null
+                    };
+                }
+                book = searchResults.results[0];
+            }
+
+            // Format the book information
+            const output = [
+                '📖 Book Information',
+                '──────────────────',
+                `ID: ${book.id}`,
+                `Title: ${book.title}`,
+                `Authors: ${book.authors.map(a => a.name).join(', ') || 'Unknown'}`,
+                `Subjects: ${book.subjects?.join(', ') || 'None listed'}`,
+                `Languages: ${book.languages?.join(', ') || 'Unknown'}`,
+                `Download Count: ${book.download_count || 0}`,
+                `Bookshelves: ${book.bookshelves?.join(', ') || 'None'}`,
+                `Formats Available: ${Object.keys(book.formats).join(', ')}`
+            ];
+
+            return {
+                error: null,
+                output: output.join('\n')
+            };
+        } catch (error) {
+            return {
+                error: `Failed to get book info: ${error.message}`,
+                output: null
+            };
+        }
+    }
+
+    async handleDownload(params) {
+        const { id, title, file } = params;
+
+        if (!id && !title) {
+            return {
+                error: 'Please specify either an ID or title',
+                output: null
+            };
+        }
+
+        try {
+            await this.fileHandler.ensureDirectoryExists(this.fileHandler.defaultCorpusDir);
+
+            let book;
+            if (id) {
+                book = await getJSON(`${this.API_BASE}/books/${id}`);
+                if (!book || book.detail === "Not found") {
+                    throw new Error(`No book found with ID "${id}"`);
+                }
+            } else {
+                const searchResults = await getJSON(`${this.API_BASE}/books/?search=${encodeURIComponent(title)}`);
+                if (!searchResults.results?.length) {
+                    throw new Error(`No book found with title "${title}"`);
+                }
+                book = searchResults.results[0];
+            }
+
+            let filename;
+            if (file) {
+                filename = file;
+            } else if (id) {
+                filename = `${id}.txt`;
+            } else {
+                // Sanitize title for filename
+                const sanitizedTitle = book.title
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]/g, '_')
+                    .replace(/_+/g, '_')
+                    .substring(0, 50); // Limit length
+                filename = `${sanitizedTitle}.txt`;
+            }
+
+            const txtUrl = this.findTextFormat(book.formats);
+            if (!txtUrl) {
+                throw new Error('No plain text format available');
+            }
+
+            const corpusPath = this.fileHandler.resolveCorpusPath(filename);
+
+            await downloadFile(txtUrl, corpusPath);
+            await this.cleanGutenbergText(corpusPath);
+
+            return {
+                error: null,
+                output: `✅ Successfully downloaded "${book.title}" to ${filename}`
+            };
+        } catch (error) {
+            return {
+                error: `Download failed: ${error.message}`,
+                output: null
+            };
+        }
+    }
+
+    findTextFormat(formats) {
+        const txtEntry = Object.entries(formats).find(
+            ([_, url]) => url.endsWith('.utf-8')
+            ) || Object.entries(formats).find(
+            ([key]) => key.startsWith('text/plain')
+        );
+        return txtEntry?.[1];
+    }
+
+    async cleanGutenbergText(filepath) {
+        try {
+            let text = await fs.promises.readFile(filepath, 'utf8');
+            const startMarker = '*** START OF THE PROJECT GUTENBERG EBOOK';
+            const endMarker = '*** END OF THE PROJECT GUTENBERG EBOOK';
+            
+            const startIndex = text.indexOf(startMarker);
+            const endIndex = text.indexOf(endMarker);
+            
+            if (startIndex !== -1 && endIndex !== -1) {
+                const afterStart = text.indexOf('\n', startIndex) + 1;
+                text = text.slice(afterStart, endIndex).trim();
+                await  fs.promises.writeFile(filepath, text, 'utf8');
+            }
+        } catch (error) {
+            console.warn('Error cleaning text:', error.message);
+        }
+    }
+}

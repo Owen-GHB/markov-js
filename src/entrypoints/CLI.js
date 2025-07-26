@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 
-import { CommandParser } from './CommandParser.js';
-import { AppInterface } from './Handler.js';
+import { CommandParser } from '../interpreter/CommandParser.js';
+import { CommandHandler } from '../interpreter/CommandHandler.js';
 
 export class MarkovCLI {
     constructor() {
         this.parser = new CommandParser();
-        this.handler = new AppInterface();
+        this.handler = new CommandHandler();
     }
 
     /**
@@ -18,26 +18,9 @@ export class MarkovCLI {
             return this.showHelp();
         }
 
-        // Handle both direct args and REPL-style commands
-        let commandStr;
-        if (args.length === 1 && (args[0].includes('(') || args[0].includes('{'))) {
-            // REPL-style command (e.g., 'generate("model.json")')
-            commandStr = args[0];
-        } else {
-            // Shell-friendly args (e.g., generate model.json length=50)
-            const command = args[0];
-            const params = args.slice(1).map(p => {
-                // Handle quoted values
-                if (p.includes('=') && !p.startsWith('"') && !p.startsWith("'")) {
-                    const [key, ...values] = p.split('=');
-                    return `${key}="${values.join('=')}"`;
-                }
-                return p;
-            });
-            commandStr = `${command}(${params.join(', ')})`;
-        }
+        const input = args.join(' ');
 
-        const { error, command } = this.parser.parse(commandStr);
+        const { error, command } = this.parser.parse(input);
         
         if (error) {
             console.error(`❌ ${error}`);
