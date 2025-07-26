@@ -13,6 +13,11 @@ export class AppInterface {
         this.serializer = new ModelSerializer();
     }
 
+    /**
+     * Handle a parsed command
+     * @param {Object} command - The command object
+     * @returns {Promise<Object>} - The result of the command
+     */
     async handleCommand(command) {
         if (!command) return;
         let result;
@@ -82,6 +87,11 @@ export class AppInterface {
         }
     }
 
+    /**
+     * Handle the "train" command
+     * @param {Object} params - The command parameters
+     * @returns {Promise<Object>} - The result of the training
+     */
     async handleTrain(params) {
         const output = [];
         const { file, modelType, order = 2 } = params || {};
@@ -138,6 +148,11 @@ export class AppInterface {
     }
 
 
+    /**
+     * Handle the "generate" command
+     * @param {Object} params - The command parameters
+     * @returns {Promise<Object>} - The result of the generation
+     */
     async handleGenerate(params) {
         const { modelName, length = 100, temperature = 1.0, samples = 1, ...rest } = params || {};
 
@@ -180,6 +195,10 @@ export class AppInterface {
         }
     }
 
+    /**
+     * Handle the "listmodels" command
+     * @returns {Promise<Object>} - The list of models
+     */
     async handleListModels() {
         try {
             const models = await this.serializer.listModels();
@@ -202,6 +221,10 @@ export class AppInterface {
         }
     }
 
+    /**
+     * Handle the "listcorpus" command
+     * @returns {Promise<Object>} - The list of corpus files
+     */
     async handleListCorpus() {
         try {
             const corpusFiles = await this.fileHandler.listCorpusFiles();
@@ -222,6 +245,11 @@ export class AppInterface {
         }
     }
 
+    /**
+     * Handle the "deletemodel" command
+     * @param {Object} params - The command parameters
+     * @returns {Promise<Object>} - The result of the deletion
+     */
     async handleDeleteModel(params) {
         const { modelName } = params || {};
         
@@ -246,6 +274,10 @@ export class AppInterface {
         }
     }
 
+    /**
+     * Get the help text for the application
+     * @returns {string} - The help text
+     */
     getHelpText() {
         return `
 🔗 Markov Chain Text Generator

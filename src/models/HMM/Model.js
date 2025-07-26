@@ -32,6 +32,10 @@ export class HMModel extends TextModel {
         this.modelType = 'hmm';
     }
 
+    /**
+     * Get model capabilities
+     * @returns {Object}
+     */
     getCapabilities() {
         return {
             supportsTemperature: false,  // HMM doesn't naturally support temperature
@@ -488,6 +492,11 @@ export class HMModel extends TextModel {
      * Post-process generated tokens into readable text
      * @param {string[]} tokens - Generated tokens
      * @returns {string} - Formatted text
+     */
+    /**
+     * Post-process generated tokens into readable text
+     * @param {string[]} tokens - The tokens to process
+     * @returns {string} - The processed text
      */
     postProcess(tokens) {
         if (tokens.length === 0) return '';

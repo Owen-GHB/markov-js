@@ -16,9 +16,14 @@ export class CommandParser {
         };
     }
 
+    /**
+     * Parse a command string into a command object
+     * @param {string} input - The command string to parse
+     * @returns {{error: string|null, command: Object|null}}
+     */
     parse(input) {
         if (!input || typeof input !== 'string') {
-            return { 
+            return {
                 error: 'Invalid input: must be a non-empty string',
                 command: null
             };
@@ -56,6 +61,11 @@ export class CommandParser {
         };
     }
 
+    /**
+     * Parse a command in object style (e.g., "train({...})")
+     * @param {string[]} - Destructured match from regex
+     * @returns {{error: string|null, command: Object|null}}
+     */
     parseObjectStyle([, name, argsString]) {
         try {
             const jsonArgs = JSON.parse(argsString);
@@ -87,6 +97,11 @@ export class CommandParser {
         }
     }
 
+    /**
+     * Parse a command in function style (e.g., "train(...)")
+     * @param {string[]} - Destructured match from regex
+     * @returns {{error: string|null, command: Object|null}}
+     */
     parseFunctionStyle([, name, argsString]) {
         const args = {};
         const argPairs = argsString.split(',').map(s => s.trim()).filter(Boolean);
@@ -195,6 +210,11 @@ export class CommandParser {
         };
     }
 
+    /**
+     * Normalize argument values (e.g., remove quotes)
+     * @param {Object} args - The arguments object
+     * @returns {Object} - Normalized arguments
+     */
     normalizeArgs(args) {
         const result = {};
         for (const [key, value] of Object.entries(args)) {
@@ -203,6 +223,11 @@ export class CommandParser {
         return result;
     }
 
+    /**
+     * Normalize a single value
+     * @param {*} value - The value to normalize
+     * @returns {*} - The normalized value
+     */
     normalizeValue(value) {
         if (typeof value === 'string') {
             const trimmed = value.trim();

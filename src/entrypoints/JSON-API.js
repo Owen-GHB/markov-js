@@ -5,6 +5,11 @@ export class JSONAPI {
         this.app = new AppInterface();
     }
 
+    /**
+     * Handle a JSON string input
+     * @param {string} input - The JSON string
+     * @returns {Promise<Object>} - The result of the command
+     */
     async handleInput(input) {
         try {
             let command = JSON.parse(input);

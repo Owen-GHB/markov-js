@@ -7,6 +7,10 @@ class RNG {
         this.state = this.seed || 0xDEADBEEF; // Ensure non-zero state
     }
 
+    /**
+     * Generate a random number
+     * @returns {number} - A random number between 0 and 1
+     */
     random() {
         this.state ^= this.state << 13;
         this.state ^= this.state >>> 17;
@@ -14,6 +18,10 @@ class RNG {
         return (this.state >>> 0) / 4294967296;
     }
 
+    /**
+     * Generate a seed for the RNG
+     * @returns {number} - A 32-bit integer seed
+     */
     static generateSeed() {
         if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
             const buf = new Uint32Array(1);

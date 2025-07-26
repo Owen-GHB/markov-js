@@ -9,6 +9,10 @@ export class MarkovCLI {
         this.handler = new AppInterface();
     }
 
+    /**
+     * Run the CLI with provided arguments
+     * @param {string[]} args - Command line arguments
+     */
     async run(args) {
         if (args.length === 0 || args[0].toLowerCase() === 'help') {
             return this.showHelp();
@@ -58,6 +62,9 @@ export class MarkovCLI {
         }
     }
 
+    /**
+     * Display help message
+     */
     showHelp() {
         console.log(this.handler.getHelpText());
         console.log('\nCommand Line Usage:');
