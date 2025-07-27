@@ -1,5 +1,5 @@
 /**
- * Trie node for the VLMM
+ * Trie node for the VLMM with improved functionality
  */
 export class VLMMNode {
     constructor() {
@@ -43,6 +43,114 @@ export class VLMMNode {
     }
 
     /**
+     * Check if this node has any next tokens
+     * @returns {boolean}
+     */
+    hasTransitions() {
+        return this.nextCounts.size > 0;
+    }
+
+    /**
+     * Get the most frequent next token
+     * @returns {string|null}
+     */
+    getMostFrequentNext() {
+        if (this.nextCounts.size === 0) return null;
+        
+        let maxCount = 0;
+        let mostFrequent = null;
+        
+        for (const [token, count] of this.nextCounts) {
+            if (count > maxCount) {
+                maxCount = count;
+                mostFrequent = token;
+            }
+        }
+        
+        return mostFrequent;
+    }
+
+    /**
+     * Get total count of all transitions from this node
+     * @returns {number}
+     */
+    getTotalTransitions() {
+        return Array.from(this.nextCounts.values()).reduce((sum, count) => sum + count, 0);
+    }
+
+    /**
+     * Get context statistics recursively
+     * @param {Map} contextLengths - Map to store context length counts
+     * @param {number} depth - Current depth in trie
+     */
+    getContextStats(contextLengths, depth) {
+        if (this.nextCounts.size > 0) {
+            contextLengths.set(depth, (contextLengths.get(depth) || 0) + 1);
+        }
+        
+        for (const child of this.children.values()) {
+            child.getContextStats(contextLengths, depth + 1);
+        }
+    }
+
+    /**
+     * Get all contexts at a specific depth
+     * @param {number} targetDepth - Target depth
+     * @param {string[]} currentPath - Current path tokens
+     * @returns {Array} - Array of {context, node} objects
+     */
+    getContextsAtDepth(targetDepth, currentPath = []) {
+        const results = [];
+        
+        if (currentPath.length === targetDepth) {
+            if (this.nextCounts.size > 0) {
+                results.push({
+                    context: [...currentPath],
+                    node: this,
+                    transitions: this.nextCounts.size,
+                    totalCount: this.getTotalTransitions()
+                });
+            }
+            return results;
+        }
+        
+        for (const [token, child] of this.children) {
+            results.push(...child.getContextsAtDepth(targetDepth, [...currentPath, token]));
+        }
+        
+        return results;
+    }
+
+    /**
+     * Prune nodes with counts below threshold
+     * @param {number} minCount - Minimum count threshold
+     * @returns {number} - Number of transitions pruned
+     */
+    prune(minCount) {
+        let pruned = 0;
+        
+        // Prune next tokens with low counts
+        for (const [token, count] of this.nextCounts) {
+            if (count < minCount) {
+                this.nextCounts.delete(token);
+                pruned++;
+            }
+        }
+        
+        // Recursively prune children
+        for (const [token, child] of this.children) {
+            pruned += child.prune(minCount);
+            
+            // Remove child if it has no transitions and no children
+            if (child.nextCounts.size === 0 && child.children.size === 0) {
+                this.children.delete(token);
+            }
+        }
+        
+        return pruned;
+    }
+
+    /**
      * Convert the node to a JSON object
      * @returns {Object}
      */
@@ -62,10 +170,21 @@ export class VLMMNode {
      */
     static fromJSON(json) {
         const node = new VLMMNode();
-        node.nextCounts = new Map(Object.entries(json.nextCounts || {}));
-        node.children = new Map(
-            Object.entries(json.children || {}).map(([token, childJson]) => [token, VLMMNode.fromJSON(childJson)])
-        );
+        
+        // Handle nextCounts - ensure they are numbers
+        if (json.nextCounts) {
+            for (const [token, count] of Object.entries(json.nextCounts)) {
+                node.nextCounts.set(token, Number(count));
+            }
+        }
+        
+        // Recursively build children
+        if (json.children) {
+            for (const [token, childJson] of Object.entries(json.children)) {
+                node.children.set(token, VLMMNode.fromJSON(childJson));
+            }
+        }
+        
         return node;
     }
 
@@ -91,5 +210,38 @@ export class VLMMNode {
             total += child.countTransitions();
         }
         return total;
+    }
+
+    /**
+     * Get memory usage statistics
+     * @returns {Object}
+     */
+    getMemoryStats() {
+        const stats = {
+            nodes: this.countNodes(),
+            transitions: this.countTransitions(),
+            maxDepth: 0,
+            avgBranchingFactor: 0
+        };
+        
+        this._getDepthStats(stats, 0);
+        
+        if (stats.nodes > 0) {
+            stats.avgBranchingFactor = stats.transitions / stats.nodes;
+        }
+        
+        return stats;
+    }
+
+    /**
+     * Helper for depth statistics
+     * @private
+     */
+    _getDepthStats(stats, depth) {
+        stats.maxDepth = Math.max(stats.maxDepth, depth);
+        
+        for (const child of this.children.values()) {
+            child._getDepthStats(stats, depth + 1);
+        }
     }
 }

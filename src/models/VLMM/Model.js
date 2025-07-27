@@ -4,6 +4,7 @@ import { random } from '../../utils/RNG.js';
 
 /**
  * Variable-Length Markov Model for text generation
+ * Fixed training logic and improved context handling
  */
 export class VLMModel extends TextModel {
     constructor(options = {}) {
@@ -33,25 +34,39 @@ export class VLMModel extends TextModel {
         };
     }
 
+    /**
+     * Train the VLMM on tokens
+     * Fixed: Use correct next tokens and proper context building
+     */
     train(tokens) {
         if (!Array.isArray(tokens) || tokens.some(t => typeof t !== 'string')) {
             throw new Error('Input tokens must be an array of strings.');
+        }
+
+        if (tokens.length < 2) {
+            throw new Error('Need at least 2 tokens to train VLMM');
         }
 
         this.root = new VLMMNode();
         this.totalTokens = tokens.length;
         this.vocabulary = new Set(tokens);
 
+        // Build contexts of all lengths up to order
         for (let i = 0; i < tokens.length - 1; i++) {
-            const maxContext = Math.min(this.order, i);
-            for (let k = 1; k <= maxContext; k++) {
-                const context = tokens.slice(i - k, i);
-                const next = tokens[i];
+            const next = tokens[i + 1]; // Fixed: use actual next token
+            
+            // Add empty context (0-gram)
+            this.root.addContext([], next);
+            
+            // Add contexts of increasing length
+            const maxContextLen = Math.min(this.order, i + 1);
+            for (let contextLen = 1; contextLen <= maxContextLen; contextLen++) {
+                const context = tokens.slice(i + 1 - contextLen, i + 1);
                 this.root.addContext(context, next);
             }
-            const next = tokens[i];
-            this.root.addContext([], next);
         }
+
+        console.log(`VLMM trained: ${this.root.countNodes()} nodes, ${this.vocabulary.size} vocabulary`);
     }
 
     generate(context = new GenerationContext()) {
@@ -62,8 +77,7 @@ export class VLMModel extends TextModel {
             prompt = null,
             temperature = 1.0,
             randomFn = random,
-            allowRepetition = true,
-            max_context_length = this.order
+            allowRepetition = true
         } = context;
 
         if (this.totalTokens === 0) {
@@ -73,15 +87,18 @@ export class VLMModel extends TextModel {
         const generated = [];
         const history = [];
 
+        // Handle prompt
         if (prompt) {
             const promptTokens = prompt.trim().split(/\s+/);
             generated.push(...promptTokens);
-            history.push(...promptTokens.slice(-max_context_length));
+            history.push(...promptTokens);
         }
 
         let finish_reason = 'length';
         let attempts = 0;
+        const maxAttempts = max_tokens * 3;
 
+        // Generate first token if no prompt
         if (history.length === 0) {
             const firstToken = this.sampleNextToken([], temperature, randomFn);
             if (!firstToken) throw new Error('No valid transitions in model');
@@ -89,9 +106,11 @@ export class VLMModel extends TextModel {
             history.push(firstToken);
         }
 
-        while (generated.length < max_tokens && attempts < max_tokens * 3) {
+        while (generated.length < max_tokens && attempts < maxAttempts) {
             attempts++;
-            const contextTokens = history.slice(-max_context_length);
+            
+            // Use up to order tokens as context
+            const contextTokens = history.slice(-this.order);
             const nextToken = this.sampleNextToken(contextTokens, temperature, randomFn);
 
             if (!nextToken) {
@@ -99,7 +118,8 @@ export class VLMModel extends TextModel {
                 break;
             }
 
-            if (!allowRepetition && generated[generated.length - 1] === nextToken) {
+            if (!allowRepetition && generated.length > 0 && 
+                generated[generated.length - 1] === nextToken) {
                 continue;
             }
 
@@ -122,20 +142,38 @@ export class VLMModel extends TextModel {
         });
     }
 
+    /**
+     * Sample next token using variable-length context
+     * Fixed: Proper fallback through shorter contexts
+     */
     sampleNextToken(contextTokens, temperature, randomFn = random) {
-        for (let k = contextTokens.length; k >= 0; k--) {
-            const subcontext = contextTokens.slice(contextTokens.length - k);
-            const node = this.root.getNode(subcontext);
-            const validNode = node || (k === 0 ? this.root : null);
-            if (!validNode || validNode.nextCounts.size === 0) continue;
+        // Try contexts from longest to shortest
+        for (let contextLen = contextTokens.length; contextLen >= 0; contextLen--) {
+            const context = contextTokens.slice(-contextLen);
+            const node = this.root.getNode(context);
+            
+            if (!node || node.nextCounts.size === 0) {
+                continue;
+            }
 
+            // Found a valid context with transitions
             const transitions = Array.from(node.nextCounts.entries());
             const totalCount = transitions.reduce((sum, [, count]) => sum + count, 0);
+            
+            if (temperature === 0) {
+                // Deterministic: pick most frequent
+                const [bestToken] = transitions.reduce((best, current) => 
+                    current[1] > best[1] ? current : best
+                );
+                return bestToken;
+            }
+
+            // Apply temperature scaling
             const weighted = transitions.map(([token, count]) => {
                 const prob = count / totalCount;
                 return {
                     token,
-                    probability: temperature === 0 ? prob : Math.pow(prob, 1 / temperature)
+                    probability: Math.pow(prob, 1 / temperature)
                 };
             });
 
@@ -145,6 +183,7 @@ export class VLMModel extends TextModel {
                 probability: w.probability / totalProb
             }));
 
+            // Sample from distribution
             const rand = randomFn();
             let cumProb = 0;
             for (const { token, probability } of normalized) {
@@ -152,10 +191,49 @@ export class VLMModel extends TextModel {
                 if (rand <= cumProb) return token;
             }
 
+            // Fallback to last token
             return normalized[normalized.length - 1].token;
         }
 
+        // If no valid context found, sample from vocabulary
+        const vocabArray = Array.from(this.vocabulary);
+        return vocabArray[Math.floor(randomFn() * vocabArray.length)];
+    }
+
+    /**
+     * Get the best matching context for given tokens
+     * @param {string[]} tokens - Context tokens
+     * @returns {Object|null} - Node and context length used
+     */
+    getBestContext(tokens) {
+        for (let len = Math.min(tokens.length, this.order); len >= 0; len--) {
+            const context = tokens.slice(-len);
+            const node = this.root.getNode(context);
+            if (node && node.nextCounts.size > 0) {
+                return { node, contextLength: len, context };
+            }
+        }
         return null;
+    }
+
+    /**
+     * Get possible next tokens for a context
+     * @param {string[]} context - Context tokens
+     * @returns {Array} - Array of {token, probability, count}
+     */
+    getPossibleNextTokens(context) {
+        const match = this.getBestContext(context);
+        if (!match) return [];
+
+        const transitions = Array.from(match.node.nextCounts.entries());
+        const totalCount = transitions.reduce((sum, [, count]) => sum + count, 0);
+        
+        return transitions.map(([token, count]) => ({
+            token,
+            count,
+            probability: count / totalCount,
+            contextLength: match.contextLength
+        })).sort((a, b) => b.probability - a.probability);
     }
 
     toJSON() {
@@ -180,20 +258,24 @@ export class VLMModel extends TextModel {
     }
 
     getStats() {
-        return {
+        const stats = {
             order: this.order,
             vocabularySize: this.vocabulary.size,
             totalTokens: this.totalTokens,
             totalNodes: this.root.countNodes(),
             totalTransitions: this.root.countTransitions()
         };
+
+        // Add context length distribution
+        const contextLengths = new Map();
+        this.root.getContextStats(contextLengths, 0);
+        stats.contextLengthDistribution = Object.fromEntries(contextLengths);
+
+        return stats;
     }
 
     /**
      * Post-process generated tokens into readable text
-     * @param {string[]} tokens - The tokens to process
-     * @param {Object} [context={}] - The generation context
-     * @returns {string} - The processed text
      */
     postProcess(tokens, context = {}) {
         if (tokens.length === 0) return '';
@@ -214,9 +296,6 @@ export class VLMModel extends TextModel {
 
     /**
      * Generate multiple samples from the model
-     * @param {number} count - The number of samples to generate
-     * @param {GenerationContext} [context=new GenerationContext()] - The generation context
-     * @returns {GenerationResult[]} - The generated samples
      */
     generateSamples(count, context = new GenerationContext()) {
         const results = [];
