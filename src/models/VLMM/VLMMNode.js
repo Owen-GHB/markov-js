@@ -51,26 +51,6 @@ export class VLMMNode {
     }
 
     /**
-     * Get the most frequent next token
-     * @returns {string|null}
-     */
-    getMostFrequentNext() {
-        if (this.nextCounts.size === 0) return null;
-        
-        let maxCount = 0;
-        let mostFrequent = null;
-        
-        for (const [token, count] of this.nextCounts) {
-            if (count > maxCount) {
-                maxCount = count;
-                mostFrequent = token;
-            }
-        }
-        
-        return mostFrequent;
-    }
-
-    /**
      * Get total count of all transitions from this node
      * @returns {number}
      */

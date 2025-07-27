@@ -252,48 +252,6 @@ export class VLMModel extends TextModel {
         return null; // No valid contexts found
     }
 
-    
-    /**
-     * Helper method to get all contexts that have valid transitions
-     * Used as a last resort fallback
-     * @returns {string[][]} - Array of context token arrays
-     */
-    getAllContextsWithTransitions() {
-        const contexts = [];
-        
-        // Check all possible context lengths
-        for (let depth = 0; depth <= this.order; depth++) {
-            const contextData = this.root.getContextsAtDepth(depth);
-            for (const { context } of contextData) {
-                contexts.push(context);
-            }
-        }
-        
-        return contexts;
-    }
-
-    /**
-     * Check if a context represents a sentence start
-     * @param {string[]} context - Context tokens to check  
-     * @returns {boolean} - True if this is a sentence-starting context
-     */
-    isStartContext(context) {
-        if (!this.startContexts) return false;
-        const contextStr = context.join(' ');
-        return this.startContexts.has(contextStr);
-    }
-
-    /**
-     * Get all sentence-starting contexts
-     * @returns {string[][]} - Array of starting context token arrays
-     */
-    getStartContexts() {
-        if (!this.startContexts) return [];
-        return Array.from(this.startContexts).map(contextStr => 
-            contextStr === '' ? [] : contextStr.split(' ')
-        );
-    }
-
     sampleNextToken(contextTokens, temperature, randomFn = random) {
         // Try contexts from longest to shortest
         for (let contextLen = contextTokens.length; contextLen >= 0; contextLen--) {

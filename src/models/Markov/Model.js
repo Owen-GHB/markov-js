@@ -144,23 +144,6 @@ export class MarkovModel extends TextModel {
     }
 
     /**
-     * Get all possible starting states (sentence beginnings)
-     * @returns {string[]} - Array of starting states
-     */
-    getStartStates() {
-        return Array.from(this.startStates);
-    }
-
-    /**
-     * Check if a given state is a known starting state
-     * @param {string} state - State to check
-     * @returns {boolean} - True if the state is a known starting state
-     */
-    isStartState(state) {
-        return this.startStates.has(state);
-    }
-
-    /**
      * @override
      * @returns {Object} - Model statistics
      */
@@ -416,12 +399,6 @@ export class MarkovModel extends TextModel {
 
     /**
      * Update the current state with a new token
-     * @param {string} currentState - Current state
-     * @param {string} newToken - New token to add
-     * @returns {string} - Updated state
-     */
-    /**
-     * Update the current state with a new token
      * @param {string} currentState - The current state
      * @param {string} newToken - The new token
      * @returns {string} - The updated state
@@ -437,12 +414,6 @@ export class MarkovModel extends TextModel {
      * @param {string[]} tokens - Generated tokens
      * @param {Object} options - Processing options
      * @returns {string} - Formatted text
-     */
-    /**
-     * Post-process the generated tokens
-     * @param {string[]} tokens - The tokens to process
-     * @param {Object} [options={}] - The options to use
-     * @returns {string} - The processed text
      */
     postProcess(tokens, options = {}) {
         if (tokens.length === 0) {
@@ -476,12 +447,6 @@ export class MarkovModel extends TextModel {
      * @param {number} count - Number of samples to generate.
      * @param {GenerationContext} context - Generation options (same as generate()).
      * @returns {Array<GenerationResult>} - Array of generation results.
-     */
-    /**
-     * Generate multiple samples
-     * @param {number} count - The number of samples to generate
-     * @param {GenerationContext} [context=new GenerationContext()] - The generation context
-     * @returns {GenerationResult[]} - The generated samples
      */
     generateSamples(count, context = new GenerationContext()) {
         const samples = [];
