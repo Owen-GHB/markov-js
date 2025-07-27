@@ -130,11 +130,6 @@ export class Tokenizer {
      * @param {string} text - Input text
      * @returns {string} Processed text
      */
-    /**
-     * Handle punctuation in text
-     * @param {string} text - The text to handle
-     * @returns {string} - The handled text
-     */
     handlePunctuation(text) {
         return text.replace(/([.!?;:,'"()[\]{}])/g, ' $1 ');
     }
@@ -144,12 +139,44 @@ export class Tokenizer {
      * @param {string} token - Token to check
      * @returns {boolean} True if token is sentence-ending punctuation
      */
-    /**
-     * Check if a token is a sentence end
-     * @param {string} token - The token to check
-     * @returns {boolean} - True if the token is a sentence end
-     */
     isSentenceEnd(token) {
         return this.sentenceEndings.has(token);
+    }
+
+    /**
+     * New method: Tokenize into sentences of words
+     * @param {string} text - Input text
+     * @param {Object} options - Tokenization options
+     * @returns {string[][]} Array of sentences, each sentence is array of words
+     */
+    tokenizeIntoSentences(text, options = {}) {
+        if (!text || typeof text !== 'string') {
+            return [[]]; // Empty training set format
+        }
+
+        const {
+            preservePunctuation = true,
+            preserveCase = true
+        } = options;
+
+        // Get sentences
+        const sentences = this.tokenizeBySentence(text);
+        
+        // Process each sentence into words
+        const result = sentences.map(sentence => {
+            let processed = this.normalizeWhitespace(sentence);
+            if (preservePunctuation) {
+                processed = this.handlePunctuation(processed);
+            }
+            
+            const words = preservePunctuation 
+                ? processed.match(/\w+|[^\w\s]/g) || []
+                : processed.match(/\w+/g) || [];
+                
+            return preserveCase ? words : words.map(w => w.toLowerCase());
+        });
+
+        // Ensure we always return at least [[]] for empty input
+        return result.length > 0 ? result : [[]];
     }
 }

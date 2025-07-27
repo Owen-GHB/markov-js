@@ -110,11 +110,6 @@ export class MarkovModel extends TextModel {
      * @param {string} state - Current state (n-gram)
      * @returns {Array<{token: string, probability: number}>}
      */
-    /**
-     * Get all possible next tokens for a given state
-     * @param {string} state - The current state
-     * @returns {Array<{token: string, probability: number}>} - The possible next tokens
-     */
     getTransitions(state) {
         if (!this.chains.has(state)) {
             return [];
@@ -135,11 +130,6 @@ export class MarkovModel extends TextModel {
      * @param {Function} randomFn - Random function (default: random)
      * @returns {string|null} - Starting state or null if none available
      */
-    /**
-     * Get a random starting state
-     * @param {Function} [randomFn=random] - The random function to use
-     * @returns {string|null} - A random starting state
-     */
     getRandomStartState(randomFn = random) {
         // First try to get a sentence-starting state if available
         if (this.startStates.size > 0) {
@@ -157,10 +147,6 @@ export class MarkovModel extends TextModel {
      * Get all possible starting states (sentence beginnings)
      * @returns {string[]} - Array of starting states
      */
-    /**
-     * Get all start states
-     * @returns {string[]} - An array of all start states
-     */
     getStartStates() {
         return Array.from(this.startStates);
     }
@@ -169,11 +155,6 @@ export class MarkovModel extends TextModel {
      * Check if a given state is a known starting state
      * @param {string} state - State to check
      * @returns {boolean} - True if the state is a known starting state
-     */
-    /**
-     * Check if a state is a start state
-     * @param {string} state - The state to check
-     * @returns {boolean} - True if the state is a start state
      */
     isStartState(state) {
         return this.startStates.has(state);
