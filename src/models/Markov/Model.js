@@ -307,12 +307,6 @@ export class MarkovModel extends TextModel {
      * @param {Function} randomFn - Random function
      * @returns {string|null} - Initial state
      */
-    /**
-     * Initialize the state for generation
-     * @param {string|null} startWith - The text to start with
-     * @param {Function} randomFn - The random function to use
-     * @returns {string|null} - The initial state
-     */
     initializeState(startWith, randomFn) {
         if (startWith) {
             if (!this.caseSensitive) {
