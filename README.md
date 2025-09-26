@@ -8,29 +8,29 @@ A versatile text generation tool implementing Markov chains, Variable-Length Mar
 
 ### Multiple Model Types
 
-* Standard Markov chains (n-gram)
-* Variable-Length Markov Models (VLMM)
-* Hidden Markov Models (HMM)
+- Standard Markov chains (n-gram)
+- Variable-Length Markov Models (VLMM)
+- Hidden Markov Models (HMM)
 
 ### Flexible Generation
 
-* Temperature control for randomness
-* Length constraints
-* Prompt-based generation
-* Multiple samples generation
+- Temperature control for randomness
+- Length constraints
+- Prompt-based generation
+- Multiple samples generation
 
 ### Command Line Interface
 
-* Interactive REPL mode
-* Multiple command syntax styles
-* Tab completion
+- Interactive REPL mode
+- Multiple command syntax styles
+- Tab completion
 
 ### Model Management
 
-* Save/load trained models
-* List available models
-* Delete models
-* Model statistics
+- Save/load trained models
+- List available models
+- Delete models
+- Model statistics
 
 ---
 
@@ -77,22 +77,22 @@ node markov-cli.js
 ### Function Style
 
 ```javascript
-train("sample.txt", "markov", order=3)
-generate("model.json", length=50, temperature=1.2)
+train('sample.txt', 'markov', (order = 3));
+generate('model.json', (length = 50), (temperature = 1.2));
 ```
 
 ### Object Style
 
 ```javascript
-train({ file: "sample.txt", modelType: "markov", order: 3 })
-generate({ model: "model.json", length: 50 })
+train({ file: 'sample.txt', modelType: 'markov', order: 3 });
+generate({ model: 'model.json', length: 50 });
 ```
 
 ### Simple Style
 
 ```javascript
-listModels()
-exit
+listModels();
+exit;
 ```
 
 ---
@@ -127,23 +127,23 @@ exit
 
 ```javascript
 // Train a 3rd-order Markov model
-train("sample.txt", "markov", order=3)
+train('sample.txt', 'markov', (order = 3));
 
 // Train a VLMM model with custom name
-train("poems.txt", "vlmm", modelName="poems_vlmm.json")
+train('poems.txt', 'vlmm', (modelName = 'poems_vlmm.json'));
 ```
 
 ### Generating Text
 
 ```javascript
 // Basic generation
-generate("model.json")
+generate('model.json');
 
 // Generate with specific parameters
-generate("model.json", length=50, temperature=1.2)
+generate('model.json', (length = 50), (temperature = 1.2));
 
 // Generate with a prompt
-generate("model.json", prompt="The quick brown fox")
+generate('model.json', (prompt = 'The quick brown fox'));
 ```
 
 ---
@@ -152,21 +152,21 @@ generate("model.json", prompt="The quick brown fox")
 
 ### Markov Chains
 
-* Fixed-length n-gram models
-* Fast training and generation
-* Good for most general purposes
+- Fixed-length n-gram models
+- Fast training and generation
+- Good for most general purposes
 
 ### Variable-Length Markov Models (VLMM)
 
-* Adaptive context length
-* More memory efficient for certain patterns
-* Better for data with variable-length dependencies
+- Adaptive context length
+- More memory efficient for certain patterns
+- Better for data with variable-length dependencies
 
 ### Hidden Markov Models (HMM)
 
-* Models hidden states that emit observable tokens
-* Supports Baum-Welch (EM) algorithm for unsupervised learning
-* Includes Viterbi algorithm for most likely state sequence
+- Models hidden states that emit observable tokens
+- Supports Baum-Welch (EM) algorithm for unsupervised learning
+- Includes Viterbi algorithm for most likely state sequence
 
 ---
 

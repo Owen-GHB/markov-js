@@ -1,119 +1,119 @@
 import readline from 'readline';
 import { CommandHandler } from '../interpreter/CommandHandler.js';
 import { CommandParser } from '../interpreter/CommandParser.js';
+import manifest from '../manifest.json' with { type: 'json' };
 
 export class MarkovREPL {
-    constructor() {
-        this.handler = new CommandHandler();
-        this.commandParser = new CommandParser();
-        this.currentModel = null;
-        this.defaultCorpus = 'sample.txt';
-        this.defaultModelType = 'markov';
-        
-        this.rl = readline.createInterface({
-            input: process.stdin,
-            output: process.stdout,
-            prompt: 'markov> ',
-            completer: (line) => this.commandCompleter(line)
-        });
-        
-        this.setupEventHandlers();
-        console.log(this.handler.getHelpText());
-    }
+	constructor() {
+		this.handler = new CommandHandler();
+		this.commandParser = new CommandParser();
+		this.state = new Map(Object.entries(manifest.stateDefaults)); // ← NEW
 
-    /**
-     * Set up event handlers for the REPL
-     */
-    setupEventHandlers() {
-        this.rl.on('line', async (input) => {
-            input = input.trim();
-            const parsedResult = this.commandParser.parse(input);
-            if (parsedResult.error) {
-                console.error(`❌ ${parsedResult.error}`);
-                return;
-            }
+		this.rl = readline.createInterface({
+			input: process.stdin,
+			output: process.stdout,
+			prompt: 'markov> ',
+			completer: (line) => this.commandCompleter(line),
+		});
 
-            const command = {
-                ...parsedResult.command,
-                args: this.withDefaults(parsedResult.command)
-            };
+		this.setupEventHandlers();
+		console.log(this.handler.getHelpText()); // keep existing help
+	}
 
-            switch (command.name) {
-                case 'train':
-                    this.currentModel = command.args?.modelName || `${command.args.file.replace(/\.[^/.]+$/, '')}.json`;
-                    break;
-                case 'generate':
-                    if (command.args?.modelName) this.currentModel = command.args.modelName;
-                    break;
-                case 'use':
-                    if (command.args?.modelName) this.currentModel = command.args.modelName;
-                    break;
-                case 'exit':
-                    this.rl.close();
-                    return;
-            }
+	/* ---------- event handlers ---------- */
+	setupEventHandlers() {
+		this.rl.on('line', async (input) => {
+			input = input.trim();
+			const parsed = this.commandParser.parse(input);
+			if (parsed.error) {
+				console.error(`❌ ${parsed.error}`);
+				this.rl.prompt();
+				return;
+			}
 
-            let result = await this.handler.handleCommand(command);
-            if (result.error) console.error(`❌ ${result.error}`);
-            if (result.output) console.log(result.output);
-            this.rl.prompt();
-        });
+			const command = this.fillDefaults(parsed.command);
+			const result = await this.handler.handleCommand(command);
 
-        this.rl.on('close', () => {
-            console.log('\nGoodbye!');
-            process.exit(0);
-        });
+			if (result.error) console.error(`❌ ${result.error}`);
+			if (result.output) console.log(result.output);
 
-        process.on('SIGINT', () => {
-            console.log('\nUse "exit" or Ctrl+D to quit.');
-            this.rl.prompt();
-        });
-    }
+			this.applySideEffects(command); // ← NEW
+			this.rl.prompt();
+		});
 
-    /**
-     * Command completer for the REPL
-     * @param {string} line - The current line
-     * @returns {[string[], string]} - The completions and the line
-     */
-    commandCompleter(line) {
-        const commands = ['train', 'generate', 'help', 'exit',
-                        'listmodels', 'listcorpus', 'delete', 'use', 'stats'];
-        const hits = commands.filter(c => c.startsWith(line));
-        return [hits.length ? hits : commands, line];
-    }
+		this.rl.on('close', () => {
+			console.log('\nGoodbye!');
+			process.exit(0);
+		});
 
-    /**
-     * Add default values to a command
-     * @param {Object} command - The command object
-     * @returns {Object} - The command arguments with defaults
-     */
-    withDefaults(command) {
-        const args = command.args || {};
+		process.on('SIGINT', () => {
+			console.log('\nUse "exit" or Ctrl+D to quit.');
+			this.rl.prompt();
+		});
+	}
 
-        // For training commands
-        if (command.name === 'train') {
-            return { 
-                ...args,
-                file: args.file || this.defaultCorpus,
-                modelType: args.modelType || this.defaultModelType
-            };
-        }
+	/* ---------- new helpers ---------- */
+	fillDefaults(cmd) {
+		const spec = manifest.commands.find((c) => c.name === cmd.name);
+		if (!spec) return cmd;
 
-        // For generate commands
-        if (command.name === 'generate') {
-            return {
-                ...args,
-                modelName: args.modelName || this.currentModel
-            };
-        }
+		const filled = { ...cmd };
+		filled.args = { ...(cmd.args || {}) };
 
-        return args;
-    }
+		for (const p of spec.parameters || []) {
+			if (filled.args[p.name] === undefined) {
+				if (p.runtimeFallback && this.state.has(p.runtimeFallback)) {
+					filled.args[p.name] = this.state.get(p.runtimeFallback);
+				} else if (p.default !== undefined) {
+					filled.args[p.name] = p.default;
+				}
+			}
+		}
+		return filled;
+	}
 
-    /**
-     * Start the REPL
-     */
-    start() {
-        this.rl.prompt();
-    }
+	applySideEffects(cmd) {
+		const spec = manifest.commands.find((c) => c.name === cmd.name);
+		if (!spec?.sideEffects) return;
+
+		if (spec.sideEffects?.builtin === 'exit') {
+			this.rl.close();
+			return;
+		}
+
+		/* ---------- helper to resolve template strings ---------- */
+		const evaluateTemplate = (tpl, bag) =>
+			tpl.replace(/\{\{(\w+)(?:\s*\|\s*(\w+))?\}\}/g, (_, key, filter) => {
+				let val = bag[key];
+				if (filter === 'basename') val = val?.replace(/\.[^/.]+$/, '');
+				return val ?? '';
+			});
+
+		/* ---------- apply side-effects ---------- */
+		if (spec.sideEffects.setState) {
+			for (const [key, rule] of Object.entries(spec.sideEffects.setState)) {
+				let value;
+				if (rule.fromParam) value = cmd.args[rule.fromParam];
+				if (value === undefined && rule.template) {
+					value = evaluateTemplate(rule.template, cmd.args);
+				}
+				if (value !== undefined) this.state.set(key, value);
+			}
+		}
+
+		if (spec.sideEffects.clearState) {
+			for (const key of spec.sideEffects.clearState) this.state.delete(key);
+		}
+	}
+
+	/* ---------- unchanged helpers ---------- */
+	commandCompleter(line) {
+		const commands = manifest.commands.map((c) => c.name);
+		const hits = commands.filter((c) => c.startsWith(line));
+		return [hits.length ? hits : commands, line];
+	}
+
+	start() {
+		this.rl.prompt();
+	}
 }

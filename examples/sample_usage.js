@@ -13,11 +13,11 @@ import { ModelSerializer } from '../src/io/ModelSerializer.js';
  */
 
 async function basicExample() {
-    console.log('🔗 Basic Markov Chain Example');
-    console.log('===============================');
+	console.log('🔗 Basic Markov Chain Example');
+	console.log('===============================');
 
-    // Sample text for training
-    const sampleText = `
+	// Sample text for training
+	const sampleText = `
         The quick brown fox jumps over the lazy dog. 
         The lazy dog sleeps in the sun. 
         The brown fox runs through the forest. 
@@ -27,53 +27,52 @@ async function basicExample() {
         The forest is full of clever animals.
     `;
 
-    // Initialize components
-    const processor = new Tokenizer();
-    const model = new MarkovModel({ order: 2 }); // Order 2
+	// Initialize components
+	const processor = new Tokenizer();
+	const model = new MarkovModel({ order: 2 }); // Order 2
 
-    // Tokenize and build model
-    const tokens = processor.tokenize(sampleText, {
-        method: 'word',
-        preservePunctuation: true,
-        preserveCase: false
-    });
+	// Tokenize and build model
+	const tokens = processor.tokenize(sampleText, {
+		method: 'word',
+		preservePunctuation: true,
+		preserveCase: false,
+	});
 
-    console.log(`📝 Tokenized into ${tokens.length} tokens`);
-    console.log(`🎯 Sample tokens: ${tokens.slice(0, 10).join(', ')}...`);
+	console.log(`📝 Tokenized into ${tokens.length} tokens`);
+	console.log(`🎯 Sample tokens: ${tokens.slice(0, 10).join(', ')}...`);
 
-    model.train(tokens);
-    console.log(`🔗 Built model with ${model.chains.size} states`);
+	model.train(tokens);
+	console.log(`🔗 Built model with ${model.chains.size} states`);
 
-    // Generate text
-    console.log('\n🎲 Generating text...');
-    for (let i = 0; i < 3; i++) {
-        const context = new GenerationContext({
-            max_tokens: 20,
-            min_tokens: 10,
-            temperature: 1.0
-        });
-        const result = model.generate(context);
-        
-        console.log(`${i + 1}. ${result.text}`);
-    }
+	// Generate text
+	console.log('\n🎲 Generating text...');
+	for (let i = 0; i < 3; i++) {
+		const context = new GenerationContext({
+			max_tokens: 20,
+			min_tokens: 10,
+			temperature: 1.0,
+		});
+		const result = model.generate(context);
+
+		console.log(`${i + 1}. ${result.text}`);
+	}
 }
 
 async function fileBasedExample() {
-    console.log('\n📁 File-based Example');
-    console.log('=====================');
+	console.log('\n📁 File-based Example');
+	console.log('=====================');
 
-    const fileHandler = new FileHandler();
-    const processor = new Tokenizer();
-    const serializer = new ModelSerializer();
-	
+	const fileHandler = new FileHandler();
+	const processor = new Tokenizer();
+	const serializer = new ModelSerializer();
+
 	// Ensure models directory exists
-    await fileHandler.ensureDirectoryExists(fileHandler.defaultModelDir);
+	await fileHandler.ensureDirectoryExists(fileHandler.defaultModelDir);
 
-
-    try {
-        // This would read from data/corpus/sample.txt
-        // For demo, we'll create sample content
-        const sampleCorpus = `
+	try {
+		// This would read from data/corpus/sample.txt
+		// For demo, we'll create sample content
+		const sampleCorpus = `
             Once upon a time, in a faraway kingdom, there lived a brave knight.
             The knight was known for his courage and wisdom throughout the land.
             Every day, the knight would ride through the kingdom, helping those in need.
@@ -86,49 +85,48 @@ async function fileBasedExample() {
             Tales of the brave knight and the dragon were told for generations to come.
         `;
 
-        console.log('📖 Processing corpus text...');
-        const tokens = processor.tokenize(sampleCorpus, {
-            method: 'word',
-            preservePunctuation: true
-        });
+		console.log('📖 Processing corpus text...');
+		const tokens = processor.tokenize(sampleCorpus, {
+			method: 'word',
+			preservePunctuation: true,
+		});
 
-        // Try different orders
-        for (const order of [2, 3]) {
-            console.log(`\n🔗 Training model with order ${order}...`);
-            
-            const model = new MarkovModel({ order });
-            model.train(tokens);
-            
-            const stats = model.getStats();
-            
-            console.log(`   States: ${stats.totalStates}`);
-            console.log(`   Vocabulary: ${stats.vocabularySize}`);
-            
-            // Generate samples
-            console.log(`📝 Generated text (order ${order}):`);
-            const context = new GenerationContext({
-                max_tokens: 30,
-                temperature: 0.8
-            });
-            const result = model.generate(context);
-            console.log(`   "${result.text}"`);
-            
-            // Save model for demo
-            const modelFilename = `demo_model_order_${order}.json`;
-            await serializer.saveModel(model, modelFilename);
-            console.log(`💾 Saved model as ${modelFilename}`);
-        }
+		// Try different orders
+		for (const order of [2, 3]) {
+			console.log(`\n🔗 Training model with order ${order}...`);
 
-    } catch (error) {
-        console.error(`❌ Error: ${error.message}`);
-    }
+			const model = new MarkovModel({ order });
+			model.train(tokens);
+
+			const stats = model.getStats();
+
+			console.log(`   States: ${stats.totalStates}`);
+			console.log(`   Vocabulary: ${stats.vocabularySize}`);
+
+			// Generate samples
+			console.log(`📝 Generated text (order ${order}):`);
+			const context = new GenerationContext({
+				max_tokens: 30,
+				temperature: 0.8,
+			});
+			const result = model.generate(context);
+			console.log(`   "${result.text}"`);
+
+			// Save model for demo
+			const modelFilename = `demo_model_order_${order}.json`;
+			await serializer.saveModel(model, modelFilename);
+			console.log(`💾 Saved model as ${modelFilename}`);
+		}
+	} catch (error) {
+		console.error(`❌ Error: ${error.message}`);
+	}
 }
 
 async function advancedGenerationExample() {
-    console.log('\n⚡ Advanced Generation Example');
-    console.log('==============================');
+	console.log('\n⚡ Advanced Generation Example');
+	console.log('==============================');
 
-    const corpus = `
+	const corpus = `
         The sun rises in the eastern sky, painting clouds with golden light.
         Golden light streams through windows, warming the morning air.
         Morning air carries the scent of fresh flowers from the garden.
@@ -141,123 +139,124 @@ async function advancedGenerationExample() {
         To explore the world is to discover beauty in unexpected places.
     `;
 
-    const processor = new Tokenizer();
-    const tokens = processor.tokenize(corpus);
-    
-    const model = new VLMModel({ order: 3 });
-    model.train(tokens);
+	const processor = new Tokenizer();
+	const tokens = processor.tokenize(corpus);
 
-    console.log('🎨 Experimenting with different generation parameters...\n');
+	const model = new VLMModel({ order: 3 });
+	model.train(tokens);
 
-    // Different temperatures
-    console.log('🌡️ Temperature Effects:');
-    for (const temp of [0.5, 1.0, 1.5]) {
-        const context = new GenerationContext({
-            max_tokens: 25,
-            temperature: temp,
-            min_tokens: 15
-        });
-        const result = model.generate(context);
-        console.log(`   Temp ${temp}: "${result.text}"`);
-    }
+	console.log('🎨 Experimenting with different generation parameters...\n');
 
-    // Starting with specific text
-    console.log('\n🎯 Starting with specific text:');
-    const continuationContext = new GenerationContext({
-        max_tokens: 20,
-        prompt: "The sun rises",
-        temperature: 1.0
-    });
-    const continuation = model.generate(continuationContext);
-    console.log(`   "${continuation.text}"`);
+	// Different temperatures
+	console.log('🌡️ Temperature Effects:');
+	for (const temp of [0.5, 1.0, 1.5]) {
+		const context = new GenerationContext({
+			max_tokens: 25,
+			temperature: temp,
+			min_tokens: 15,
+		});
+		const result = model.generate(context);
+		console.log(`   Temp ${temp}: "${result.text}"`);
+	}
 
-    // Multiple samples
-    console.log('\n📊 Multiple samples:');
-    const samplesContext = new GenerationContext({
-        max_tokens: 15,
-        temperature: 1.2
-    });
-    const samples = model.generateSamples(3, samplesContext);
-    
-    samples.forEach((sample, i) => {
-        console.log(`   ${i + 1}. "${sample.text}" (${sample.length} tokens)`);
-    });
+	// Starting with specific text
+	console.log('\n🎯 Starting with specific text:');
+	const continuationContext = new GenerationContext({
+		max_tokens: 20,
+		prompt: 'The sun rises',
+		temperature: 1.0,
+	});
+	const continuation = model.generate(continuationContext);
+	console.log(`   "${continuation.text}"`);
+
+	// Multiple samples
+	console.log('\n📊 Multiple samples:');
+	const samplesContext = new GenerationContext({
+		max_tokens: 15,
+		temperature: 1.2,
+	});
+	const samples = model.generateSamples(3, samplesContext);
+
+	samples.forEach((sample, i) => {
+		console.log(`   ${i + 1}. "${sample.text}" (${sample.length} tokens)`);
+	});
 }
 
 async function modelPersistenceExample() {
-    console.log('\n💾 Model Persistence Example');
-    console.log('=============================');
+	console.log('\n💾 Model Persistence Example');
+	console.log('=============================');
 
-    const fileHandler = new FileHandler();
-    const serializer = new ModelSerializer();
-    const processor = new Tokenizer();
+	const fileHandler = new FileHandler();
+	const serializer = new ModelSerializer();
+	const processor = new Tokenizer();
 
-    // Ensure models directory exists
-    await fileHandler.ensureDirectoryExists(fileHandler.defaultModelDir);
+	// Ensure models directory exists
+	await fileHandler.ensureDirectoryExists(fileHandler.defaultModelDir);
 
-    // Create and train a model
-    const text = "Hello world. World is beautiful. Beautiful world brings joy. Joy comes from beautiful things.";
-    const tokens = processor.tokenize(text);
-    
-    const originalModel = new MarkovModel({ order: 2 });
-    originalModel.train(tokens);
-    
-    console.log('💾 Saving model...');
-    await serializer.saveModel(originalModel, 'persistence_test.json');
-    
-    console.log('📂 Loading model...');
-    const loadedModel = await serializer.loadModel('persistence_test.json');
-    
-    console.log('🔍 Comparing original vs loaded model:');
-    
-    // Use same random seed for comparison
-    const seed = 0.12345;
-    const mockRandom = () => seed;
-    
-    const context = new GenerationContext({
-        max_tokens: 10,
-        randomFn: mockRandom
-    });
-    
-    const originalResult = originalModel.generate(context);
+	// Create and train a model
+	const text =
+		'Hello world. World is beautiful. Beautiful world brings joy. Joy comes from beautiful things.';
+	const tokens = processor.tokenize(text);
 
-    const loadedResult = loadedModel.generate(context);
-    
-    console.log(`   Original: "${originalResult.text}"`);
-    console.log(`   Loaded:   "${loadedResult.text}"`);
-    console.log(`   Match: ${originalResult.text === loadedResult.text ? '✅' : '❌'}`);
+	const originalModel = new MarkovModel({ order: 2 });
+	originalModel.train(tokens);
+
+	console.log('💾 Saving model...');
+	await serializer.saveModel(originalModel, 'persistence_test.json');
+
+	console.log('📂 Loading model...');
+	const loadedModel = await serializer.loadModel('persistence_test.json');
+
+	console.log('🔍 Comparing original vs loaded model:');
+
+	// Use same random seed for comparison
+	const seed = 0.12345;
+	const mockRandom = () => seed;
+
+	const context = new GenerationContext({
+		max_tokens: 10,
+		randomFn: mockRandom,
+	});
+
+	const originalResult = originalModel.generate(context);
+
+	const loadedResult = loadedModel.generate(context);
+
+	console.log(`   Original: "${originalResult.text}"`);
+	console.log(`   Loaded:   "${loadedResult.text}"`);
+	console.log(
+		`   Match: ${originalResult.text === loadedResult.text ? '✅' : '❌'}`,
+	);
 }
 
 // Main execution
 async function runAllExamples() {
-    try {
-        await basicExample();
-        await fileBasedExample();
-        await advancedGenerationExample();
-        await modelPersistenceExample();
-        
-        console.log('\n🎉 All examples completed successfully!');
-        console.log('\nTo run the CLI interface, use:');
-        console.log('  npm start');
-        console.log('  # or');
-        console.log('  node src/cli/CLI.js');
-        
-    } catch (error) {
-        console.error(`❌ Example failed: ${error.message}`);
-        console.error(error.stack);
-    }
+	try {
+		await basicExample();
+		await fileBasedExample();
+		await advancedGenerationExample();
+		await modelPersistenceExample();
+
+		console.log('\n🎉 All examples completed successfully!');
+		console.log('\nTo run the CLI interface, use:');
+		console.log('  npm start');
+		console.log('  # or');
+		console.log('  node src/cli/CLI.js');
+	} catch (error) {
+		console.error(`❌ Example failed: ${error.message}`);
+		console.error(error.stack);
+	}
 }
 
 // Run examples and handle any uncaught errors
 async function main() {
-    try {
-        await runAllExamples();
-    } catch (err) {
-        console.error('Error in examples:', err);
-        process.exit(1);
-    }
+	try {
+		await runAllExamples();
+	} catch (err) {
+		console.error('Error in examples:', err);
+		process.exit(1);
+	}
 }
-
 
 main();
 

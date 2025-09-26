@@ -1,160 +1,213 @@
-import { ParserUtils } from "./Utils.js";
+// src/interpreter/parsers/Functional.js
+
+import { ParserUtils } from './Utils.js';
+import manifest from '../../manifest.json' with { type: 'json' }; // Explicit JSON import
 
 /**
- * Parse a command in function style (e.g., "train(...)")
- * @param {string[]} - Destructured match from regex
+ * Parse a command in function style (e.g., "train('file', 'type')")
+ * @param {string[]} match - Destructured match from regex
  * @returns {{error: string|null, command: Object|null}}
  */
 export function parseFunctionStyle([, name, argsString]) {
-    let args = {};
-    const argPairs = argsString.split(',').map(s => s.trim()).filter(Boolean);
-    
-    // Handle different command patterns
-    const commandName = name.toLowerCase();
-    
-    if (commandName === 'train') {
-        // Required params: file, modelType
-        if (argPairs.length > 0 && !argPairs[0].includes('=')) {
-            args.file = ParserUtils.normalizeValue(argPairs[0]);
-        } else {
-            return {
-                error: 'First parameter (file) must be provided without key',
-                command: null
-            };
-        }
-        
-        if (argPairs.length > 1 && !argPairs[1].includes('=')) {
-            args.modelType = ParserUtils.normalizeValue(argPairs[1]);
-        } else if (argPairs.length > 1) {
-            return {
-                error: 'Second parameter (modelType) must be provided without key',
-                command: null
-            };
-        }
-        
-        // Optional params must use key=value syntax
-        for (let i = 2; i < argPairs.length; i++) {
-            if (!argPairs[i].includes('=')) {
-                return {
-                    error: `Optional parameters must use key=value syntax (got "${argPairs[i]}")`,
-                    command: null
-                };
-            }
-            const [key, value] = argPairs[i].split('=').map(s => s.trim());
-            args[key] = ParserUtils.normalizeValue(value);
-        }
-    }
-    else if (commandName === 'generate') {
-        // Required param: model
-        if (argPairs.length > 0 && !argPairs[0].includes('=')) {
-            args.model = ParserUtils.normalizeValue(argPairs[0]);
-        } else {
-            return {
-                error: 'First parameter (model) must be provided without key',
-                command: null
-            };
-        }
-        
-        // Optional params must use key=value syntax
-        for (let i = 1; i < argPairs.length; i++) {
-            if (!argPairs[i].includes('=')) {
-                return {
-                    error: `Optional parameters must use key=value syntax (got "${argPairs[i]}")`,
-                    command: null
-                };
-            }
-            const [key, value] = argPairs[i].split('=').map(s => s.trim());
-            args[key] = ParserUtils.normalizeValue(value);
-        }
-    }
-    else if (commandName === 'delete' || commandName === 'use') {
-        // Only required param: modelName
-        if (argPairs.length > 0 && !argPairs[0].includes('=')) {
-            args.modelName = ParserUtils.normalizeValue(argPairs[0]);
-        } else if (argPairs.length > 0) {
-            return {
-                error: 'Parameter must be provided without key (e.g., delete("model.json"))',
-                command: null
-            };
-        }
-        
-        // No optional params for these commands
-        if (argPairs.length > 1) {
-            return {
-                error: `${commandName} command only accepts one parameter`,
-                command: null
-            };
-        }
-    }
-    else if (commandName === 'listmodels' || commandName === 'listcorpus') {
-        // No parameters allowed
-        if (argPairs.length > 0) {
-            return {
-                error: `${commandName} command doesn't accept any parameters`,
-                command: null
-            };
-        }
-    }
-    else if (commandName === 'pgb_search') {
-        if (argPairs.length !== 1 || argPairs[0].includes('=')) {
-            return {
-                error: 'pgb_search requires exactly one unkeyed search term',
-                command: null
-            };
-        }
-        args.search = ParserUtils.normalizeValue(argPairs[0]);
-    }
-    else if (commandName === 'pgb_info') {
-        if (argPairs.length !== 1) {
-            return {
-                error: 'pgb_info requires exactly one parameter (ID or title)',
-                command: null
-            };
-        }
-        
-        const param = ParserUtils.normalizeValue(argPairs[0]);
-        args = /^\d+$/.test(param) ? { id: param } : { title: param };
-    }
-    else if (commandName === 'pgb_download') {
-        if (argPairs.length < 1) {
-            return {
-                error: 'pgb_download requires at least one parameter (ID or title)',
-                command: null
-            };
-        }
+	const commandName = name.toLowerCase();
 
-        // First parameter can be ID or title
-        const firstParam = ParserUtils.normalizeValue(argPairs[0]);
-        args = /^\d+$/.test(firstParam) ? { id: firstParam } : { title: firstParam };
+	// Find the command in manifest
+	const command = manifest.commands.find(
+		(cmd) => cmd.name.toLowerCase() === commandName,
+	);
+	if (!command) {
+		return {
+			error: `Unknown command: ${name}`,
+			command: null,
+		};
+	}
 
-        // Handle optional filename parameter
-        for (let i = 1; i < argPairs.length; i++) {
-            if (!argPairs[i].includes('=')) {
-                return {
-                    error: 'Optional parameters must use key=value syntax (e.g., file="filename.txt")',
-                    command: null
-                };
-            }
-            const [key, value] = argPairs[i].split('=').map(s => s.trim());
-            if (key === 'file') {
-                args.file = ParserUtils.normalizeValue(value);
-            }
-        }
-    }
+	const parameters = command.parameters || [];
+	const requiredParams = parameters.filter((p) => p.required);
+	const optionalParams = parameters.filter((p) => !p.required);
 
-    // Process any remaining named parameters (for other commands)
-    for (const pair of argPairs) {
-        if (pair.includes('=')) {
-            const [key, value] = pair.split('=').map(s => s.trim());
-            args[key] = ParserUtils.normalizeValue(value);
-        }
-    }
+	let args = {};
+	const argPairs = argsString
+		.split(',')
+		.map((s) => s.trim())
+		.filter(Boolean);
 
-    return {
-        error: null,
-        command: {
-            name: commandName,
-            args
-        }
-    };
+	let positionalIndex = 0;
+
+	// Process arguments
+	for (const argPair of argPairs) {
+		if (argPair.includes('=')) {
+			// Named parameter: key=value
+			const [key, valueStr] = argPair.split('=', 2).map((s) => s.trim());
+			if (!key || !valueStr) {
+				return {
+					error: `Invalid named parameter: ${argPair}`,
+					command: null,
+				};
+			}
+
+			// Validate parameter exists
+			const param = parameters.find(
+				(p) => p.name.toLowerCase() === key.toLowerCase(),
+			);
+			if (!param) {
+				return {
+					error: `Unknown parameter: ${key}`,
+					command: null,
+				};
+			}
+
+			args[param.name] = ParserUtils.normalizeValue(valueStr);
+		} else {
+			// Positional parameter
+			if (positionalIndex >= requiredParams.length) {
+				return {
+					error: `Unexpected positional parameter: ${argPair}. All required parameters already provided.`,
+					command: null,
+				};
+			}
+
+			const param = requiredParams[positionalIndex];
+			args[param.name] = ParserUtils.normalizeValue(argPair);
+			positionalIndex++;
+		}
+	}
+
+	// Check for missing required parameters
+	if (positionalIndex < requiredParams.length) {
+		const missing = requiredParams
+			.filter((p, i) => i >= positionalIndex && !(p.name in args)) // Check if missing in args
+			.map((p) => p.name)
+			.join(', ');
+		if (missing) {
+			return {
+				error: `Missing required parameters: ${missing}`,
+				command: null,
+			};
+		}
+	}
+
+	// Apply defaults
+	for (const param of optionalParams) {
+		if (!(param.name in args) && param.default !== undefined) {
+			args[param.name] = param.default;
+		}
+	}
+
+	// Validate arguments against manifest specs
+	for (const param of parameters) {
+		const value = args[param.name];
+		if (value === undefined && !param.required) continue;
+
+		// Type validation for union types
+		const types = param.type.split('|').map((t) => t.trim());
+		let parsedValue = value;
+		let typeValidationPassed = false;
+
+		// Try each type in the union until one succeeds
+		for (const type of types) {
+			try {
+				if (type === 'integer') {
+					const intValue = parseInt(value, 10);
+					if (!isNaN(intValue)) {
+						parsedValue = intValue;
+						typeValidationPassed = true;
+						break;
+					}
+				} else if (type === 'number') {
+					const numValue = parseFloat(value);
+					if (!isNaN(numValue)) {
+						parsedValue = numValue;
+						typeValidationPassed = true;
+						break;
+					}
+				} else if (type === 'boolean') {
+					if (typeof value === 'boolean') {
+						parsedValue = value;
+						typeValidationPassed = true;
+						break;
+					} else {
+						const lowerValue = value.toLowerCase();
+						if (lowerValue === 'true') {
+							parsedValue = true;
+							typeValidationPassed = true;
+							break;
+						} else if (lowerValue === 'false') {
+							parsedValue = false;
+							typeValidationPassed = true;
+							break;
+						}
+					}
+				} else if (type === 'array') {
+					if (Array.isArray(value)) {
+						parsedValue = value;
+						typeValidationPassed = true;
+						break;
+					} else {
+						try {
+							const arrayValue = JSON.parse(value);
+							if (Array.isArray(arrayValue)) {
+								parsedValue = arrayValue;
+								typeValidationPassed = true;
+								break;
+							}
+						} catch {
+							// Continue to next type
+						}
+					}
+				} else if (type === 'string') {
+					// Strings are always valid (everything can be treated as a string)
+					parsedValue = String(value);
+					typeValidationPassed = true;
+					break;
+				}
+			} catch {
+				// Continue to next type if this one fails
+				continue;
+			}
+		}
+
+		// If no type validation passed, return error
+		if (!typeValidationPassed) {
+			return {
+				error: `Parameter ${param.name} must be of type: ${param.type}`,
+				command: null,
+			};
+		}
+
+		// Update args with parsed value
+		args[param.name] = parsedValue;
+
+		// Range validation for numbers
+		if (types.includes('integer') || types.includes('number')) {
+			if (param.min !== undefined && parsedValue < param.min) {
+				return {
+					error: `Parameter ${param.name} must be at least ${param.min}`,
+					command: null,
+				};
+			}
+			if (param.max !== undefined && parsedValue > param.max) {
+				return {
+					error: `Parameter ${param.name} must be at most ${param.max}`,
+					command: null,
+				};
+			}
+		}
+
+		// Enum validation
+		if (param.enum && !param.enum.includes(parsedValue)) {
+			return {
+				error: `Parameter ${param.name} must be one of: ${param.enum.join(', ')}`,
+				command: null,
+			};
+		}
+	}
+
+	return {
+		error: null,
+		command: {
+			name: command.name,
+			args,
+		},
+	};
 }

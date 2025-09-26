@@ -6,267 +6,279 @@ import path from 'path';
  * Handles reading corpus files and managing file paths
  */
 export class FileHandler {
-    constructor(options = {}) {
-        this.defaultCorpusDir = options.corpusDir || './data/corpus';
-        this.defaultModelDir = options.modelDir || './data/models';
-        this.encoding = options.encoding || 'utf8';
-    }
+	constructor(options = {}) {
+		this.defaultCorpusDir = options.corpusDir || './data/corpus';
+		this.defaultModelDir = options.modelDir || './data/models';
+		this.encoding = options.encoding || 'utf8';
+	}
 
-    /**
-     * Read a text file with automatic path resolution
-     * @param {string} filename - File name or path
-     * @returns {Promise<string>} - File contents
-     */
-    async readTextFile(filename) {
-        const fullPath = this.resolveCorpusPath(filename);
+	/**
+	 * Read a text file with automatic path resolution
+	 * @param {string} filename - File name or path
+	 * @returns {Promise<string>} - File contents
+	 */
+	async readTextFile(filename) {
+		const fullPath = this.resolveCorpusPath(filename);
 
-        try {
-            await fs.access(fullPath, fs.constants.R_OK);
-        } catch (error) {
-            if (error.code === 'ENOENT') {
-                throw new Error(`File not found: ${fullPath}`);
-            } else if (error.code === 'EACCES') {
-                throw new Error(`Permission denied to read file: ${fullPath}`);
-            }
-            throw new Error(`Cannot access file ${filename}: ${error.message}`);
-        }
-        
-        try {
-            const stats = await fs.stat(fullPath);
-            if (!stats.isFile()) {
-                throw new Error(`${fullPath} is not a file`);
-            }
-            
-            const content = await fs.readFile(fullPath, this.encoding);
-            
-            if (!content.trim()) {
-                throw new Error(`File ${filename} is empty or contains only whitespace`);
-            }
-            
-            return content;
-        } catch (error) {
-            throw new Error(`Failed to read file ${filename}: ${error.message}`);
-        }
-    }
+		try {
+			await fs.access(fullPath, fs.constants.R_OK);
+		} catch (error) {
+			if (error.code === 'ENOENT') {
+				throw new Error(`File not found: ${fullPath}`);
+			} else if (error.code === 'EACCES') {
+				throw new Error(`Permission denied to read file: ${fullPath}`);
+			}
+			throw new Error(`Cannot access file ${filename}: ${error.message}`);
+		}
 
-    /**
-     * Delete a saved model.
-     * @param {string} filename - Model filename to delete.
-     */
-    async deleteModel(filename) {
-        const fullPath = this.resolveModelPath(filename);
-        
-        try {
-            await fs.unlink(fullPath);
-        } catch (error) {
-            if (error.code === 'ENOENT') {
-                throw new Error(`Model file not found: ${filename}`);
-            }
-            throw new Error(`Failed to delete model ${filename}: ${error.message}`);
-        }
-    }
+		try {
+			const stats = await fs.stat(fullPath);
+			if (!stats.isFile()) {
+				throw new Error(`${fullPath} is not a file`);
+			}
 
-    /**
-     * Get model file information without loading the full model.
-     * @param {string} filename - Model filename.
-     * @returns {Promise<Object>} - Model metadata and stats.
-     */
-    async getModelInfo(filename) {
-        const fullPath = this.resolveModelPath(filename);
-        
-        try {
-            await fs.access(fullPath, fs.constants.R_OK);
-        } catch (error) {
-            if (error.code === 'ENOENT') {
-                throw new Error(`Model file not found: ${fullPath}`);
-            } else if (error.code === 'EACCES') {
-                throw new Error(`Permission denied to read model file: ${fullPath}`);
-            }
-            throw new Error(`Cannot access model file ${filename}: ${error.message}`);
-        }
+			const content = await fs.readFile(fullPath, this.encoding);
 
-        try {
-            const stats = await fs.stat(fullPath);
-            const content = await fs.readFile(fullPath, 'utf8');
+			if (!content.trim()) {
+				throw new Error(
+					`File ${filename} is empty or contains only whitespace`,
+				);
+			}
 
-            let data;
-            try {
-                data = JSON.parse(content);
-            } catch (jsonError) {
-                throw new Error(`Invalid JSON in model file: ${filename}. ${jsonError.message}`);
-            }
-            
-            return {
-                filename,
-                path: fullPath,
-                size: stats.size,
-                sizeFormatted: this.formatFileSize(stats.size),
-                modified: stats.mtime,
-                order: data.order,
-                totalStates: data.chains ? Object.keys(data.chains).length : 0,
-                vocabularySize: data.vocabulary ? data.vocabulary.length : 0,
-                totalTokens: data.totalTokens || 0,
-                startStates: data.startStates ? data.startStates.length : 0,
-                metadata: data.metadata || null
-            };
-            
-        } catch (error) {
-            if (error.code === 'ENOENT') {
-                throw new Error(`Model file not found: ${filename}`);
-            }
-            throw new Error(`Failed to get model info for ${filename}: ${error.message}`);
-        }
-    }
+			return content;
+		} catch (error) {
+			throw new Error(`Failed to read file ${filename}: ${error.message}`);
+		}
+	}
 
-    /**
-     * Write text to file.
-     * @param {string} filename - File name or path.
-     * @param {string} content - Content to write.
-     * @param {Object} options - Write options.
-     */
-    async writeTextFile(filename, content, options = {}) {
-        const fullPath = this.resolveCorpusPath(filename);
-        
-        // Ensure directory exists
-        await this.ensureDirectoryExists(path.dirname(fullPath));
-        
-        try {
-            await fs.writeFile(fullPath, content, {
-                encoding: this.encoding,
-                ...options
-            });
-        } catch (error) {
-            throw new Error(`Failed to write file ${filename}: ${error.message}`);
-        }
-    }
+	/**
+	 * Delete a saved model.
+	 * @param {string} filename - Model filename to delete.
+	 */
+	async deleteModel(filename) {
+		const fullPath = this.resolveModelPath(filename);
 
-    /**
-     * List available corpus files.
-     * @returns {Promise<string[]>} - Array of corpus file names.
-     */
-    async listCorpusFiles() {
-        try {
-            const files = await fs.readdir(this.defaultCorpusDir);
-            return files.filter(file => 
-                file.endsWith('.txt') || 
-                file.endsWith('.md') || 
-                file.endsWith('.csv')
-            );
-        } catch (error) {
-            if (error.code === 'ENOENT') {
-                return [];
-            }
-            throw new Error(`Failed to list corpus files: ${error.message}`);
-        }
-    }
+		try {
+			await fs.unlink(fullPath);
+		} catch (error) {
+			if (error.code === 'ENOENT') {
+				throw new Error(`Model file not found: ${filename}`);
+			}
+			throw new Error(`Failed to delete model ${filename}: ${error.message}`);
+		}
+	}
 
-    /**
-     * Get file information.
-     * @param {string} filename - File name.
-     * @returns {Promise<Object>} - File stats and info.
-     */
-    async getFileInfo(filename) {
-        const fullPath = this.resolveCorpusPath(filename);
-        
-        try {
-            const stats = await fs.stat(fullPath);
-            const content = await fs.readFile(fullPath, this.encoding);
-            
-            return {
-                path: fullPath,
-                size: stats.size,
-                sizeFormatted: this.formatFileSize(stats.size),
-                modified: stats.mtime,
-                characterCount: content.length,
-                lineCount: content.split('\n').length,
-                wordCount: content.split(/\s+/).filter(word => word.length > 0).length
-            };
-        } catch (error) {
-            throw new Error(`Failed to get file info for ${filename}: ${error.message}`);
-        }
-    }
+	/**
+	 * Get model file information without loading the full model.
+	 * @param {string} filename - Model filename.
+	 * @returns {Promise<Object>} - Model metadata and stats.
+	 */
+	async getModelInfo(filename) {
+		const fullPath = this.resolveModelPath(filename);
 
-    /**
-     * Resolve corpus file path.
-     * @param {string} filename - File name or path.
-     * @returns {string} - Full resolved path.
-     */
-    resolveCorpusPath(filename) {
-        if (!filename || typeof filename !== 'string') {
-            throw new Error('Invalid filename');
-        }
-        
-        // Prevent directory traversal
-        if (filename.includes('../') || filename.includes('..\\')) {
-            throw new Error('Invalid path');
-        }
-        
-        if (path.isAbsolute(filename)) {
-            return filename;
-        }
-        
-        // Try relative to current directory first
-        if (filename.includes('/') || filename.includes('\\')) {
-            return path.resolve(filename);
-        }
-        
-        // Default to corpus directory
-        return path.join(this.defaultCorpusDir, filename);
-    }
+		try {
+			await fs.access(fullPath, fs.constants.R_OK);
+		} catch (error) {
+			if (error.code === 'ENOENT') {
+				throw new Error(`Model file not found: ${fullPath}`);
+			} else if (error.code === 'EACCES') {
+				throw new Error(`Permission denied to read model file: ${fullPath}`);
+			}
+			throw new Error(`Cannot access model file ${filename}: ${error.message}`);
+		}
 
-    /**
-     * Resolve model file path.
-     * @param {string} filename - File name or path.
-     * @returns {string} - Full resolved path.
-     */
-    resolveModelPath(filename) {
-        if (!filename) {
-            throw new Error('Filename cannot be empty');
-        }
-        
-        if (path.isAbsolute(filename)) {
-            return filename;
-        }
-        
-        // Handle relative paths
-        const baseDir = this.defaultModelDir || './data/models';
-        return path.join(baseDir, filename);
-    }
+		try {
+			const stats = await fs.stat(fullPath);
+			const content = await fs.readFile(fullPath, 'utf8');
 
-    /**
-     * Ensure directory exists, create if needed.
-     * @param {string} dirPath - Directory path.
-     */
-    async ensureDirectoryExists(dirPath) {
-        if (!dirPath || typeof dirPath !== 'string') {
-            throw new Error(`Invalid directory path: ${dirPath}`);
-        }
+			let data;
+			try {
+				data = JSON.parse(content);
+			} catch (jsonError) {
+				throw new Error(
+					`Invalid JSON in model file: ${filename}. ${jsonError.message}`,
+				);
+			}
 
-        const absolutePath = path.resolve(dirPath);
-        try {
-            await fs.mkdir(absolutePath, { recursive: true });
-        } catch (error) {
-            if (error.code !== 'EEXIST') { // Ignore if directory already exists
-                throw new Error(`Failed to create directory ${absolutePath}: ${error.message}`);
-            }
-        }
-    }
+			return {
+				filename,
+				path: fullPath,
+				size: stats.size,
+				sizeFormatted: this.formatFileSize(stats.size),
+				modified: stats.mtime,
+				order: data.order,
+				totalStates: data.chains ? Object.keys(data.chains).length : 0,
+				vocabularySize: data.vocabulary ? data.vocabulary.length : 0,
+				totalTokens: data.totalTokens || 0,
+				startStates: data.startStates ? data.startStates.length : 0,
+				metadata: data.metadata || null,
+			};
+		} catch (error) {
+			if (error.code === 'ENOENT') {
+				throw new Error(`Model file not found: ${filename}`);
+			}
+			throw new Error(
+				`Failed to get model info for ${filename}: ${error.message}`,
+			);
+		}
+	}
 
-    /**
-     * Format file size in human-readable format.
-     * @param {number} bytes - File size in bytes.
-     * @returns {string} - Formatted size.
-     */
-    formatFileSize(bytes) {
-        const units = ['B', 'KB', 'MB', 'GB'];
-        let size = bytes;
-        let unitIndex = 0;
-        
-        while (size >= 1024 && unitIndex < units.length - 1) {
-            size /= 1024;
-            unitIndex++;
-        }
-        
-        return `${size.toFixed(1)} ${units[unitIndex]}`;
-    }
+	/**
+	 * Write text to file.
+	 * @param {string} filename - File name or path.
+	 * @param {string} content - Content to write.
+	 * @param {Object} options - Write options.
+	 */
+	async writeTextFile(filename, content, options = {}) {
+		const fullPath = this.resolveCorpusPath(filename);
+
+		// Ensure directory exists
+		await this.ensureDirectoryExists(path.dirname(fullPath));
+
+		try {
+			await fs.writeFile(fullPath, content, {
+				encoding: this.encoding,
+				...options,
+			});
+		} catch (error) {
+			throw new Error(`Failed to write file ${filename}: ${error.message}`);
+		}
+	}
+
+	/**
+	 * List available corpus files.
+	 * @returns {Promise<string[]>} - Array of corpus file names.
+	 */
+	async listCorpusFiles() {
+		try {
+			const files = await fs.readdir(this.defaultCorpusDir);
+			return files.filter(
+				(file) =>
+					file.endsWith('.txt') ||
+					file.endsWith('.md') ||
+					file.endsWith('.csv'),
+			);
+		} catch (error) {
+			if (error.code === 'ENOENT') {
+				return [];
+			}
+			throw new Error(`Failed to list corpus files: ${error.message}`);
+		}
+	}
+
+	/**
+	 * Get file information.
+	 * @param {string} filename - File name.
+	 * @returns {Promise<Object>} - File stats and info.
+	 */
+	async getFileInfo(filename) {
+		const fullPath = this.resolveCorpusPath(filename);
+
+		try {
+			const stats = await fs.stat(fullPath);
+			const content = await fs.readFile(fullPath, this.encoding);
+
+			return {
+				path: fullPath,
+				size: stats.size,
+				sizeFormatted: this.formatFileSize(stats.size),
+				modified: stats.mtime,
+				characterCount: content.length,
+				lineCount: content.split('\n').length,
+				wordCount: content.split(/\s+/).filter((word) => word.length > 0)
+					.length,
+			};
+		} catch (error) {
+			throw new Error(
+				`Failed to get file info for ${filename}: ${error.message}`,
+			);
+		}
+	}
+
+	/**
+	 * Resolve corpus file path.
+	 * @param {string} filename - File name or path.
+	 * @returns {string} - Full resolved path.
+	 */
+	resolveCorpusPath(filename) {
+		if (!filename || typeof filename !== 'string') {
+			throw new Error('Invalid filename');
+		}
+
+		// Prevent directory traversal
+		if (filename.includes('../') || filename.includes('..\\')) {
+			throw new Error('Invalid path');
+		}
+
+		if (path.isAbsolute(filename)) {
+			return filename;
+		}
+
+		// Try relative to current directory first
+		if (filename.includes('/') || filename.includes('\\')) {
+			return path.resolve(filename);
+		}
+
+		// Default to corpus directory
+		return path.join(this.defaultCorpusDir, filename);
+	}
+
+	/**
+	 * Resolve model file path.
+	 * @param {string} filename - File name or path.
+	 * @returns {string} - Full resolved path.
+	 */
+	resolveModelPath(filename) {
+		if (!filename) {
+			throw new Error('Filename cannot be empty');
+		}
+
+		if (path.isAbsolute(filename)) {
+			return filename;
+		}
+
+		// Handle relative paths
+		const baseDir = this.defaultModelDir || './data/models';
+		return path.join(baseDir, filename);
+	}
+
+	/**
+	 * Ensure directory exists, create if needed.
+	 * @param {string} dirPath - Directory path.
+	 */
+	async ensureDirectoryExists(dirPath) {
+		if (!dirPath || typeof dirPath !== 'string') {
+			throw new Error(`Invalid directory path: ${dirPath}`);
+		}
+
+		const absolutePath = path.resolve(dirPath);
+		try {
+			await fs.mkdir(absolutePath, { recursive: true });
+		} catch (error) {
+			if (error.code !== 'EEXIST') {
+				// Ignore if directory already exists
+				throw new Error(
+					`Failed to create directory ${absolutePath}: ${error.message}`,
+				);
+			}
+		}
+	}
+
+	/**
+	 * Format file size in human-readable format.
+	 * @param {number} bytes - File size in bytes.
+	 * @returns {string} - Formatted size.
+	 */
+	formatFileSize(bytes) {
+		const units = ['B', 'KB', 'MB', 'GB'];
+		let size = bytes;
+		let unitIndex = 0;
+
+		while (size >= 1024 && unitIndex < units.length - 1) {
+			size /= 1024;
+			unitIndex++;
+		}
+
+		return `${size.toFixed(1)} ${units[unitIndex]}`;
+	}
 }
