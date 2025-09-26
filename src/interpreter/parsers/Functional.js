@@ -6,9 +6,10 @@ import manifest from '../../manifest.json' with { type: 'json' }; // Explicit JS
 /**
  * Parse a command in function style (e.g., "train('file', 'type')")
  * @param {string[]} match - Destructured match from regex
+ * @param {Object} context - Optional context with runtime state
  * @returns {{error: string|null, command: Object|null}}
  */
-export function parseFunctionStyle([, name, argsString]) {
+export function parseFunctionStyle([, name, argsString], context = {}) {
 	const commandName = name.toLowerCase();
 
 	// Find the command in manifest
@@ -73,18 +74,24 @@ export function parseFunctionStyle([, name, argsString]) {
 		}
 	}
 
-	// Check for missing required parameters
-	if (positionalIndex < requiredParams.length) {
-		const missing = requiredParams
-			.filter((p, i) => i >= positionalIndex && !(p.name in args)) // Check if missing in args
-			.map((p) => p.name)
-			.join(', ');
-		if (missing) {
-			return {
-				error: `Missing required parameters: ${missing}`,
-				command: null,
-			};
+	// Check for missing required parameters after applying runtime fallbacks
+	const missingParams = [];
+	for (const param of requiredParams) {
+		if (!(param.name in args)) {
+			// Try to apply runtime fallback
+			if (param.runtimeFallback && context && context.state && context.state.has(param.runtimeFallback)) {
+				args[param.name] = context.state.get(param.runtimeFallback);
+			} else {
+				missingParams.push(param.name);
+			}
 		}
+	}
+
+	if (missingParams.length > 0) {
+		return {
+			error: `Missing required parameters: ${missingParams.join(',')}`,
+			command: null,
+		};
 	}
 
 	// Apply defaults

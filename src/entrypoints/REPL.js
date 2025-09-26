@@ -24,14 +24,15 @@ export class MarkovREPL {
 	setupEventHandlers() {
 		this.rl.on('line', async (input) => {
 			input = input.trim();
-			const parsed = this.commandParser.parse(input);
+			const context = { state: this.state, manifest }; // Build context object
+			const parsed = this.commandParser.parse(input, context);
 			if (parsed.error) {
 				console.error(`❌ ${parsed.error}`);
 				this.rl.prompt();
 				return;
 			}
 
-			const command = this.fillDefaults(parsed.command);
+			const command = parsed.command; // No need to fill defaults since parser handles it
 			const result = await this.handler.handleCommand(command);
 
 			if (result.error) console.error(`❌ ${result.error}`);
@@ -52,25 +53,7 @@ export class MarkovREPL {
 		});
 	}
 
-	/* ---------- new helpers ---------- */
-	fillDefaults(cmd) {
-		const spec = manifest.commands.find((c) => c.name === cmd.name);
-		if (!spec) return cmd;
-
-		const filled = { ...cmd };
-		filled.args = { ...(cmd.args || {}) };
-
-		for (const p of spec.parameters || []) {
-			if (filled.args[p.name] === undefined) {
-				if (p.runtimeFallback && this.state.has(p.runtimeFallback)) {
-					filled.args[p.name] = this.state.get(p.runtimeFallback);
-				} else if (p.default !== undefined) {
-					filled.args[p.name] = p.default;
-				}
-			}
-		}
-		return filled;
-	}
+	
 
 	applySideEffects(cmd) {
 		const spec = manifest.commands.find((c) => c.name === cmd.name);

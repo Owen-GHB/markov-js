@@ -23,9 +23,10 @@ export class CommandParser {
 	/**
 	 * Parse a command string into a command object
 	 * @param {string} input - The command string to parse
+	 * @param {Object} context - Optional context with runtime state
 	 * @returns {{error: string|null, command: Object|null}}
 	 */
-	parse(input) {
+	parse(input, context = {}) {
 		if (!input || typeof input !== 'string') {
 			return {
 				error: 'Invalid input: must be a non-empty string',
@@ -42,7 +43,7 @@ export class CommandParser {
 				(c) => c.name.toLowerCase() === cliMatch[1].toLowerCase(),
 			);
 			if (!(spec && spec.parameters.every((p) => !p.required))) {
-				return this.parseCliStyle(cliMatch[1], cliMatch[2]);
+				return this.parseCliStyle(cliMatch[1], cliMatch[2], context);
 			}
 		}
 
@@ -64,7 +65,7 @@ export class CommandParser {
 		if (simpleMatch) {
             const funcCall = `${trimmed}()`;
             const match = funcCall.match(this.patterns.funcCall);
-            if (match) return this.parseFunctionStyle(match);
+            if (match) return this.parseFunctionStyle(match, context);
 		}
 
 		return {
@@ -73,7 +74,7 @@ export class CommandParser {
 		};
 	}
 
-	parseCliStyle(command, argsString) {
+	parseCliStyle(command, argsString, context = {}) {
 		const spec = manifest.commands.find(
 			(c) => c.name.toLowerCase() === command.toLowerCase(),
 		);
@@ -106,27 +107,29 @@ export class CommandParser {
 			.map((p, i) => `${p.name}="${positional[i]}"`);
 
 		// Build final function-style string
-		const funcCall = `${command}(${[...positionalPairs, ...named].join(',')})`; // Remove space after comma
-		const match = funcCall.match(this.patterns.funcCall);
+	const funcCall = `${command}(${[...positionalPairs, ...named].join(',')})`; // Remove space after comma
+	const match = funcCall.match(this.patterns.funcCall);
 
-		return parseFunctionStyle(match);
+	return parseFunctionStyle(match, context);
 	}
 
 	/**
 	 * Parse a command in object style (e.g., "train({...})")
 	 * @param {string[]} - Destructured match from regex
+	 * @param {Object} context - Optional context with runtime state
 	 * @returns {{error: string|null, command: Object|null}}
 	 */
-	parseObjectStyle([, name, argsString]) {
-		return parseObjectStyle([, name, argsString]);
+	parseObjectStyle([, name, argsString], context = {}) {
+		return parseObjectStyle([, name, argsString], context);
 	}
 
 	/**
 	 * Parse a command in function style (e.g., "train(...)")
 	 * @param {string[]} - Destructured match from regex
+	 * @param {Object} context - Optional context with runtime state
 	 * @returns {{error: string|null, command: Object|null}}
 	 */
-	parseFunctionStyle([, name, argsString]) {
-		return parseFunctionStyle([, name, argsString]);
+	parseFunctionStyle([, name, argsString], context = {}) {
+		return parseFunctionStyle([, name, argsString], context);
 	}
 }

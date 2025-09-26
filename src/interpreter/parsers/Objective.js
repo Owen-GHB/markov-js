@@ -4,9 +4,10 @@ import manifest from '../../manifest.json' with { type: 'json' }; // Explicit JS
 /**
  * Parse a command in object style (e.g., "train({file: 'sample.txt', modelType: 'markov'})")
  * @param {string[]} match - Destructured match from regex
+ * @param {Object} context - Optional context with runtime state
  * @returns {{error: string|null, command: Object|null}}
  */
-export function parseObjectStyle([, name, argsString]) {
+export function parseObjectStyle([, name, argsString], context = {}) {
 	const commandName = name.toLowerCase();
 
 	// Find the command in manifest
@@ -106,7 +107,13 @@ export function parseObjectStyle([, name, argsString]) {
 	// Validate and process each parameter
 	for (const param of parameters) {
 		const key = param.name;
+		
+		// Get current value, applying fallback if needed
 		let value = args[key];
+		if (value === undefined && param.runtimeFallback && context && context.state && context.state.has(param.runtimeFallback)) {
+			value = context.state.get(param.runtimeFallback);
+			args[key] = value; // Update args with fallback value
+		}
 
 		// Check for missing required parameters
 		if (value === undefined && param.required) {
