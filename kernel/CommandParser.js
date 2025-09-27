@@ -113,7 +113,7 @@ export class CommandParser {
 	}
 
 	/**
-	 * Parse a command in object style (e.g., "train({...})")
+	 * Parse a command in object style
 	 * @param {string[]} - Destructured match from regex
 	 * @param {Object} context - Optional context with runtime state
 	 * @returns {{error: string|null, command: Object|null}}
@@ -123,7 +123,7 @@ export class CommandParser {
 	}
 
 	/**
-	 * Parse a command in function style (e.g., "train(...)")
+	 * Parse a command in function style
 	 * @param {string[]} - Destructured match from regex
 	 * @param {Object} context - Optional context with runtime state
 	 * @returns {{error: string|null, command: Object|null}}

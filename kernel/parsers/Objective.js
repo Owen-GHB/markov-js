@@ -2,7 +2,7 @@ import { ParserUtils } from './Utils.js';
 import { manifest } from '../contract.js';
 
 /**
- * Parse a command in object style (e.g., "train({file: 'sample.txt', modelType: 'markov'})")
+ * Parse a command in object style
  * @param {string[]} match - Destructured match from regex
  * @param {Object} context - Optional context with runtime state
  * @returns {{error: string|null, command: Object|null}}

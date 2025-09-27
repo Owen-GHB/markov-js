@@ -13,7 +13,7 @@ export class REPL {
 	async start() {
 		// Load help text first, then initialize REPL and event handlers
 		try {
-			// For REPL help, we'll get the help text directly from the help handler module\n\t\t\ttry {\n\t\t\t\tconst helpModule = await import('../contract/help/handler.js');\n\t\t\t\tconst helpText = helpModule.getHelpText ? helpModule.getHelpText() : '';\n\t\t\t\tconsole.log(helpText); // Display help first\n\t\t\t} catch (error) {\n\t\t\t\t// Fallback if we can't load the help text\n\t\t\t\tconsole.log('\\n🔗 Command-Line Application\\n=============================');\n\t\t\t}
+			// For REPL help, we'll get the help text directly from the help handler module
 		} catch (error) {
 			console.error('Error loading help text:', error);
 		}
