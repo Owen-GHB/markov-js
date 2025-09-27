@@ -1,8 +1,9 @@
-import { handlers } from '../contract/index.js';
+import { getHandler, manifest as contractManifest } from './contract.js';
 
 export class CommandHandler {
 	constructor() {
-		this.handlers = handlers;
+		// Initialize with the manifest
+		this.manifest = contractManifest;
 	}
 
 	/**
@@ -16,10 +17,12 @@ export class CommandHandler {
 		try {
 			switch (command.name) {
 			case 'help':
-				result = await this.handlers.help.handleHelp(command.args);
+				const helpHandler = await getHandler('help');
+				result = await helpHandler.handleHelp(command.args);
 				break;
 			case 'train':
-				result = await this.handlers.train.handleTrain(command.args);
+				const trainHandler = await getHandler('train');
+				result = await trainHandler.handleTrain(command.args);
 				break;
 			case 'generate':
 				if (!command.args.modelName) {
@@ -28,32 +31,41 @@ export class CommandHandler {
 						output: null,
 					};
 				} else {
-					result = await this.handlers.generate.handleGenerate(command.args);
+					const generateHandler = await getHandler('generate');
+					result = await generateHandler.handleGenerate(command.args);
 				}
 				break;
 			case 'listModels':
-				result = await this.handlers.listModels.handleListModels();
+				const listModelsHandler = await getHandler('listModels');
+				result = await listModelsHandler.handleListModels();
 				break;
 			case 'listCorpus':
-				result = await this.handlers.listCorpus.handleListCorpus();
+				const listCorpusHandler = await getHandler('listCorpus');
+				result = await listCorpusHandler.handleListCorpus();
 				break;
 			case 'delete':
-				result = await this.handlers.delete.handleDelete(command.args);
+				const deleteHandler = await getHandler('delete');
+				result = await deleteHandler.handleDelete(command.args);
 				break;
 			case 'use':
-				result = await this.handlers.use.handleUse(command.args);
+				const useHandler = await getHandler('use');
+				result = await useHandler.handleUse(command.args);
 				break;
 			case 'pgb_search':
-				result = await this.handlers.pgb_search.handleSearch(command.args);
+				const pgbSearchHandler = await getHandler('pgb_search');
+				result = await pgbSearchHandler.handleSearch(command.args);
 				break;
 			case 'pgb_info':
-				result = await this.handlers.pgb_info.handleInfo(command.args);
+				const pgbInfoHandler = await getHandler('pgb_info');
+				result = await pgbInfoHandler.handleInfo(command.args);
 				break;
 			case 'pgb_download':
-				result = await this.handlers.pgb_download.handleDownload(command.args);
+				const pgbDownloadHandler = await getHandler('pgb_download');
+				result = await pgbDownloadHandler.handleDownload(command.args);
 				break;
 			case 'exit':
-				result = await this.handlers.exit.handleExit(command.args);
+				const exitHandler = await getHandler('exit');
+				result = await exitHandler.handleExit(command.args);
 				break;
 			default:
 				result = {
@@ -62,7 +74,6 @@ export class CommandHandler {
 				};
 				break;
 			}
-			return result;
 		} catch (error) {
 			result = {
 				error: `Error processing command: ${error.message}`,
@@ -70,7 +81,7 @@ export class CommandHandler {
 			};
 			return result;
 		}
+		return result;
 	}
 
-	
 	}

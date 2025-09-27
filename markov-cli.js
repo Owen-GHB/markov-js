@@ -14,9 +14,9 @@ if (process.argv.length > 2) {
 } else {
 	// Default to REPL mode if no args
 	import('./kernel/transports/REPL.js')
-		.then(({ MarkovREPL }) => {
+		.then(async ({ MarkovREPL }) => {
 			const repl = new MarkovREPL();
-			repl.start();
+			await repl.start();
 		})
 		.catch((err) => {
 			console.error('❌ Failed to start Markov REPL:', err.message);

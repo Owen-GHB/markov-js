@@ -1,14 +1,26 @@
 import readline from 'readline';
 import { CommandHandler } from '../CommandHandler.js';
 import { CommandParser } from '../CommandParser.js';
-import { manifest } from '../../contract/index.js';
+import { manifest } from '../contract.js';
 
 export class MarkovREPL {
 	constructor() {
 		this.handler = new CommandHandler();
 		this.commandParser = new CommandParser();
 		this.state = new Map(Object.entries(manifest.stateDefaults)); // ← NEW
+	}
 
+	async start() {
+		// Load help text first, then initialize REPL and event handlers
+		try {
+			const helpHandlerModule = await import('../../contract/index.js');
+			const handler = await helpHandlerModule.getHandler('help');
+			console.log(handler.getHelpText()); // Display help first
+		} catch (error) {
+			console.error('Error loading help text:', error);
+		}
+
+		// Initialize REPL instance after help text is displayed
 		this.rl = readline.createInterface({
 			input: process.stdin,
 			output: process.stdout,
@@ -17,8 +29,33 @@ export class MarkovREPL {
 		});
 
 		this.setupEventHandlers();
-		console.log(this.handler.handlers.help.getHelpText()); // keep existing help
+		// Start the prompt after everything is set up
+		this.rl.prompt();
 	}
+	
+			async loadHelpAndSetup() {
+		try {
+			const helpHandlerModule = await import('../contract.js');
+			const handler = await helpHandlerModule.getHandler('help');
+			console.log(handler.getHelpText()); // Display help first
+		} catch (error) {
+			console.error('Error loading help text:', error);
+		}
+
+		// Initialize REPL instance after help text is displayed
+		this.rl = readline.createInterface({
+			input: process.stdin,
+			output: process.stdout,
+			prompt: 'markov> ',
+			completer: (line) => this.commandCompleter(line),
+		});
+
+		this.setupEventHandlers();
+		// Start the prompt after everything is set up
+		this.rl.prompt();
+	}
+
+	/* ---------- event handlers ---------- */
 
 	/* ---------- event handlers ---------- */
 	setupEventHandlers() {
@@ -94,9 +131,5 @@ export class MarkovREPL {
 		const commands = manifest.commands.map((c) => c.name);
 		const hits = commands.filter((c) => c.startsWith(line));
 		return [hits.length ? hits : commands, line];
-	}
-
-	start() {
-		this.rl.prompt();
 	}
 }

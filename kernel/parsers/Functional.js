@@ -1,5 +1,5 @@
 import { ParserUtils } from './Utils.js';
-import { manifest } from '../../contract/index.js';
+import { manifest } from '../contract.js';
 
 /**
  * Parse a command in function style (e.g., "train('file', 'type')")
