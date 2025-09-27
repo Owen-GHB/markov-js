@@ -1,5 +1,5 @@
-import { CommandParser } from './src/interpreter/CommandParser.js';
-import { CommandHandler } from './src/interpreter/CommandHandler.js';
+import { CommandParser } from './kernel/CommandParser.js';
+import { CommandHandler } from './kernel/CommandHandler.js';
 
 async function testReplLogic() {
   const parser = new CommandParser();

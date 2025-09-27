@@ -1,6 +1,6 @@
-import { getJSON, downloadFile } from '../../utils/GutendexAPI.js';
+import { getJSON, downloadFile } from '../../textgen/utils/GutendexAPI.js';
 import fs from 'fs';
-import { FileHandler } from '../../io/FileHandler.js';
+import { FileHandler } from '../../textgen/io/FileHandler.js';
 
 export class PGBHandler {
 	constructor() {

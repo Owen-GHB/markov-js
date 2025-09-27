@@ -1,6 +1,6 @@
-import { HMModel } from '../src/models/HMM/Model.js';
-import { Tokenizer } from '../src/models/Tokenizer.js';
-import { GenerationContext } from '../src/models/Interfaces.js';
+import { HMModel } from '../textgen/models/HMM/Model.js';
+import { Tokenizer } from '../textgen/models/Tokenizer.js';
+import { GenerationContext } from '../textgen/models/Interfaces.js';
 
 async function hmmExample() {
 	console.log('\n🔮 Hidden Markov Model Example');

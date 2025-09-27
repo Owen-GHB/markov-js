@@ -1,6 +1,6 @@
 import { parseObjectStyle } from './parsers/Objective.js';
 import { parseFunctionStyle } from './parsers/Functional.js';
-import manifest from '../manifest.json' with { type: 'json' };
+import manifest from '../contract/manifest.json' with { type: 'json' };
 /**
  * Command parser for REPL-style interface
  *
@@ -110,7 +110,7 @@ export class CommandParser {
 	const funcCall = `${command}(${[...positionalPairs, ...named].join(',')})`; // Remove space after comma
 	const match = funcCall.match(this.patterns.funcCall);
 
-	return parseFunctionStyle(match, context);
+	return this.parseFunctionStyle(match, context);
 	}
 
 	/**

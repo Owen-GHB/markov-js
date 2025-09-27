@@ -1,9 +1,9 @@
-import { Tokenizer } from '../../models/Tokenizer.js';
-import { FileHandler } from '../../io/FileHandler.js';
-import { ModelSerializer } from '../../io/ModelSerializer.js';
-import { MarkovModel } from '../../models/Markov/Model.js';
-import { VLMModel } from '../../models/VLMM/Model.js';
-import { HMModel } from '../../models/HMM/Model.js';
+import { Tokenizer } from '../../textgen/models/Tokenizer.js';
+import { FileHandler } from '../../textgen/io/FileHandler.js';
+import { ModelSerializer } from '../../textgen/io/ModelSerializer.js';
+import { MarkovModel } from '../../textgen/models/Markov/Model.js';
+import { VLMModel } from '../../textgen/models/VLMM/Model.js';
+import { HMModel } from '../../textgen/models/HMM/Model.js';
 
 export class TrainHandler {
 	constructor() {

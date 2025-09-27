@@ -1,5 +1,5 @@
-import { FileHandler } from '../../io/FileHandler.js';
-import { ModelSerializer } from '../../io/ModelSerializer.js';
+import { FileHandler } from '../../textgen/io/FileHandler.js';
+import { ModelSerializer } from '../../textgen/io/ModelSerializer.js';
 
 export class OperationsHandler {
 	constructor() {

@@ -1,7 +1,7 @@
-import { GenerateHandler } from './handlers/Generate.js';
-import { TrainHandler } from './handlers/Train.js';
-import { OperationsHandler } from './handlers/Operations.js';
-import { PGBHandler } from './handlers/Gutenberg.js';
+import { GenerateHandler } from '../contract/handlers/Generate.js';
+import { TrainHandler } from '../contract/handlers/Train.js';
+import { OperationsHandler } from '../contract/handlers/Operations.js';
+import { PGBHandler } from '../contract/handlers/Gutenberg.js';
 
 export class CommandHandler {
 	constructor() {

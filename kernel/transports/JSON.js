@@ -1,4 +1,4 @@
-import { CommandHandler } from '../interpreter/CommandHandler.js';
+import { CommandHandler } from '../CommandHandler.js';
 
 export class JSONAPI {
 	constructor() {

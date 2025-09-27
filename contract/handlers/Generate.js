@@ -1,5 +1,5 @@
-import { ModelSerializer } from '../../io/ModelSerializer.js';
-import { GenerationContext } from '../../models/Interfaces.js';
+import { ModelSerializer } from '../../textgen/io/ModelSerializer.js';
+import { GenerationContext } from '../../textgen/models/Interfaces.js';
 
 export class GenerateHandler {
 	constructor() {

@@ -7,7 +7,7 @@
 	"scripts": {
 		"start": "node markov-cli.js",
 		"test": "jest",
-		"dev": "nodemon mrkov-cli.js"
+		"dev": "nodemon markov-cli.js"
 	},
 	"keywords": [
 		"markov",
@@ -26,6 +26,6 @@
 		"prettier": "^3.6.2"
 	},
 	"bin": {
-		"markov-gen": "src/cli/CLI.js"
+		"markov-gen": "kernel/transports/CLI.js"
 	}
 }

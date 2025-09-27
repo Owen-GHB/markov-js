@@ -1,7 +1,7 @@
 import readline from 'readline';
-import { CommandHandler } from '../interpreter/CommandHandler.js';
-import { CommandParser } from '../interpreter/CommandParser.js';
-import manifest from '../manifest.json' with { type: 'json' };
+import { CommandHandler } from '../CommandHandler.js';
+import { CommandParser } from '../CommandParser.js';
+import manifest from '../../contract/manifest.json' with { type: 'json' };
 
 export class MarkovREPL {
 	constructor() {

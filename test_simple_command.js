@@ -1,4 +1,4 @@
-import { CommandParser } from './src/interpreter/CommandParser.js';
+import { CommandParser } from './kernel/CommandParser.js';
 
 const parser = new CommandParser();
 

@@ -2,7 +2,7 @@
 
 // Check if we're being called directly with command line args
 if (process.argv.length > 2) {
-	import('./src/entrypoints/CLI.js')
+	import('./kernel/transports/CLI.js')
 		.then(({ MarkovCLI }) => {
 			const cli = new MarkovCLI();
 			cli.run(process.argv.slice(2));
@@ -13,7 +13,7 @@ if (process.argv.length > 2) {
 		});
 } else {
 	// Default to REPL mode if no args
-	import('./src/entrypoints/REPL.js')
+	import('./kernel/transports/REPL.js')
 		.then(({ MarkovREPL }) => {
 			const repl = new MarkovREPL();
 			repl.start();

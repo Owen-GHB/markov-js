@@ -1,11 +1,11 @@
 // examples/sample_usage.js
 
-import { MarkovModel } from '../src/models/Markov/Model.js';
-import { VLMModel } from '../src/models/VLMM/Model.js';
-import { GenerationContext } from '../src/models/Interfaces.js';
-import { Tokenizer } from '../src/models/Tokenizer.js';
-import { FileHandler } from '../src/io/FileHandler.js';
-import { ModelSerializer } from '../src/io/ModelSerializer.js';
+import { MarkovModel } from '../textgen/models/Markov/Model.js';
+import { VLMModel } from '../textgen/models/VLMM/Model.js';
+import { GenerationContext } from '../textgen/models/Interfaces.js';
+import { Tokenizer } from '../textgen/models/Tokenizer.js';
+import { FileHandler } from '../textgen/io/FileHandler.js';
+import { ModelSerializer } from '../textgen/io/ModelSerializer.js';
 
 /**
  * Example usage of the Markov text generator
@@ -238,10 +238,10 @@ async function runAllExamples() {
 		await modelPersistenceExample();
 
 		console.log('\n🎉 All examples completed successfully!');
-		console.log('\nTo run the CLI interface, use:');
+		console.log('\\nTo run the CLI interface, use:');
 		console.log('  npm start');
 		console.log('  # or');
-		console.log('  node src/cli/CLI.js');
+		console.log('  node markov-cli.js');
 	} catch (error) {
 		console.error(`❌ Example failed: ${error.message}`);
 		console.error(error.stack);

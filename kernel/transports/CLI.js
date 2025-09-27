@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-import { CommandParser } from '../interpreter/CommandParser.js';
-import { CommandHandler } from '../interpreter/CommandHandler.js';
+import { CommandParser } from '../CommandParser.js';
+import { CommandHandler } from '../CommandHandler.js';
 
 export class MarkovCLI {
 	constructor() {
