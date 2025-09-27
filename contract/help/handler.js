@@ -1,10 +1,9 @@
-export class HelpHandler {
-  /**
-   * Get the help text for the application
-   * @returns {string} - The help text
-   */
-  getHelpText() {
-    return `
+/**
+ * Get the help text for the application
+ * @returns {string} - The help text
+ */
+export function getHelpText() {
+  return `
 🔗 Markov Chain Text Generator
 =============================
 
@@ -41,17 +40,16 @@ Command Syntax:
 • Object style: command({param1: value, key: value})
 • Simple style: command
 `;
-  }
+}
 
-  /**
-   * Handle the "help" command
-   * @param {Object} params - The command parameters
-   * @returns {Object} - The result of the help command
-   */
-  async handleHelp(params) {
-    return {
-      error: null,
-      output: this.getHelpText(),
-    };
-  }
+/**
+ * Handle the "help" command
+ * @param {Object} params - The command parameters
+ * @returns {Object} - The result of the help command
+ */
+export default async function handleHelp(params) {
+  return {
+    error: null,
+    output: getHelpText(),
+  };
 }

@@ -13,7 +13,7 @@ function initializeContractSync() {
     return contractCache;
   }
 
-  // Load global manifest - Note: this is domain-specific and makes kernel not fully generic
+  // Load global manifest from contract directory
   const globalManifest = JSON.parse(
     fs.readFileSync(path.join(__dirname, '../contract/global.json'), 'utf8')
   );
@@ -34,14 +34,13 @@ function initializeContractSync() {
   for (const dir of commandDirs) {
     try {
       // Load manifest slice from contract directory
-      const contractDir = path.join(__dirname, '../contract');
       const manifestPath = path.join(contractDir, dir, 'manifest.json');
       const manifestSlice = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
       commands.push(manifestSlice);
 
       // For handlers, we need to use dynamic imports, but we can prepare the mappings
       // The handlers will be loaded asynchronously but cached
-      handlers[dir] = null; // Will be loaded on first access
+      handlers[manifestSlice.name] = null; // Will be loaded on first access, keyed by manifest name
     } catch (error) {
       console.warn(`Warning: Could not load from ${dir}:`, error.message);
     }
@@ -62,18 +61,55 @@ function initializeContractSync() {
     }
     
     try {
-      const handlerModule = await import(`../contract/${commandName}/handler.js`);
-      // Find the handler class in the module exports
+      // Find the directory that contains this command by looking at manifest names
+      const commandDir = commandDirs.find(dir => {
+        try {
+          const manifestPath = path.join(contractDir, dir, 'manifest.json');
+          const manifestSlice = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+          return manifestSlice.name === commandName;
+        } catch (error) {
+          return false;
+        }
+      });
+      
+      if (!commandDir) {
+        console.warn(`Warning: Could not find directory for command ${commandName}`);
+        return null;
+      }
+      
+      // Load the handler function from the handler file
+      // Modern handlers export their main function as default
+      const handlerModule = await import(`../contract/${commandDir}/handler.js`);
+      
+      // Check if it exports a default function (modern approach)
+      if (handlerModule.default && typeof handlerModule.default === 'function') {
+        handlerRegistry.set(commandName, handlerModule.default);
+        return handlerModule.default;
+      }
+      
+      // Check if it exports a class with a method (legacy approach for backward compatibility)
       for (const key of Object.keys(handlerModule)) {
         const HandlerClass = handlerModule[key];
         if (HandlerClass && typeof HandlerClass === 'function' && HandlerClass.name && HandlerClass.name.endsWith('Handler')) {
           const handlerInstance = new HandlerClass();
-          handlerRegistry.set(commandName, handlerInstance);
-          return handlerInstance;
+          // Try to find the appropriate method name based on command name
+          const methodName = 'handle' + commandName.charAt(0).toUpperCase() + commandName.slice(1)
+            .replace(/_([a-z])/g, (match, letter) => letter.toUpperCase())
+            .replace(/([A-Z])/g, (match, letter, index) => 
+              index === 0 ? letter.toLowerCase() : letter);
+          
+          if (typeof handlerInstance[methodName] === 'function') {
+            // Create a wrapper function that calls the method
+            const handlerFunction = async (args) => {
+              return await handlerInstance[methodName](args);
+            };
+            handlerRegistry.set(commandName, handlerFunction);
+            return handlerFunction;
+          }
         }
       }
       
-      console.warn(`Warning: Could not find handler class in ${commandName}/handler.js`);
+      console.warn(`Warning: Handler for ${commandName} does not export a default function or compatible class method`);
       return null;
     } catch (error) {
       console.warn(`Warning: Could not load handler from ${commandName}/handler.js:`, error.message);
@@ -87,14 +123,30 @@ function initializeContractSync() {
     async getHandlers() {
       // Load all handlers (this would be used infrequently)
       for (const dir of commandDirs) {
-        if (!handlerRegistry.has(dir)) {
-          await getHandler(dir);
+        try {
+          const manifestPath = path.join(contractDir, dir, 'manifest.json');
+          const manifestSlice = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+          const commandName = manifestSlice.name;
+          
+          if (!handlerRegistry.has(commandName)) {
+            await getHandler(commandName);
+          }
+        } catch (error) {
+          console.warn(`Warning: Could not load handler for directory ${dir}:`, error.message);
         }
       }
+      
       // Return a proxy so that handler access is async
       const asyncHandlers = {};
       for (const dir of commandDirs) {
-        asyncHandlers[dir] = await getHandler(dir);
+        try {
+          const manifestPath = path.join(contractDir, dir, 'manifest.json');
+          const manifestSlice = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+          const commandName = manifestSlice.name;
+          asyncHandlers[commandName] = await getHandler(commandName);
+        } catch (error) {
+          console.warn(`Warning: Could not get handler for directory ${dir}:`, error.message);
+        }
       }
       return asyncHandlers;
     }

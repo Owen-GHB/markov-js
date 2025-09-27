@@ -3,7 +3,7 @@ import { CommandHandler } from '../CommandHandler.js';
 import { CommandParser } from '../CommandParser.js';
 import { manifest } from '../contract.js';
 
-export class MarkovREPL {
+export class REPL {
 	constructor() {
 		this.handler = new CommandHandler();
 		this.commandParser = new CommandParser();
@@ -13,9 +13,7 @@ export class MarkovREPL {
 	async start() {
 		// Load help text first, then initialize REPL and event handlers
 		try {
-			const helpHandlerModule = await import('../../contract/index.js');
-			const handler = await helpHandlerModule.getHandler('help');
-			console.log(handler.getHelpText()); // Display help first
+			// For REPL help, we'll get the help text directly from the help handler module\n\t\t\ttry {\n\t\t\t\tconst helpModule = await import('../contract/help/handler.js');\n\t\t\t\tconst helpText = helpModule.getHelpText ? helpModule.getHelpText() : '';\n\t\t\t\tconsole.log(helpText); // Display help first\n\t\t\t} catch (error) {\n\t\t\t\t// Fallback if we can't load the help text\n\t\t\t\tconsole.log('\\n🔗 Command-Line Application\\n=============================');\n\t\t\t}
 		} catch (error) {
 			console.error('Error loading help text:', error);
 		}
@@ -24,7 +22,7 @@ export class MarkovREPL {
 		this.rl = readline.createInterface({
 			input: process.stdin,
 			output: process.stdout,
-			prompt: 'markov> ',
+			prompt: manifest.prompt || '> ', // Use prompt from manifest or default fallback
 			completer: (line) => this.commandCompleter(line),
 		});
 
@@ -33,28 +31,6 @@ export class MarkovREPL {
 		this.rl.prompt();
 	}
 	
-			async loadHelpAndSetup() {
-		try {
-			const helpHandlerModule = await import('../contract.js');
-			const handler = await helpHandlerModule.getHandler('help');
-			console.log(handler.getHelpText()); // Display help first
-		} catch (error) {
-			console.error('Error loading help text:', error);
-		}
-
-		// Initialize REPL instance after help text is displayed
-		this.rl = readline.createInterface({
-			input: process.stdin,
-			output: process.stdout,
-			prompt: 'markov> ',
-			completer: (line) => this.commandCompleter(line),
-		});
-
-		this.setupEventHandlers();
-		// Start the prompt after everything is set up
-		this.rl.prompt();
-	}
-
 	/* ---------- event handlers ---------- */
 
 	/* ---------- event handlers ---------- */
@@ -91,7 +67,6 @@ export class MarkovREPL {
 	}
 
 	
-
 	applySideEffects(cmd) {
 		const spec = manifest.commands.find((c) => c.name === cmd.name);
 		if (!spec?.sideEffects) return;

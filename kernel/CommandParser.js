@@ -5,10 +5,9 @@ import { manifest } from './contract.js';
  * Command parser for REPL-style interface
  *
  * Supports both function-style and object-style syntax:
- * - train("corpus.txt", "markov", 2)
- * - train({file: "corpus.txt", modelType: "markov", order: 2})
- * - generate("model.json", 50)
- * - generate({model: "model.json", length: 50})
+ * - command("param1", "param2", key=value)
+ * - command({param1: "value1", key: value2})
+ * - command param1 param2 key=value
  */
 export class CommandParser {
 	constructor() {

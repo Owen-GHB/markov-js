@@ -3,7 +3,7 @@
 import { CommandParser } from '../CommandParser.js';
 import { CommandHandler } from '../CommandHandler.js';
 
-export class MarkovCLI {
+export class CLI {
 	constructor() {
 		this.parser = new CommandParser();
 		this.handler = new CommandHandler();
@@ -44,23 +44,24 @@ export class MarkovCLI {
 	 * Display help message
 	 */
 	async showHelp() {
-		// For CLI help, we'll get the help text from the handler
-		const helpHandler = await import('../contract.js');
-		const handler = await helpHandler.getHandler('help');
-		console.log(handler.getHelpText());
+		// For CLI help, we'll get the help text directly from the help handler module
+		try {
+			const helpModule = await import('../contract/help/handler.js');
+			const helpText = helpModule.getHelpText ? helpModule.getHelpText() : 
+						   (typeof helpModule.getHelpText === 'function' ? helpModule.getHelpText() : '');
+			console.log(helpText);
+		} catch (error) {
+			// Fallback if we can't load the help text
+			console.log('\n🔗 Command-Line Application\n=============================');
+		}
+		
 		console.log('\nCommand Line Usage:');
-		console.log('  markov-cli <command> [args...]');
-		console.log('  markov-cli \'command("param", key=value)\'');
-		console.log('\nExamples:');
-		console.log('  markov-cli generate sample.json length=50 temperature=0.8');
-		console.log(
-			'  markov-cli \'generate("sample.json", length=50, temperature=0.8)\'',
-		);
-		console.log('  markov-cli listModels');
+		console.log('  app-cli <command> [args...]');
+		console.log('  app-cli \'command(\"param\", key=value)\'');
 	}
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-	const cli = new MarkovCLI();
+	const cli = new CLI();
 	cli.run(process.argv.slice(2));
 }

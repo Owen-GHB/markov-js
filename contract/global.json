@@ -2,6 +2,7 @@
   "name": "markov-text-generator",
   "version": "1.0.0",
   "description": "Markov chain text generation engine with multiple model types",
+  "prompt": "markov> ",
   "stateDefaults": {
     "currentModel": null,
     "defaultCorpus": "sample.txt"

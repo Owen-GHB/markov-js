@@ -1,22 +1,20 @@
-export class UseHandler {
-  /**
-   * Handle the "use" command
-   * @param {Object} params - The command parameters
-   * @returns {Object} - The result of the use command
-   */
-  async handleUse(params) {
-    const { modelName } = params || {};
+/**
+ * Handle the "use" command
+ * @param {Object} params - The command parameters
+ * @returns {Object} - The result of the use command
+ */
+export default async function handleUse(params) {
+  const { modelName } = params || {};
 
-    if (!modelName) {
-      return {
-        error: 'Model name is required (e.g., use("model.json"))',
-        output: null,
-      };
-    }
-
+  if (!modelName) {
     return {
-      error: null,
-      output: `✅ Using model: ${modelName}`,
+      error: 'Model name is required (e.g., use("model.json"))',
+      output: null,
     };
   }
+
+  return {
+    error: null,
+    output: `✅ Using model: ${modelName}`,
+  };
 }
