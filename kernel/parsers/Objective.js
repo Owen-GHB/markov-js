@@ -1,5 +1,5 @@
 import { ParserUtils } from './Utils.js';
-import manifest from '../../contract/manifest.json' with { type: 'json' }; // Explicit JSON import
+import { manifest } from '../../contract/index.js';
 
 /**
  * Parse a command in object style (e.g., "train({file: 'sample.txt', modelType: 'markov'})")

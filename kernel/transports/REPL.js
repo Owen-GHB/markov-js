@@ -1,7 +1,7 @@
 import readline from 'readline';
 import { CommandHandler } from '../CommandHandler.js';
 import { CommandParser } from '../CommandParser.js';
-import manifest from '../../contract/manifest.json' with { type: 'json' };
+import { manifest } from '../../contract/index.js';
 
 export class MarkovREPL {
 	constructor() {
@@ -17,7 +17,7 @@ export class MarkovREPL {
 		});
 
 		this.setupEventHandlers();
-		console.log(this.handler.getHelpText()); // keep existing help
+		console.log(this.handler.handlers.help.getHelpText()); // keep existing help
 	}
 
 	/* ---------- event handlers ---------- */

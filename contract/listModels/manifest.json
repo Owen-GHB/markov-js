@@ -1,0 +1,7 @@
+{
+  "name": "listModels",
+  "description": "List all available saved models",
+  "syntax": "listModels()",
+  "parameters": [],
+  "examples": ["listModels()"]
+}

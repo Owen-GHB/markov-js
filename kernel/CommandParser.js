@@ -1,6 +1,6 @@
 import { parseObjectStyle } from './parsers/Objective.js';
 import { parseFunctionStyle } from './parsers/Functional.js';
-import manifest from '../contract/manifest.json' with { type: 'json' };
+import { manifest } from '../contract/index.js';
 /**
  * Command parser for REPL-style interface
  *

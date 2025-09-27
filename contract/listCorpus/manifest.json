@@ -1,0 +1,7 @@
+{
+  "name": "listCorpus",
+  "description": "List all available corpus files",
+  "syntax": "listCorpus()",
+  "parameters": [],
+  "examples": ["listCorpus()"]
+}

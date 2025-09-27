@@ -1,0 +1,72 @@
+{
+  "name": "markov-text-generator",
+  "version": "1.0.0",
+  "description": "Markov chain text generation engine with multiple model types",
+  "stateDefaults": {
+    "currentModel": null,
+    "defaultCorpus": "sample.txt"
+  },
+  "syntaxPatterns": [
+    {
+      "name": "functionStyle",
+      "pattern": "command(param1, param2, key=value)",
+      "description": "Function-style syntax with positional and named parameters"
+    },
+    {
+      "name": "objectStyle",
+      "pattern": "command({param1: value, key: value})",
+      "description": "Object-style syntax with all parameters as key-value pairs"
+    },
+    {
+      "name": "simpleStyle",
+      "pattern": "command",
+      "description": "Simple command without parameters"
+    },
+    {
+      "name": "cliStyle",
+      "pattern": "command param1 param2 key=value",
+      "description": "CLI-style syntax with space-separated parameters"
+    }
+  ],
+  "modelTypes": [
+    {
+      "name": "markov",
+      "description": "Standard Markov chain model with fixed-order n-grams",
+      "capabilities": {
+        "supportsTemperature": true,
+        "supportsConstraints": true,
+        "supportsConditionalGeneration": true,
+        "supportsBatchGeneration": true,
+        "maxOrder": 10
+      }
+    },
+    {
+      "name": "vlmm",
+      "description": "Variable-Length Markov Model with adaptive context length",
+      "capabilities": {
+        "supportsTemperature": true,
+        "supportsConstraints": false,
+        "supportsConditionalGeneration": true,
+        "supportsBatchGeneration": true,
+        "maxOrder": 10
+      }
+    },
+    {
+      "name": "hmm",
+      "description": "Hidden Markov Model with state-based generation",
+      "capabilities": {
+        "supportsTemperature": false,
+        "supportsConstraints": true,
+        "supportsConditionalGeneration": true,
+        "supportsBatchGeneration": true,
+        "maxOrder": 1,
+        "supportsUnsupervisedLearning": true
+      }
+    }
+  ],
+  "filePaths": {
+    "defaultCorpusDir": "./data/corpus",
+    "defaultModelDir": "./data/models",
+    "supportedCorpusExtensions": [".txt", ".md", ".csv"]
+  }
+}

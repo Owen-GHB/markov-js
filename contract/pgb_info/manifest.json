@@ -1,0 +1,24 @@
+{
+  "name": "pgb_info",
+  "description": "Get book details from Project Gutenberg",
+  "syntax": "pgb_info(id_or_title)",
+  "parameters": [
+    {
+      "name": "id_or_title",
+      "type": "string|integer",
+      "required": true,
+      "description": "Book ID or title to get information about",
+      "transform": {
+        "if": "integer",
+        "then": { "id": "value" },
+        "else": { "title": "value" }
+      }
+    }
+  ],
+  "examples": [
+    "pgb_info(1342)",
+    "pgb_info(\"Pride and Prejudice\")",
+    "pgb_info({id: 1342})",
+    "pgb_info({title: \"Pride and Prejudice\"})"
+  ]
+}

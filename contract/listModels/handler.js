@@ -1,14 +1,14 @@
 import { FileHandler } from '../../textgen/io/FileHandler.js';
 import { ModelSerializer } from '../../textgen/io/ModelSerializer.js';
 
-export class OperationsHandler {
+export class ListModelsHandler {
 	constructor() {
 		this.serializer = new ModelSerializer();
 		this.fileHandler = new FileHandler();
 	}
 
 	/**
-	 * Handle the "listmodels" command
+	 * Handle the "listModels" command
 	 * @returns {Promise<Object>} - The list of models
 	 */
 	async handleListModels() {

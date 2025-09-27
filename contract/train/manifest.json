@@ -1,0 +1,63 @@
+{
+  "name": "train",
+  "description": "Train a model from a text corpus file",
+  "syntax": "train(file, modelType, [options])",
+  "parameters": [
+    {
+      "name": "file",
+      "type": "string",
+      "required": true,
+      "description": "Corpus file to train from",
+      "runtimeFallback": "defaultCorpus"
+    },
+    {
+      "name": "modelType",
+      "type": "string",
+      "required": true,
+      "enum": ["markov", "vlmm", "hmm"],
+      "description": "Type of model to train"
+    },
+    {
+      "name": "order",
+      "type": "integer",
+      "required": false,
+      "default": 2,
+      "min": 1,
+      "max": 10,
+      "description": "Markov order (n-gram size)"
+    },
+    {
+      "name": "modelName",
+      "type": "string",
+      "required": false,
+      "kind": "implicit",
+      "description": "Filename to save the trained model"
+    },
+    {
+      "name": "caseSensitive",
+      "type": "boolean",
+      "required": false,
+      "default": false,
+      "description": "Whether to preserve case during tokenization"
+    },
+    {
+      "name": "trackStartStates",
+      "type": "boolean",
+      "required": false,
+      "default": true,
+      "description": "Whether to track sentence start states"
+    }
+  ],
+  "sideEffects": {
+    "setState": {
+      "currentModel": {
+        "fromParam": "modelName",
+        "template": "{{file | basename}}.json"
+      }
+    }
+  },
+  "examples": [
+    "train(\"sample.txt\", \"markov\", order=2)",
+    "train({file: \"corpus.txt\", modelType: \"vlmm\", order: 3})"
+  ]
+}

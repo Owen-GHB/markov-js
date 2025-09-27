@@ -1,0 +1,29 @@
+{
+  "name": "pgb_download",
+  "description": "Download a book from Project Gutenberg",
+  "syntax": "pgb_download(id|title, [options])",
+  "parameters": [
+    {
+      "name": "id_or_title",
+      "type": "string|integer",
+      "required": true,
+      "description": "Book ID or title to download",
+      "transform": {
+        "if": "integer",
+        "then": { "id": "value" },
+        "else": { "title": "value" }
+      }
+    },
+    {
+      "name": "file",
+      "type": "string",
+      "required": false,
+      "description": "Filename to save the downloaded text",
+      "default": null
+    }
+  ],
+  "examples": [
+    "pgb_download(1342)",
+    "pgb_download(\"Moby Dick\", file=\"whale.txt\")"
+  ]
+}

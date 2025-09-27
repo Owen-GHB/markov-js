@@ -2,7 +2,7 @@ import { getJSON, downloadFile } from '../../textgen/utils/GutendexAPI.js';
 import fs from 'fs';
 import { FileHandler } from '../../textgen/io/FileHandler.js';
 
-export class PGBHandler {
+export class PGBDownloadHandler {
 	constructor() {
 		this.API_BASE = 'https://gutendex.com';
 		this.fileHandler = new FileHandler();

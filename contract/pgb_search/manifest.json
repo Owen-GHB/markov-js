@@ -1,0 +1,14 @@
+{
+  "name": "pgb_search",
+  "description": "Search Project Gutenberg by title/author",
+  "syntax": "pgb_search(query)",
+  "parameters": [
+    {
+      "name": "query",
+      "type": "string",
+      "required": true,
+      "description": "Search query for Project Gutenberg"
+    }
+  ],
+  "examples": ["pgb_search(\"Sherlock Holmes\")"]
+}

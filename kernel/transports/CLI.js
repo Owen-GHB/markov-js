@@ -44,7 +44,8 @@ export class MarkovCLI {
 	 * Display help message
 	 */
 	showHelp() {
-		console.log(this.handler.getHelpText());
+		// For CLI help, we'll get the help text from the handler
+		console.log(this.handler.handlers.help.getHelpText());
 		console.log('\nCommand Line Usage:');
 		console.log('  markov-cli <command> [args...]');
 		console.log('  markov-cli \'command("param", key=value)\'');

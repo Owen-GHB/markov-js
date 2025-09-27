@@ -1,0 +1,10 @@
+{
+  "name": "exit",
+  "description": "Exit the program",
+  "syntax": "exit()",
+  "parameters": [],
+  "sideEffects": {
+    "builtin": "exit"
+  },
+  "examples": ["exit()"]
+}
