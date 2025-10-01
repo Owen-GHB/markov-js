@@ -251,9 +251,6 @@ export class UI {
         const formsContainer = document.getElementById('formsContainer');
         const resultsContainer = document.getElementById('resultsContainer');
         const resultsContent = document.getElementById('resultsContent');
-        const commandInfo = document.getElementById('commandInfo');
-        const selectedCommandName = document.getElementById('selectedCommandName');
-        const selectedCommandDesc = document.getElementById('selectedCommandDesc');
         
         // Show a specific form and hide others
         function showForm(commandName) {
@@ -268,16 +265,6 @@ export class UI {
             if (form) {
               form.classList.add('active-form');
             }
-            
-            // Show command info if available
-            const cmd = commandManifests[commandName];
-            if (cmd) {
-              selectedCommandName.textContent = commandName;
-              selectedCommandDesc.textContent = cmd.description || '';
-              commandInfo.style.display = 'block';
-            }
-          } else {
-            commandInfo.style.display = 'none';
           }
         }
         

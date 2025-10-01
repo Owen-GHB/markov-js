@@ -18,17 +18,17 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    line-height: 1.6;
+    line-height: 1.5;
     color: #333;
     background-color: #f5f7fa;
-    padding: 20px;
+    padding: 10px;
 }
 
 .container {
     max-width: 1200px;
     margin: 0 auto;
     background: white;
-    border-radius: 8px;
+    border-radius: 6px;
     box-shadow: var(--shadow);
     overflow: hidden;
 }
@@ -36,18 +36,19 @@ body {
 header {
     background: var(--secondary-color);
     color: white;
-    padding: 20px;
+    padding: 12px 15px;
     text-align: center;
 }
 
 header h1 {
-    margin-bottom: 5px;
+    margin-bottom: 3px;
+    font-size: 1.4em;
 }
 
 .main-content {
     display: flex;
     flex-direction: column;
-    padding: 20px;
+    padding: 12px;
 }
 
 @media (min-width: 768px) {
@@ -58,30 +59,30 @@ header h1 {
 
 .sidebar {
     width: 100%;
-    padding: 20px;
+    padding: 12px;
     border-right: 1px solid var(--border-color);
-    margin-bottom: 20px;
+    margin-bottom: 12px;
 }
 
 @media (min-width: 768px) {
     .sidebar {
-        width: 250px;
+        width: 220px;
         margin-bottom: 0;
     }
 }
 
 .content {
     flex: 1;
-    padding: 20px;
+    padding: 12px;
 }
 
 .command-selector {
     width: 100%;
-    padding: 10px;
+    padding: 8px;
     border: 1px solid var(--border-color);
     border-radius: 4px;
     background: white;
-    font-size: 16px;
+    font-size: 14px;
 }
 
 .form-container {
@@ -93,65 +94,67 @@ header h1 {
 }
 
 .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 12px;
 }
 
 label {
     display: block;
-    margin-bottom: 5px;
+    margin-bottom: 4px;
     font-weight: bold;
     color: var(--secondary-color);
+    font-size: 0.95em;
 }
 
 .param-description {
     display: block;
     font-weight: normal;
-    font-size: 0.9em;
+    font-size: 0.85em;
     color: #666;
-    margin-top: 2px;
+    margin-top: 1px;
 }
 
 input, select, textarea {
     width: 100%;
-    padding: 10px;
+    padding: 7px 8px;
     border: 1px solid var(--border-color);
     border-radius: 4px;
-    font-size: 16px;
+    font-size: 14px;
 }
 
 input[type="checkbox"] {
     width: auto;
+    margin-right: 5px;
 }
 
 textarea {
-    min-height: 100px;
+    min-height: 80px;
     resize: vertical;
 }
 
 .validation-info {
-    font-size: 0.85em;
+    font-size: 0.8em;
     color: #666;
-    margin-top: 5px;
+    margin-top: 3px;
 }
 
 .array-format-help, .union-type-help {
-    font-size: 0.85em;
+    font-size: 0.8em;
     color: #666;
-    margin-top: 5px;
+    margin-top: 3px;
     font-style: italic;
 }
 
 .btn {
     display: inline-block;
-    padding: 10px 20px;
+    padding: 8px 16px;
     background: var(--primary-color);
     color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 16px;
+    font-size: 14px;
     text-align: center;
-    margin-top: 10px;
+    margin-top: 8px;
 }
 
 .btn:hover {
@@ -164,11 +167,11 @@ textarea {
 }
 
 .results {
-    margin-top: 30px;
-    padding: 20px;
+    margin-top: 20px;
+    padding: 12px;
     background: var(--light-color);
     border-radius: 4px;
-    border-left: 4px solid var(--primary-color);
+    border-left: 3px solid var(--primary-color);
 }
 
 .results.error {
@@ -184,21 +187,22 @@ textarea {
 }
 
 .command-info {
-    margin-top: 20px;
-    padding: 15px;
+    margin-top: 15px;
+    padding: 10px;
     background: #e8f4fc;
     border-radius: 4px;
+    font-size: 0.9em;
 }
 
 .command-examples {
-    margin-top: 15px;
+    margin-top: 12px;
 }
 
 .command-examples pre {
     background: #2c3e50;
     color: white;
-    padding: 10px;
+    padding: 8px;
     border-radius: 4px;
     overflow-x: auto;
-    font-size: 0.9em;
+    font-size: 0.85em;
 }
