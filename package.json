@@ -2,12 +2,13 @@
 	"name": "markov-text-generator",
 	"version": "1.0.0",
 	"description": "Configurable Markov chain text generator with CLI interface",
-	"main": "markov-cli.js",
+	"main": "main.js",
 	"type": "module",
 	"scripts": {
-		"start": "node markov-cli.js",
+		"start": "node main.js",
 		"test": "jest",
-		"dev": "nodemon markov-cli.js",
+		"dev": "nodemon main.js",
+		"generate": "node main.js --generate",
 		"generate-contract": "node generate-contract-index.js"
 	},
 	"keywords": [

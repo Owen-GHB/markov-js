@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>markov-text-generator</title>
+    <style>
+:root {
+    --primary-color: #3498db;
+    --secondary-color: #2c3e50;
+    --success-color: #27ae60;
+    --warning-color: #f39c12;
+    --danger-color: #e74c3c;
+    --light-color: #f8f9fa;
+    --dark-color: #343a40;
+    --border-color: #ddd;
+    --shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    background-color: #f5f7fa;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+}
+
+header {
+    background: var(--secondary-color);
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+
+header h1 {
+    margin-bottom: 5px;
+}
+
+.main-content {
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+}
+
+@media (min-width: 768px) {
+    .main-content {
+        flex-direction: row;
+    }
+}
+
+.sidebar {
+    width: 100%;
+    padding: 20px;
+    border-right: 1px solid var(--border-color);
+    margin-bottom: 20px;
+}
+
+@media (min-width: 768px) {
+    .sidebar {
+        width: 250px;
+        margin-bottom: 0;
+    }
+}
+
+.content {
+    flex: 1;
+    padding: 20px;
+}
+
+.command-selector {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: white;
+    font-size: 16px;
+}
+
+.form-container {
+    display: none;
+}
+
+.form-container.active-form {
+    display: block;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: var(--secondary-color);
+}
+
+.param-description {
+    display: block;
+    font-weight: normal;
+    font-size: 0.9em;
+    color: #666;
+    margin-top: 2px;
+}
+
+input, select, textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+input[type="checkbox"] {
+    width: auto;
+}
+
+textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.validation-info {
+    font-size: 0.85em;
+    color: #666;
+    margin-top: 5px;
+}
+
+.array-format-help, .union-type-help {
+    font-size: 0.85em;
+    color: #666;
+    margin-top: 5px;
+    font-style: italic;
+}
+
+.btn {
+    display: inline-block;
+    padding: 10px 20px;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    text-align: center;
+    margin-top: 10px;
+}
+
+.btn:hover {
+    background: #2980b9;
+}
+
+.btn-block {
+    display: block;
+    width: 100%;
+}
+
+.results {
+    margin-top: 30px;
+    padding: 20px;
+    background: var(--light-color);
+    border-radius: 4px;
+    border-left: 4px solid var(--primary-color);
+}
+
+.results.error {
+    border-left-color: var(--danger-color);
+}
+
+.results.success {
+    border-left-color: var(--success-color);
+}
+
+.hidden {
+    display: none;
+}
+
+.command-info {
+    margin-top: 20px;
+    padding: 15px;
+    background: #e8f4fc;
+    border-radius: 4px;
+}
+
+.command-examples {
+    margin-top: 15px;
+}
+
+.command-examples pre {
+    background: #2c3e50;
+    color: white;
+    padding: 10px;
+    border-radius: 4px;
+    overflow-x: auto;
+    font-size: 0.9em;
+}
+</style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Markov chain text generation engine with multiple model types</h1>
+            <p>Execute commands through a web interface</p>
+        </header>
+        
+        <div class="main-content">
+            <div class="sidebar">
+                <div>
+                    <label for="commandSelector">Select Command:</label>
+                    <select id="commandSelector" class="command-selector">
+                        <option value="">Select a command...</option>
+<option value="delete">delete</option>
+<option value="exit">exit</option>
+<option value="generate">generate</option>
+<option value="help">help</option>
+<option value="listCorpus">listCorpus</option>
+<option value="listModels">listModels</option>
+<option value="pgb_download">pgb_download</option>
+<option value="pgb_info">pgb_info</option>
+<option value="pgb_search">pgb_search</option>
+<option value="train">train</option>
+<option value="use">use</option>
+
+                    </select>
+                </div>
+                
+                <div class="command-info" id="commandInfo" style="display: none;">
+                    <h3 id="selectedCommandName"></h3>
+                    <p id="selectedCommandDesc"></p>
+                </div>
+            </div>
+            
+            <div class="content">
+                <!-- Command forms will be inserted here -->
+                <div id="formsContainer">
+                    <div id="delete-form" class="form-container" data-command-form="delete">
+    <h2>delete</h2>
+    <p>Delete a saved model</p>
+    
+    <form class="command-form" data-command="delete">
+        <label for="modelName">
+      modelName *
+      <span class="param-description">Name of the model file to delete</span>
+    </label><input type="text" name="modelName" id="modelName" data-param-name="modelName" required title="Name of the model file to delete">
+        
+        <button type="submit" class="btn btn-block">Execute Command</button>
+    </form>
+    
+    <div class="command-examples">
+    <h4>Examples:</h4>
+    <ul>
+        <li><pre><code>delete(&quot;old_model.json&quot;)</code></pre></li>
+    </ul>
+</div>
+</div>
+<div id="exit-form" class="form-container" data-command-form="exit">
+    <h2>exit</h2>
+    <p>Exit the program</p>
+    
+    <form class="command-form" data-command="exit">
+        
+        
+        <button type="submit" class="btn btn-block">Execute Command</button>
+    </form>
+    
+    <div class="command-examples">
+    <h4>Examples:</h4>
+    <ul>
+        <li><pre><code>exit()</code></pre></li>
+    </ul>
+</div>
+</div>
+<div id="generate-form" class="form-container" data-command-form="generate">
+    <h2>generate</h2>
+    <p>Generate text from a trained model</p>
+    
+    <form class="command-form" data-command="generate">
+        <label for="modelName">
+      modelName *
+      <span class="param-description">Model file to use for generation</span>
+    </label><input type="text" name="modelName" id="modelName" data-param-name="modelName" required title="Model file to use for generation" value="null"><label for="length">
+      length
+      <span class="param-description">Maximum number of tokens to generate</span>
+    </label><input type="number" name="length" id="length" data-param-name="length" title="Maximum number of tokens to generate" min="1" step="1" value="100"><div class="validation-info">Minimum: 1</div><label for="min_tokens">
+      min_tokens
+      <span class="param-description">Minimum number of tokens to generate</span>
+    </label><input type="number" name="min_tokens" id="min_tokens" data-param-name="min_tokens" title="Minimum number of tokens to generate" min="1" step="1" value="50"><div class="validation-info">Minimum: 1</div><label for="temperature">
+      temperature
+      <span class="param-description">Randomness factor (lower = more predictable)</span>
+    </label><input type="number" name="temperature" id="temperature" data-param-name="temperature" title="Randomness factor (lower = more predictable)" min="0" max="2" value="1"><div class="validation-info">Minimum: 0, Maximum: 2</div><label for="prompt">
+      prompt
+      <span class="param-description">Starting text for generation</span>
+    </label><input type="text" name="prompt" id="prompt" data-param-name="prompt" title="Starting text for generation"><label for="stop">
+      stop
+      <span class="param-description">Stop tokens that end generation</span>
+    </label><input type="text" name="stop" id="stop" data-param-name="stop" title="Stop tokens that end generation" value="., !, ?"><div class="array-format-help">Enter values separated by commas (e.g., value1, value2, value3)</div><label for="samples">
+      samples
+      <span class="param-description">Number of samples to generate</span>
+    </label><input type="number" name="samples" id="samples" data-param-name="samples" title="Number of samples to generate" min="1" step="1" value="1"><div class="validation-info">Minimum: 1</div><label for="allowRepetition">
+      allowRepetition
+      <span class="param-description">Allow immediate token repetition</span>
+    </label><input type="checkbox" name="allowRepetition" id="allowRepetition" data-param-name="allowRepetition" title="Allow immediate token repetition" checked>
+        
+        <button type="submit" class="btn btn-block">Execute Command</button>
+    </form>
+    
+    <div class="command-examples">
+    <h4>Examples:</h4>
+    <ul>
+        <li><pre><code>generate(&quot;model.json&quot;, length=50, temperature=0.8)</code></pre></li><li><pre><code>generate({modelName: &quot;story_model.json&quot;, prompt: &quot;Once upon a time&quot;})</code></pre></li>
+    </ul>
+</div>
+</div>
+<div id="help-form" class="form-container" data-command-form="help">
+    <h2>help</h2>
+    <p>Show help information</p>
+    
+    <form class="command-form" data-command="help">
+        <label for="command">
+      command
+      <span class="param-description">Specific command to get help for</span>
+    </label><input type="text" name="command" id="command" data-param-name="command" title="Specific command to get help for">
+        
+        <button type="submit" class="btn btn-block">Execute Command</button>
+    </form>
+    
+    <div class="command-examples">
+    <h4>Examples:</h4>
+    <ul>
+        <li><pre><code>help()</code></pre></li><li><pre><code>help(&quot;generate&quot;)</code></pre></li>
+    </ul>
+</div>
+</div>
+<div id="listCorpus-form" class="form-container" data-command-form="listCorpus">
+    <h2>listCorpus</h2>
+    <p>List all available corpus files</p>
+    
+    <form class="command-form" data-command="listCorpus">
+        
+        
+        <button type="submit" class="btn btn-block">Execute Command</button>
+    </form>
+    
+    <div class="command-examples">
+    <h4>Examples:</h4>
+    <ul>
+        <li><pre><code>listCorpus()</code></pre></li>
+    </ul>
+</div>
+</div>
+<div id="listModels-form" class="form-container" data-command-form="listModels">
+    <h2>listModels</h2>
+    <p>List all available saved models</p>
+    
+    <form class="command-form" data-command="listModels">
+        
+        
+        <button type="submit" class="btn btn-block">Execute Command</button>
+    </form>
+    
+    <div class="command-examples">
+    <h4>Examples:</h4>
+    <ul>
+        <li><pre><code>listModels()</code></pre></li>
+    </ul>
+</div>
+</div>
+<div id="pgb_download-form" class="form-container" data-command-form="pgb_download">
+    <h2>pgb_download</h2>
+    <p>Download a book from Project Gutenberg</p>
+    
+    <form class="command-form" data-command="pgb_download">
+        <label for="id_or_title">
+      id_or_title *
+      <span class="param-description">Book ID or title to download</span>
+    </label><input type="text" name="id_or_title" id="id_or_title" data-param-name="id_or_title" required title="Book ID or title to download"><div class="union-type-help">Accepts: string, integer</div><label for="file">
+      file
+      <span class="param-description">Filename to save the downloaded text</span>
+    </label><input type="text" name="file" id="file" data-param-name="file" title="Filename to save the downloaded text" value="null">
+        
+        <button type="submit" class="btn btn-block">Execute Command</button>
+    </form>
+    
+    <div class="command-examples">
+    <h4>Examples:</h4>
+    <ul>
+        <li><pre><code>pgb_download(1342)</code></pre></li><li><pre><code>pgb_download(&quot;Moby Dick&quot;, file=&quot;whale.txt&quot;)</code></pre></li>
+    </ul>
+</div>
+</div>
+<div id="pgb_info-form" class="form-container" data-command-form="pgb_info">
+    <h2>pgb_info</h2>
+    <p>Get book details from Project Gutenberg</p>
+    
+    <form class="command-form" data-command="pgb_info">
+        <label for="id_or_title">
+      id_or_title *
+      <span class="param-description">Book ID or title to get information about</span>
+    </label><input type="text" name="id_or_title" id="id_or_title" data-param-name="id_or_title" required title="Book ID or title to get information about"><div class="union-type-help">Accepts: string, integer</div>
+        
+        <button type="submit" class="btn btn-block">Execute Command</button>
+    </form>
+    
+    <div class="command-examples">
+    <h4>Examples:</h4>
+    <ul>
+        <li><pre><code>pgb_info(1342)</code></pre></li><li><pre><code>pgb_info(&quot;Pride and Prejudice&quot;)</code></pre></li><li><pre><code>pgb_info({id: 1342})</code></pre></li><li><pre><code>pgb_info({title: &quot;Pride and Prejudice&quot;})</code></pre></li>
+    </ul>
+</div>
+</div>
+<div id="pgb_search-form" class="form-container" data-command-form="pgb_search">
+    <h2>pgb_search</h2>
+    <p>Search Project Gutenberg by title/author</p>
+    
+    <form class="command-form" data-command="pgb_search">
+        <label for="query">
+      query *
+      <span class="param-description">Search query for Project Gutenberg</span>
+    </label><input type="text" name="query" id="query" data-param-name="query" required title="Search query for Project Gutenberg">
+        
+        <button type="submit" class="btn btn-block">Execute Command</button>
+    </form>
+    
+    <div class="command-examples">
+    <h4>Examples:</h4>
+    <ul>
+        <li><pre><code>pgb_search(&quot;Sherlock Holmes&quot;)</code></pre></li>
+    </ul>
+</div>
+</div>
+<div id="train-form" class="form-container" data-command-form="train">
+    <h2>train</h2>
+    <p>Train a model from a text corpus file</p>
+    
+    <form class="command-form" data-command="train">
+        <label for="file">
+      file *
+      <span class="param-description">Corpus file to train from</span>
+    </label><input type="text" name="file" id="file" data-param-name="file" required title="Corpus file to train from" value="sample.txt"><label for="modelType">
+      modelType *
+      <span class="param-description">Type of model to train</span>
+    </label><select name="modelType" id="modelType" data-param-name="modelType" required title="Type of model to train"><option value="markov">markov</option><option value="vlmm">vlmm</option><option value="hmm">hmm</option></select><label for="order">
+      order
+      <span class="param-description">Markov order (n-gram size)</span>
+    </label><input type="number" name="order" id="order" data-param-name="order" title="Markov order (n-gram size)" min="1" max="10" step="1" value="2"><div class="validation-info">Minimum: 1, Maximum: 10</div><label for="modelName">
+      modelName
+      <span class="param-description">Filename to save the trained model</span>
+    </label><input type="text" name="modelName" id="modelName" data-param-name="modelName" title="Filename to save the trained model"><label for="caseSensitive">
+      caseSensitive
+      <span class="param-description">Whether to preserve case during tokenization</span>
+    </label><input type="checkbox" name="caseSensitive" id="caseSensitive" data-param-name="caseSensitive" title="Whether to preserve case during tokenization"><label for="trackStartStates">
+      trackStartStates
+      <span class="param-description">Whether to track sentence start states</span>
+    </label><input type="checkbox" name="trackStartStates" id="trackStartStates" data-param-name="trackStartStates" title="Whether to track sentence start states" checked>
+        
+        <button type="submit" class="btn btn-block">Execute Command</button>
+    </form>
+    
+    <div class="command-examples">
+    <h4>Examples:</h4>
+    <ul>
+        <li><pre><code>train(&quot;sample.txt&quot;, &quot;markov&quot;, order=2)</code></pre></li><li><pre><code>train({file: &quot;corpus.txt&quot;, modelType: &quot;vlmm&quot;, order: 3})</code></pre></li>
+    </ul>
+</div>
+</div>
+<div id="use-form" class="form-container" data-command-form="use">
+    <h2>use</h2>
+    <p>Set the current model to use</p>
+    
+    <form class="command-form" data-command="use">
+        <label for="modelName">
+      modelName *
+      <span class="param-description">Name of the model to set as current</span>
+    </label><input type="text" name="modelName" id="modelName" data-param-name="modelName" required title="Name of the model to set as current" value="null">
+        
+        <button type="submit" class="btn btn-block">Execute Command</button>
+    </form>
+    
+    <div class="command-examples">
+    <h4>Examples:</h4>
+    <ul>
+        <li><pre><code>use(&quot;current_model.json&quot;)</code></pre></li>
+    </ul>
+</div>
+</div>
+                </div>
+                
+                <div id="resultsContainer" class="results hidden">
+                    <h3>Command Results</h3>
+                    <div id="resultsContent"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Embedded JavaScript for the UI
+        
+      // Client-side JavaScript for the UI
+      (function() {
+        'use strict';
+        
+        // Initialize state
+        let state = {
+  "currentModel": null,
+  "defaultCorpus": "sample.txt"
+};
+        
+        // Available commands
+        const commands = [
+  {
+    "name": "delete",
+    "description": "Delete a saved model",
+    "syntax": "delete(modelName)",
+    "parameters": [
+      {
+        "name": "modelName",
+        "type": "string",
+        "required": true,
+        "description": "Name of the model file to delete"
+      }
+    ],
+    "sideEffects": {
+      "clearStateIf": {
+        "currentModel": {
+          "fromParam": "modelName"
+        }
+      }
+    },
+    "examples": [
+      "delete(\"old_model.json\")"
+    ]
+  },
+  {
+    "name": "exit",
+    "description": "Exit the program",
+    "syntax": "exit()",
+    "parameters": [],
+    "sideEffects": {
+      "builtin": "exit"
+    },
+    "examples": [
+      "exit()"
+    ]
+  },
+  {
+    "name": "generate",
+    "description": "Generate text from a trained model",
+    "syntax": "generate(modelName, [options])",
+    "parameters": [
+      {
+        "name": "modelName",
+        "type": "string",
+        "required": true,
+        "description": "Model file to use for generation",
+        "runtimeFallback": "currentModel"
+      },
+      {
+        "name": "length",
+        "type": "integer",
+        "required": false,
+        "default": 100,
+        "min": 1,
+        "description": "Maximum number of tokens to generate"
+      },
+      {
+        "name": "min_tokens",
+        "type": "integer",
+        "required": false,
+        "default": 50,
+        "min": 1,
+        "description": "Minimum number of tokens to generate"
+      },
+      {
+        "name": "temperature",
+        "type": "number",
+        "required": false,
+        "default": 1,
+        "min": 0,
+        "max": 2,
+        "description": "Randomness factor (lower = more predictable)"
+      },
+      {
+        "name": "prompt",
+        "type": "string",
+        "required": false,
+        "description": "Starting text for generation"
+      },
+      {
+        "name": "stop",
+        "type": "array",
+        "required": false,
+        "default": [
+          ".",
+          "!",
+          "?"
+        ],
+        "description": "Stop tokens that end generation"
+      },
+      {
+        "name": "samples",
+        "type": "integer",
+        "required": false,
+        "default": 1,
+        "min": 1,
+        "description": "Number of samples to generate"
+      },
+      {
+        "name": "allowRepetition",
+        "type": "boolean",
+        "required": false,
+        "default": true,
+        "description": "Allow immediate token repetition"
+      }
+    ],
+    "sideEffects": {
+      "setState": {
+        "currentModel": {
+          "fromParam": "modelName"
+        }
+      }
+    },
+    "examples": [
+      "generate(\"model.json\", length=50, temperature=0.8)",
+      "generate({modelName: \"story_model.json\", prompt: \"Once upon a time\"})"
+    ]
+  },
+  {
+    "name": "help",
+    "description": "Show help information",
+    "syntax": "help([command])",
+    "parameters": [
+      {
+        "name": "command",
+        "type": "string",
+        "required": false,
+        "description": "Specific command to get help for"
+      }
+    ],
+    "examples": [
+      "help()",
+      "help(\"generate\")"
+    ]
+  },
+  {
+    "name": "listCorpus",
+    "description": "List all available corpus files",
+    "syntax": "listCorpus()",
+    "parameters": [],
+    "examples": [
+      "listCorpus()"
+    ]
+  },
+  {
+    "name": "listModels",
+    "description": "List all available saved models",
+    "syntax": "listModels()",
+    "parameters": [],
+    "examples": [
+      "listModels()"
+    ]
+  },
+  {
+    "name": "pgb_download",
+    "description": "Download a book from Project Gutenberg",
+    "syntax": "pgb_download(id|title, [options])",
+    "parameters": [
+      {
+        "name": "id_or_title",
+        "type": "string|integer",
+        "required": true,
+        "description": "Book ID or title to download",
+        "transform": {
+          "if": "integer",
+          "then": {
+            "id": "value"
+          },
+          "else": {
+            "title": "value"
+          }
+        }
+      },
+      {
+        "name": "file",
+        "type": "string",
+        "required": false,
+        "description": "Filename to save the downloaded text",
+        "default": null
+      }
+    ],
+    "examples": [
+      "pgb_download(1342)",
+      "pgb_download(\"Moby Dick\", file=\"whale.txt\")"
+    ]
+  },
+  {
+    "name": "pgb_info",
+    "description": "Get book details from Project Gutenberg",
+    "syntax": "pgb_info(id_or_title)",
+    "parameters": [
+      {
+        "name": "id_or_title",
+        "type": "string|integer",
+        "required": true,
+        "description": "Book ID or title to get information about",
+        "transform": {
+          "if": "integer",
+          "then": {
+            "id": "value"
+          },
+          "else": {
+            "title": "value"
+          }
+        }
+      }
+    ],
+    "examples": [
+      "pgb_info(1342)",
+      "pgb_info(\"Pride and Prejudice\")",
+      "pgb_info({id: 1342})",
+      "pgb_info({title: \"Pride and Prejudice\"})"
+    ]
+  },
+  {
+    "name": "pgb_search",
+    "description": "Search Project Gutenberg by title/author",
+    "syntax": "pgb_search(query)",
+    "parameters": [
+      {
+        "name": "query",
+        "type": "string",
+        "required": true,
+        "description": "Search query for Project Gutenberg"
+      }
+    ],
+    "examples": [
+      "pgb_search(\"Sherlock Holmes\")"
+    ]
+  },
+  {
+    "name": "train",
+    "description": "Train a model from a text corpus file",
+    "syntax": "train(file, modelType, [options])",
+    "parameters": [
+      {
+        "name": "file",
+        "type": "string",
+        "required": true,
+        "description": "Corpus file to train from",
+        "runtimeFallback": "defaultCorpus"
+      },
+      {
+        "name": "modelType",
+        "type": "string",
+        "required": true,
+        "enum": [
+          "markov",
+          "vlmm",
+          "hmm"
+        ],
+        "description": "Type of model to train"
+      },
+      {
+        "name": "order",
+        "type": "integer",
+        "required": false,
+        "default": 2,
+        "min": 1,
+        "max": 10,
+        "description": "Markov order (n-gram size)"
+      },
+      {
+        "name": "modelName",
+        "type": "string",
+        "required": false,
+        "kind": "implicit",
+        "description": "Filename to save the trained model"
+      },
+      {
+        "name": "caseSensitive",
+        "type": "boolean",
+        "required": false,
+        "default": false,
+        "description": "Whether to preserve case during tokenization"
+      },
+      {
+        "name": "trackStartStates",
+        "type": "boolean",
+        "required": false,
+        "default": true,
+        "description": "Whether to track sentence start states"
+      }
+    ],
+    "sideEffects": {
+      "setState": {
+        "currentModel": {
+          "fromParam": "modelName",
+          "template": "{{file | basename}}.json"
+        }
+      }
+    },
+    "examples": [
+      "train(\"sample.txt\", \"markov\", order=2)",
+      "train({file: \"corpus.txt\", modelType: \"vlmm\", order: 3})"
+    ]
+  },
+  {
+    "name": "use",
+    "description": "Set the current model to use",
+    "syntax": "use(modelName)",
+    "parameters": [
+      {
+        "name": "modelName",
+        "type": "string",
+        "required": true,
+        "description": "Name of the model to set as current",
+        "runtimeFallback": "currentModel"
+      }
+    ],
+    "sideEffects": {
+      "setState": {
+        "currentModel": {
+          "fromParam": "modelName"
+        }
+      }
+    },
+    "examples": [
+      "use(\"current_model.json\")"
+    ]
+  }
+];
+        
+        // Map of command manifests by name for quick lookup
+        const commandManifests = {};
+        commands.forEach(cmd => {
+          commandManifests[cmd.name] = cmd;
+        });
+        
+        // DOM elements
+        const commandSelector = document.getElementById('commandSelector');
+        const formsContainer = document.getElementById('formsContainer');
+        const resultsContainer = document.getElementById('resultsContainer');
+        const resultsContent = document.getElementById('resultsContent');
+        const commandInfo = document.getElementById('commandInfo');
+        const selectedCommandName = document.getElementById('selectedCommandName');
+        const selectedCommandDesc = document.getElementById('selectedCommandDesc');
+        
+        // Show a specific form and hide others
+        function showForm(commandName) {
+          // Hide all forms
+          document.querySelectorAll('.form-container').forEach(form => {
+            form.classList.remove('active-form');
+          });
+          
+          // Show the selected form if it exists
+          if (commandName) {
+            const form = document.getElementById(commandName + '-form');
+            if (form) {
+              form.classList.add('active-form');
+            }
+            
+            // Show command info if available
+            const cmd = commandManifests[commandName];
+            if (cmd) {
+              selectedCommandName.textContent = commandName;
+              selectedCommandDesc.textContent = cmd.description || '';
+              commandInfo.style.display = 'block';
+            }
+          } else {
+            commandInfo.style.display = 'none';
+          }
+        }
+        
+        // Handle command selection change
+        commandSelector.addEventListener('change', function(e) {
+          const commandName = e.target.value;
+          showForm(commandName);
+          
+          // Scroll to the form
+          if (commandName) {
+            const form = document.getElementById(commandName + '-form');
+            if (form) {
+              form.scrollIntoView({ behavior: 'smooth' });
+            }
+          }
+        });
+        
+        // Handle form submissions
+        document.addEventListener('submit', function(e) {
+          if (e.target.classList.contains('command-form')) {
+            e.preventDefault();
+            handleCommandSubmit(e.target);
+          }
+        });
+        
+        // Process a command form submission
+        async function handleCommandSubmit(form) {
+          const commandName = form.getAttribute('data-command');
+          if (!commandName) return;
+          
+          const cmdManifest = commandManifests[commandName];
+          if (!cmdManifest) {
+            showResults({ error: 'Command not found: ' + commandName }, 'error');
+            return;
+          }
+          
+          // Extract form data
+          const formData = new FormData(form);
+          const args = {};
+          
+          // Map form fields to command arguments
+          for (const param of cmdManifest.parameters || []) {
+            const field = document.getElementById(param.name);
+            if (field) {
+              let value;
+              
+              if (field.type === 'checkbox') {
+                value = field.checked;
+              } else if (field.type === 'number') {
+                value = field.value ? Number(field.value) : undefined;
+              } else {
+                value = field.value || undefined;
+                
+                // Handle array inputs (comma-separated values)
+                if (param.type === 'array' && value) {
+                  value = value.split(',').map(v => v.trim()).filter(v => v);
+                }
+              }
+              
+              // Only add to args if value exists and is not empty (unless it's a false boolean)
+              if (value !== undefined && value !== '') {
+                args[param.name] = value;
+              }
+            }
+          }
+          
+          // Prepare command object
+          const command = {
+            name: commandName,
+            args: args
+          };
+          
+          // Validate command
+          const validationResult = validateCommand(command, cmdManifest);
+          if (!validationResult.isValid) {
+            showResults({ error: 'Validation Error: ' + validationResult.errors.join(', ') }, 'error');
+            return;
+          }
+          
+          console.log('Executing command:', command);
+          
+          try {
+            // Execute the command (this would call your API)
+            const result = await executeCommand(command);
+            
+            // Update state based on side effects
+            state = updateState(state, command, result, cmdManifest);
+            
+            // Show results
+            showResults(result, result.error ? 'error' : 'success');
+          } catch (error) {
+            showResults({ error: 'Execution Error: ' + error.message }, 'error');
+          }
+        }
+        
+        // Validate a command
+        function validateCommand(command, cmdManifest) {
+          const paramManifests = cmdManifest.parameters || [];
+          return {
+            isValid: true,  // Simplified, would use actual validation in a real implementation
+            errors: []
+          };
+        }
+        
+        // Update state based on command side effects
+        function updateState(state, command, result, cmdManifest) {
+          // This is a simplified version - in a real implementation, 
+          // you would use the StateHelpers.updateState method
+          return Object.assign({}, state);
+        }
+        
+        // Show results in the results container
+        function showResults(result, type = 'success') {
+          resultsContainer.classList.remove('hidden', 'error', 'success');
+          resultsContainer.classList.add(type);
+          resultsContent.innerHTML = '<pre>' + JSON.stringify(result, null, 2) + '</pre>';
+        }
+        
+        // API execution function (would be customized based on API type)
+        async function executeCommand(command) {
+          // This is a placeholder for the actual API call
+          // In a real implementation, this would connect to your backend API
+          console.log('Sending command to API:', command);
+          
+          // Simulate API call
+          return new Promise((resolve) => {
+            setTimeout(() => {
+              resolve({
+                command: command.name,
+                args: command.args,
+                output: 'Command executed successfully (simulated)',
+                timestamp: new Date().toISOString()
+              });
+            }, 300);
+          });
+        }
+        
+        // Initialize - hide all forms initially
+        showForm('');
+        
+        console.log('UI initialized with', commands.length, 'commands');
+      })();
+    
+    </script>
+</body>
+</html>
