@@ -46,7 +46,7 @@ export class CLI {
 	async showHelp() {
 		// For CLI help, we'll get the help text directly from the help handler module
 		try {
-			const helpModule = await import('../contract/help/handler.js');
+			const helpModule = await import('../../contract/help/handler.js');
 			const helpText = helpModule.getHelpText ? helpModule.getHelpText() : 
 						   (typeof helpModule.getHelpText === 'function' ? helpModule.getHelpText() : '');
 			console.log(helpText);
