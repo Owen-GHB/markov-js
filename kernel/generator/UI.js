@@ -402,11 +402,35 @@ export class UI {
           return Object.assign({}, state);
         }
         
+        // Escape HTML special characters to prevent XSS - needed for the function below
+        function escapeHtml(str) {
+          if (typeof str !== 'string') return String(str);
+          return str
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#x27;');
+        }
+        
         // Show results in the results container
         function showResults(result, type = 'success') {
           resultsContainer.classList.remove('hidden', 'error', 'success');
-          resultsContainer.classList.add(type);
-          resultsContent.innerHTML = '<pre>' + JSON.stringify(result, null, 2) + '</pre>';
+          
+          // Determine the appropriate type and content to display
+          if (result.error) {
+            resultsContainer.classList.add('error');
+            resultsContent.innerHTML = '<strong>Error:</strong><br><code>' + escapeHtml(result.error) + '</code>';
+          } else if (result.output) {
+            resultsContainer.classList.add('success');
+            // Format output, handling newlines properly - use string literal for newline
+            let formattedOutput = escapeHtml(result.output).replace(new RegExp('\\n', 'g'), '<br>');
+            resultsContent.innerHTML = '<strong>Output:</strong><br><code>' + formattedOutput + '</code>';
+          } else {
+            // If no specific error or output, show the full result for debugging
+            resultsContainer.classList.add(type);
+            resultsContent.innerHTML = '<pre>' + JSON.stringify(result, null, 2) + '</pre>';
+          }
         }
         
         // API execution function that uses Electron IPC
