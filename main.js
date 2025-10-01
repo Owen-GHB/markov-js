@@ -10,9 +10,49 @@ const __dirname = path.dirname(__filename);        // project root
 // Check command line arguments
 const args = process.argv.slice(2);
 
+// Check if we should run in Electron
+const electronArg = args.find(arg => arg === '--electron' || arg === '-e');
+if (electronArg) {
+    // First, generate the UI if needed
+    import('./kernel/generator/UI.js')
+        .then(({ UI }) => {
+            const generator = new UI();
+            // Pass absolute paths based on the project root
+            const contractDir = path.join(__dirname, 'contract');
+            const outputDir = path.join(__dirname, 'generated-ui');
+            return generator.generate(contractDir, outputDir, 'index.html');
+        })
+        .then(() => {
+            // After generating UI, launch Electron using npx
+            import('child_process').then(({ spawn }) => {
+                const npxProcess = spawn('npx', ['electron', 'electron-main.js'], {
+                    stdio: 'inherit',
+                    cwd: __dirname,
+                    shell: true
+                });
+                
+                npxProcess.on('error', (err) => {
+                    console.error('❌ Failed to start Electron:', err.message);
+                    console.log('Make sure you have installed Electron as a dev dependency: npm install --save-dev electron');
+                    process.exit(1);
+                });
+                
+                npxProcess.on('close', (code) => {
+                    console.log(`Electron process exited with code ${code}`);
+                    process.exit(code);
+                });
+            }).catch(err => {
+                console.error('❌ Failed to import child_process:', err.message);
+                process.exit(1);
+            });
+        })
+        .catch((err) => {
+            console.error('❌ Failed to generate UI for Electron:', err.message);
+            process.exit(1);
+        });
+}
 // Check if we should regenerate UI
-const generateArg = args.find(arg => arg === '--generate' || arg === '-g');
-if (generateArg) {
+else if (args.find(arg => arg === '--generate' || arg === '-g')) {
     // Import and run the UI generator with proper paths
     import('./kernel/generator/UI.js')
         .then(({ UI }) => {

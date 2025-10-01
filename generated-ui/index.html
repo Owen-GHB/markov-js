@@ -920,32 +920,45 @@ textarea {
           }
           
           // Extract form data
-          const formData = new FormData(form);
           const args = {};
           
           // Map form fields to command arguments
+          // Use form-scoped selection instead of global document.getElementById to avoid ID conflicts
           for (const param of cmdManifest.parameters || []) {
-            const field = document.getElementById(param.name);
+            // Find the field within the current form using the data attribute that's already in the HTML
+            const field = form.querySelector('[data-param-name="' + param.name + '"]');
+            let value;
+            
             if (field) {
-              let value;
-              
+              // Extract value from the form field
               if (field.type === 'checkbox') {
                 value = field.checked;
               } else if (field.type === 'number') {
-                value = field.value ? Number(field.value) : undefined;
+                value = field.value ? Number(field.value) : (param.required ? 0 : undefined);
+              } else if (field.type === 'select-multiple') {
+                // Handle multi-select
+                const selectedOptions = Array.from(field.selectedOptions);
+                value = selectedOptions.map(option => option.value);
               } else {
-                value = field.value || undefined;
+                value = field.value !== undefined ? field.value : (field.textContent || field.innerText);
                 
                 // Handle array inputs (comma-separated values)
                 if (param.type === 'array' && value) {
                   value = value.split(',').map(v => v.trim()).filter(v => v);
                 }
               }
-              
-              // Only add to args if value exists and is not empty (unless it's a false boolean)
-              if (value !== undefined && value !== '') {
-                args[param.name] = value;
-              }
+            }
+            
+            // Apply runtime fallback only if the field value is empty/undefined and a fallback exists
+            if ((value === undefined || value === '' || value === null) && param.runtimeFallback && state[param.runtimeFallback] !== undefined) {
+              value = state[param.runtimeFallback];
+            }
+            
+            // For checkboxes, we should always include the value (true/false), otherwise only add to args if value exists and is not empty
+            if (field && field.type === 'checkbox') {
+              args[param.name] = value || false;
+            } else if (value !== undefined && value !== '' && value !== null) {
+              args[param.name] = value;
             }
           }
           
@@ -965,7 +978,7 @@ textarea {
           console.log('Executing command:', command);
           
           try {
-            // Execute the command (this would call your API)
+            // Execute the command
             const result = await executeCommand(command);
             
             // Update state based on side effects
@@ -1001,23 +1014,28 @@ textarea {
           resultsContent.innerHTML = '<pre>' + JSON.stringify(result, null, 2) + '</pre>';
         }
         
-        // API execution function (would be customized based on API type)
+        // API execution function that uses Electron IPC
         async function executeCommand(command) {
-          // This is a placeholder for the actual API call
-          // In a real implementation, this would connect to your backend API
-          console.log('Sending command to API:', command);
-          
-          // Simulate API call
-          return new Promise((resolve) => {
-            setTimeout(() => {
-              resolve({
-                command: command.name,
-                args: command.args,
-                output: 'Command executed successfully (simulated)',
-                timestamp: new Date().toISOString()
-              });
-            }, 300);
-          });
+          // Check if we're in Electron environment
+          if (window.electronAPI) {
+            // Use IPC to send command to main process
+            return await window.electronAPI.executeCommand(command);
+          } else {
+            // Fallback for browser environment (simulated API call)
+            console.log('Sending command to API:', command);
+            
+            // Simulate API call
+            return new Promise((resolve) => {
+              setTimeout(() => {
+                resolve({
+                  command: command.name,
+                  args: command.args,
+                  output: 'Command executed successfully (simulated)',
+                  timestamp: new Date().toISOString()
+                });
+              }, 300);
+            });
+          }
         }
         
         // Initialize - hide all forms initially
