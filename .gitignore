@@ -31,3 +31,6 @@ full_codebase_combined.js
 
 #utility for generating context window
 concatenate_codebase.py
+
+# Generated UI
+generated-ui/
