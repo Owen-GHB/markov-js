@@ -55,7 +55,6 @@ export class CommandParser {
 		// Try function style
 		const funcMatch = trimmed.match(this.patterns.funcCall);
 		if (funcMatch) {
-            console.log('Detected function style command');
 			return this.parseFunctionStyle(funcMatch);
 		}
 

@@ -1,0 +1,6 @@
+{
+  "defaultHttpPort": 8080,
+  "repl": {
+    "maxHistory": 100
+  }
+}

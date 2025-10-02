@@ -4,9 +4,21 @@ import fs from 'fs';
 import path from 'path';
 import pathResolver from '../utils/path-resolver.js';
 
+// Load configuration from config directory using path resolver
+let config = { defaultHttpPort: 8080 }; // fallback default
+try {
+  const configPath = pathResolver.getConfigFilePath('default.json');
+  if (fs.existsSync(configPath)) {
+    const configFile = fs.readFileSync(configPath, 'utf8');
+    config = JSON.parse(configFile);
+  }
+} catch (error) {
+  console.warn('⚠️ Could not load config file, using defaults:', error.message);
+}
+
 export class HTTPServer {
   constructor(options = {}) {
-    this.port = options.port || 8080;
+    this.port = options.port || config.defaultHttpPort || 8080;
     this.staticDir = options.staticDir || null;
     this.apiHandler = options.apiHandler || null;
     this.apiEndpoint = options.apiEndpoint || '/api';

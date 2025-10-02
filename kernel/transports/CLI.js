@@ -2,11 +2,15 @@
 
 import { CommandParser } from '../CommandParser.js';
 import { CommandHandler } from '../CommandHandler.js';
+import stateManager from '../utils/StateManager.js';
+import { manifest } from '../contract.js';
 
 export class CLI {
 	constructor() {
 		this.parser = new CommandParser();
 		this.handler = new CommandHandler();
+		// Use shared state manager
+		this.state = stateManager.getStateMap();
 	}
 
 	/**
@@ -20,7 +24,9 @@ export class CLI {
 
 		const input = args.join(' ');
 
-		const { error, command } = this.parser.parse(input);
+		// Create context with state for the parser
+		const context = { state: this.state, manifest };
+		const { error, command } = this.parser.parse(input, context);
 
 		if (error) {
 			console.error(`❌ ${error}`);
@@ -37,6 +43,13 @@ export class CLI {
 
 		if (result.output) {
 			console.log(result.output);
+		}
+
+		// Apply side effects and save state if command was successful
+		const commandSpec = manifest.commands.find(c => c.name === command.name);
+		if (commandSpec) {
+			stateManager.applySideEffects(command, commandSpec);
+			stateManager.saveState();
 		}
 	}
 
