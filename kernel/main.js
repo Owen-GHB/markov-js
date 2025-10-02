@@ -75,9 +75,28 @@ export async function launch(args, projectRoot) {
       }
     }
     
-    // Start HTTP server
+    // Start HTTP server (API only)
     const { startServer } = await import('./transports/HTTP.js');
     return startServer(port);
+  }
+  // Check if we should start HTTP server serving both UI and API
+  else if (args.find(arg => arg.startsWith('--serve'))) {
+    const serveArg = args.find(arg => arg.startsWith('--serve'));
+    
+    // Extract port if specified (format: --serve=8080)
+    let port = 8080; // default port
+    if (serveArg.includes('=')) {
+      const portStr = serveArg.split('=')[1];
+      port = parseInt(portStr, 10);
+      if (isNaN(port) || port < 1 || port > 65535) {
+        console.error('❌ Invalid port number. Please specify a port between 1 and 65535');
+        process.exit(1);
+      }
+    }
+    
+    // Start server that serves both UI and API
+    const { startServeServer } = await import('./transports/HTTP-serve.js');
+    return startServeServer(port);
   } else if (args.length > 0) {
     // Check if we're being called directly with command line args
     const { CLI } = await import('./transports/CLI.js');

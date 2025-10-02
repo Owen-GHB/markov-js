@@ -243,6 +243,69 @@ export default async function handleExample(params) {
 }
 ```
 
+## 🌐 Transport Interfaces
+
+The kernel provides multiple interfaces to access your commands:
+
+### CLI Transport
+Execute commands directly from the command line:
+```bash
+node main.js yourcommand param=value
+```
+
+### REPL Transport  
+Interactive shell with tab completion:
+```bash
+node main.js
+> yourcommand param=value
+```
+
+### HTTP Transport
+RESTful API server with JSON endpoints:
+```bash
+# Start API server
+node main.js --http=8080
+
+# Make API calls
+GET http://localhost:8080?json={"name":"yourcommand","args":{"param":"value"}}
+POST http://localhost:8080 with JSON body
+```
+
+### HTTP Serve Transport
+HTTP server serving both web UI and API:
+```bash
+# Start server with UI and API
+node main.js --serve=3000
+
+# UI available at: http://localhost:3000/
+# API available at: http://localhost:3000/api
+```
+
+### JSON Transport
+Direct programmatic access:
+```javascript
+import { JSONAPI } from './kernel/transports/JSON.js';
+const api = new JSONAPI();
+const result = await api.handleInput('{"name":"yourcommand","args":{"param":"value"}}');
+```
+
+## 🏗️ Modular Architecture
+
+### Reusable HTTP Server
+The kernel includes a flexible HTTP server that can:
+- Serve static content (web UI)
+- Handle API requests
+- Support both GET and POST endpoints
+- Include CORS headers for web applications
+
+### Transport Layer
+- **`HTTP-server.js`**: Reusable HTTP server class
+- **`HTTP.js`**: API-only server (maintains backward compatibility)
+- **`HTTP-serve.js`**: Combined UI and API server
+- **`CLI.js`**: Command-line interface
+- **`REPL.js`**: Interactive shell
+- **`JSON.js`**: JSON-based interface
+
 ## 📋 Manifest Schema
 
 Each command must provide a `manifest.json` that defines:
@@ -251,7 +314,16 @@ Each command must provide a `manifest.json` that defines:
 - Syntax examples and usage information
 - Side effects and state management rules
 
-The kernel uses these manifests for automatic parameter validation, help text generation, and command completion.
+The kernel uses these manifests for automatic parameter validation, help text generation, command completion, and UI form generation.
+
+## 🌐 Web UI Generation
+
+The kernel automatically generates complete web interfaces from your contract manifests:
+- Single-page application with dynamic forms
+- Parameter-specific input fields (text, number, boolean, enum, etc.)
+- Real-time API integration
+- State management and fallbacks
+- Cross-platform compatibility (web and Electron)
 
 ## 🔄 Extensibility
 
@@ -260,5 +332,7 @@ The kernel is designed for extension:
 - Extend functionality through the contract manifest system
 - Customize behavior through domain-specific configuration
 - Maintain backward compatibility while evolving features
+- Generate complete web UIs from command contracts
+- Serve both UI and API from the same server
 
 Just copy the kernel once and focus on writing your domain-specific commands!
