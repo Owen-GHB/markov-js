@@ -66,7 +66,6 @@ node markov-cli.js
 | `listCorpus()`                      | List available corpus files | `listCorpus()`                           |
 | `delete("model.json")`              | Delete a model              | `delete("old_model.json")`               |
 | `use("model.json")`                 | Set current model           | `use("model.json")`                      |
-| `stats()`                           | Show model statistics       | `stats()`                                |
 | `help()`                            | Show help                   | `help()`                                 |
 | `exit`                              | Exit the CLI                | `exit`                                   |
 

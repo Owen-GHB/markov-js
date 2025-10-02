@@ -71,6 +71,57 @@ class KernelPathResolver {
   getContractHandlerPath(commandName) {
     return path.join(this.getContractDir(), commandName, 'handler.js');
   }
+
+  /**
+   * Get the path to the config directory
+   * @returns {string} Path to config directory
+   */
+  getConfigDir() {
+    return path.join(this.projectRoot, 'config');
+  }
+
+  /**
+   * Get the path to a specific config file
+   * @param {string} filename - The config filename (default: 'default.json')
+   * @returns {string} Path to the config file
+   */
+  getConfigFilePath(filename = 'default.json') {
+    return path.join(this.getConfigDir(), filename);
+  }
+
+  /**
+   * Get the path to the context directory
+   * @returns {string} Path to context directory
+   */
+  getContextDir() {
+    return path.join(this.projectRoot, 'context');
+  }
+
+  /**
+   * Get the path to a specific context file
+   * @param {string} filename - The context filename
+   * @returns {string} Path to the context file
+   */
+  getContextFilePath(filename) {
+    return path.join(this.getContextDir(), filename);
+  }
+
+  /**
+   * Get the path to the templates directory
+   * @returns {string} Path to templates directory
+   */
+  getTemplatesDir() {
+    return path.join(this.projectRoot, 'templates');
+  }
+
+  /**
+   * Get the path to a specific template file
+   * @param {string} filename - The template filename
+   * @returns {string} Path to the template file
+   */
+  getTemplatePath(filename) {
+    return path.join(this.getTemplatesDir(), filename);
+  }
 }
 
 // Create a singleton instance
@@ -81,6 +132,8 @@ export const projectRoot = pathResolver.getProjectRoot();
 export const contractDir = pathResolver.getContractDir();
 export const generatedUIDir = pathResolver.getGeneratedUIDir();
 export const electronPreloadPath = pathResolver.getElectronPreloadPath();
+export const contextDir = pathResolver.getContextDir();
+export const templatesDir = pathResolver.getTemplatesDir();
 
 // Export the resolver instance for when more complex path operations are needed
 export default pathResolver;

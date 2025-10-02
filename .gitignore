@@ -34,3 +34,6 @@ concatenate_codebase.py
 
 # Generated UI
 generated-ui/
+context/
+concat.py
+kernel/stuff.py

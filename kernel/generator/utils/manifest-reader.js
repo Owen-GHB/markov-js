@@ -92,18 +92,8 @@ export class ManifestReader {
    * @returns {string|null} CSS content if file exists, null otherwise
    */
   static readCSS(contractDir = '../../../contract') {
-    // If contractDir is an absolute path, use it directly; otherwise join with __dirname
-    let contractPath;
-    if (path.isAbsolute(contractDir)) {
-      contractPath = contractDir;
-    } else {
-      contractPath = path.join(__dirname, contractDir);
-    }
-    
-    const cssPath = path.join(contractPath, 'global.css');
-    if (fs.existsSync(cssPath)) {
-      return fs.readFileSync(cssPath, 'utf8');
-    }
+    // This method is deprecated. CSS is now loaded from the templates directory.
+    // The UI generator uses templatesDir for CSS loading instead.
     return null;
   }
 }

@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import pathResolver from '../utils/path-resolver.js';
 import { GENERATOR_CONSTANTS } from './constants.js';
 import { ManifestReader } from './utils/manifest-reader.js';
 import { StringBuilder } from './builders/string-builder.js';
@@ -35,14 +36,27 @@ export class UI {
    */
   async generate(contractDir = '../../contract', outputDir = '../../generated-ui', outputFile = 'index.html') {
     try {
+      // Check if templates directory exists
+      const templatesDir = pathResolver.getTemplatesDir();
+      
+      if (!fs.existsSync(templatesDir)) {
+        throw new Error(`Templates directory does not exist: ${templatesDir}. UI generation requires templates to be present in a /templates folder at the project root.`);
+      }
+      
+      // Check if templates directory is empty
+      const templateFiles = fs.readdirSync(templatesDir);
+      if (templateFiles.length === 0) {
+        throw new Error(`Templates directory is empty: ${templatesDir}. UI generation requires template files to be present for proper generation.`);
+      }
+      
       console.log('Starting UI generation...');
       
       // Read all manifests
       const { global: globalManifest, commands: commandManifests } = ManifestReader.readAllManifests(contractDir);
       console.log(`Read global manifest and ${commandManifests.length} command manifests`);
       
-      // Read optional CSS
-      const cssContent = ManifestReader.readCSS(contractDir);
+      // Read optional CSS from templates directory instead of contract
+      const cssContent = this.readCSSFromTemplates();
       
       // Initialize state from global manifest
       const initialState = StateHelpers.initializeState(globalManifest);
@@ -83,6 +97,19 @@ export class UI {
   }
 
   /**
+   * Get CSS content from the templates directory
+   * @returns {string|null} CSS content if file exists, null otherwise
+   */
+  readCSSFromTemplates() {
+    const cssPath = pathResolver.getTemplatePath('global.css');
+    
+    if (fs.existsSync(cssPath)) {
+      return fs.readFileSync(cssPath, 'utf8');
+    }
+    return null;
+  }
+
+  /**
    * Generate HTML for a single command form
    * @param {Object} commandManifest - The command manifest
    * @param {Object} state - Initial state
@@ -105,7 +132,7 @@ export class UI {
       }
       
       // Read and process the examples template
-      const examplesTemplatePath = path.join(path.dirname(fileURLToPath(import.meta.url)), 'templates', 'command-examples.html');
+      const examplesTemplatePath = pathResolver.getTemplatePath('command-examples.html');
       let examplesTemplate = fs.readFileSync(examplesTemplatePath, 'utf8');
       examplesTemplate = examplesTemplate.replace('{{EXAMPLE_LIST}}', examplesList);
       
@@ -113,7 +140,7 @@ export class UI {
     }
     
     // Read and process the form template
-    const formTemplatePath = path.join(path.dirname(fileURLToPath(import.meta.url)), 'templates', 'command-form.html');
+    const formTemplatePath = pathResolver.getTemplatePath('command-form.html');
     let formTemplate = fs.readFileSync(formTemplatePath, 'utf8');
     
     // Replace all placeholders in the template using global regex to replace ALL occurrences
@@ -180,7 +207,7 @@ export class UI {
     fs.writeFileSync(cssFilePath, cssContentToWrite);
     
     // Read the base template
-    const baseTemplatePath = path.join(path.dirname(fileURLToPath(import.meta.url)), 'templates', 'spa-base.html');
+    const baseTemplatePath = pathResolver.getTemplatePath('spa-base.html');
     let baseTemplate = fs.readFileSync(baseTemplatePath, 'utf8');
     
     // Replace top-level placeholders
