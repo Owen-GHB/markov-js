@@ -50,9 +50,6 @@ export class UI {
       // Generate all command forms
       const commandForms = commandManifests.map(cmd => this.generateCommandForm(cmd, initialState));
       
-      // Generate the complete HTML page
-      const html = this.generateHTMLPage(globalManifest, commandManifests, commandForms, cssContent);
-      
       // Ensure output directory exists
       // If outputDir is an absolute path, use it directly; otherwise join with project root
       let outputPath;
@@ -69,6 +66,9 @@ export class UI {
       if (!fs.existsSync(outputPath)) {
         fs.mkdirSync(outputPath, { recursive: true });
       }
+      
+      // Generate separate files (HTML, CSS, and JS)
+      const html = await this.generateSeparateFiles(globalManifest, commandManifests, commandForms, cssContent, outputPath);
       
       // Write the HTML file
       const htmlFilePath = path.join(outputPath, outputFile);
@@ -159,14 +159,26 @@ export class UI {
   }
 
   /**
-   * Generate the complete HTML page
+   * Generate separate HTML, CSS and JS files for the UI
    * @param {Object} globalManifest - Global manifest
    * @param {Array} commandManifests - Array of command manifests
    * @param {Array} commandForms - Array of generated command forms
    * @param {string|null} cssContent - Optional CSS content
-   * @returns {string} Complete HTML page
+   * @param {string} outputDir - Directory to output files
    */
-  generateHTMLPage(globalManifest, commandManifests, commandForms, cssContent) {
+  async generateSeparateFiles(globalManifest, commandManifests, commandForms, cssContent, outputDir) {
+    // Generate client-side JavaScript
+    const clientSideJS = this.generateClientSideJavaScript(globalManifest, commandManifests);
+    
+    // Write the JavaScript file
+    const jsFilePath = path.join(outputDir, 'app.js');
+    fs.writeFileSync(jsFilePath, clientSideJS);
+    
+    // Write the CSS file
+    let cssContentToWrite = cssContent || '';
+    const cssFilePath = path.join(outputDir, 'app.css');
+    fs.writeFileSync(cssFilePath, cssContentToWrite);
+    
     // Read the base template
     const baseTemplatePath = path.join(path.dirname(fileURLToPath(import.meta.url)), 'templates', 'spa-base.html');
     let baseTemplate = fs.readFileSync(baseTemplatePath, 'utf8');
@@ -177,17 +189,14 @@ export class UI {
       .replace('{{PAGE_HEADER}}', this.escapeHtml(globalManifest.description || this.constants.DEFAULTS.PAGE_HEADER))
       .replace('{{COMMAND_SELECTOR_LABEL}}', this.escapeHtml(this.constants.DEFAULTS.COMMAND_SELECTOR_LABEL));
     
-    // Add optional CSS if provided
-    if (cssContent) {
-      // Embed CSS in a style tag
-      baseTemplate = baseTemplate.replace(
-        '{{CSS_PLACEHOLDER}}', 
-        `<style>\n${cssContent}\n</style>`
-      );
-    } else {
-      // If no CSS provided, replace with empty string
-      baseTemplate = baseTemplate.replace('{{CSS_PLACEHOLDER}}', '');
-    }
+    // Replace CSS placeholder with link to CSS file
+    baseTemplate = baseTemplate.replace('{{CSS_PLACEHOLDER}}', '<link rel="stylesheet" href="app.css">');
+    
+    // Replace the entire script block with a reference to the external JS file
+    baseTemplate = baseTemplate.replace(
+      /<script>\s*\/\/ Embedded JavaScript for the UI\s*{{CLIENT_SIDE_JS}}\s*<\/script>/,
+      '<script src="app.js"></script>'
+    );
     
     // Generate command options for the selector
     let commandOptions = '';
@@ -207,10 +216,6 @@ export class UI {
       '<!-- Individual command forms will be populated by JavaScript -->',
       allForms
     );
-    
-    // Generate client-side JavaScript
-    const clientSideJS = this.generateClientSideJavaScript(globalManifest, commandManifests);
-    baseTemplate = baseTemplate.replace('{{CLIENT_SIDE_JS}}', clientSideJS);
     
     return baseTemplate;
   }
