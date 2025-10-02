@@ -1,13 +1,12 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
-import path from 'path';
-import fs from 'fs';
-import { fileURLToPath } from 'url';
-
-// Create __dirname equivalent for ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { ElectronUIManager } from './kernel/electron/ui-manager.js';
+import { ElectronCommandHandler } from './kernel/electron/command-handler.js';
+import pathResolver from './kernel/utils/path-resolver.js';
 
 const createWindow = () => {
+  const uiManager = new ElectronUIManager();
+  const commandHandler = new ElectronCommandHandler();
+
   // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 1200,
@@ -15,30 +14,22 @@ const createWindow = () => {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, 'electron-preload.js'),
+      preload: pathResolver.getElectronPreloadPath(),
     }
   });
 
   // Load the generated UI
-  const uiPath = path.join(__dirname, 'generated-ui', 'index.html');
+  const uiPath = uiManager.getUIPath();
   
   // Check if UI exists, if not generate it first
-  if (!fs.existsSync(uiPath)) {
+  if (!uiManager.hasUI()) {
     console.log('Generated UI not found, generating...');
-    // Import and run the UI generator
-    import('./kernel/generator/UI.js').then(({ UI }) => {
-      const generator = new UI();
-      generator.generate(
-        path.join(__dirname, 'contract'),
-        path.join(__dirname, 'generated-ui'),
-        'index.html'
-      ).then(() => {
-        mainWindow.loadFile(uiPath);
-      }).catch(err => {
-        console.error('Failed to generate UI:', err);
-        // Load a simple error page
-        mainWindow.loadURL(`data:text/html,<h1>UI Generation Failed</h1><p>${err.message}</p>`);
-      });
+    uiManager.generateUIIfNeeded().then(() => {
+      mainWindow.loadFile(uiPath);
+    }).catch(err => {
+      console.error('Failed to generate UI:', err);
+      // Load a simple error page
+      mainWindow.loadURL(`data:text/html,<h1>UI Generation Failed</h1><p>${err.message}</p>`);
     });
   } else {
     // Load the generated UI
@@ -75,22 +66,12 @@ app.on('window-all-closed', () => {
 
 // IPC handler to execute commands via the kernel
 ipcMain.handle('execute-command', async (event, command) => {
-  try {
-    const { CommandHandler } = await import('./kernel/CommandHandler.js');
-    const handler = new CommandHandler();
-    const result = await handler.handleCommand(command);
-    return result;
-  } catch (error) {
-    return { error: error.message, output: null };
-  }
+  const handler = new ElectronCommandHandler();
+  return await handler.executeCommand(command);
 });
 
 // IPC handler to get manifests
-ipcMain.handle('get-manifests', async () => {
-  try {
-    const { manifest } = await import('./kernel/contract.js');
-    return manifest;
-  } catch (error) {
-    return { error: error.message };
-  }
+ipcMain.handle('get-manifests', () => {
+  const handler = new ElectronCommandHandler();
+  return handler.getManifests();
 });

@@ -15,17 +15,41 @@ export async function launch(args, projectRoot) {
   // Check if we should run in Electron
   const electronArg = args.find(arg => arg === '--electron' || arg === '-e');
   if (electronArg) {
-    const { launchElectron } = await import('./electron/launcher.js');
-    return launchElectron(projectRoot);
+    // Launch Electron using npx, which will run electron-main.js
+    // The electron-main.js handles UI generation and window creation
+    return import('child_process')
+      .then(({ spawn }) => {
+        const npxProcess = spawn('npx', ['electron', path.join(projectRoot, 'electron-main.js')], {
+          stdio: 'inherit',
+          cwd: projectRoot,  // Crucial: run from project root
+          shell: true
+        });
+
+        npxProcess.on('error', (err) => {
+          console.error('❌ Failed to start Electron:', err.message);
+          console.log('Make sure you have installed Electron as a dev dependency: npm install --save-dev electron');
+          process.exit(1);
+        });
+
+        npxProcess.on('close', (code) => {
+          console.log(`Electron process exited with code ${code}`);
+          process.exit(code);
+        });
+      })
+      .catch((err) => {
+        console.error('❌ Failed to launch Electron:', err.message);
+        process.exit(1);
+      });
   }
   // Check if we should regenerate UI
   else if (args.find(arg => arg === '--generate' || arg === '-g')) {
     // Import and run the UI generator with proper paths
     const { UI } = await import('./generator/UI.js');
+    const pathResolver = await import('./utils/path-resolver.js');
     const generator = new UI();
-    // Pass absolute paths based on the project root
-    const contractDir = path.join(projectRoot, 'contract');
-    const outputDir = path.join(projectRoot, 'generated-ui');
+    // Use the centralized path resolver
+    const contractDir = pathResolver.contractDir;
+    const outputDir = pathResolver.generatedUIDir;
     return generator.generate(contractDir, outputDir, 'index.html')
       .then(() => {
         console.log('✅ UI generation completed successfully!');
