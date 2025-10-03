@@ -1,5 +1,5 @@
-import { CommandHandler } from '../CommandHandler.js';
-import { manifest } from '../contract.js';
+import { CommandHandler } from '../../CommandHandler.js';
+import { manifest } from '../../contract.js';
 
 /**
  * Handles commands for the Electron application via IPC

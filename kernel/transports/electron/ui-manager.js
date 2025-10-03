@@ -1,5 +1,6 @@
 import fs from 'fs';
-import pathResolver from '../utils/path-resolver.js';
+import path from 'path';
+import pathResolver from '../../utils/path-resolver.js';
 
 /**
  * Manages the UI for the Electron application, including checking and loading
@@ -32,8 +33,8 @@ export class ElectronUIManager {
    * @returns {Promise<void>}
    */
   async generateUI(filename = 'index.html') {
-    const { UI } = await import('../generator/UI.js');
-    const { manifest } = await import('../contract.js');
+    const { UI } = await import('../../generator/UI.js');
+    const { manifest } = await import('../../contract.js');
     
     const outputDir = pathResolver.getGeneratedUIDir();
     const templateDir = pathResolver.templatesDir;

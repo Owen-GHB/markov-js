@@ -1,6 +1,6 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
-import { ElectronUIManager } from './kernel/electron/ui-manager.js';
-import { ElectronCommandHandler } from './kernel/electron/command-handler.js';
+import { ElectronUIManager } from './kernel/transports/electron/ui-manager.js';
+import { ElectronCommandHandler } from './kernel/transports/electron/command-handler.js';
 import pathResolver from './kernel/utils/path-resolver.js';
 
 const createWindow = () => {
