@@ -1,6 +1,7 @@
 import fs from 'fs';
 import { UI } from '../generator/UI.js';
 import pathResolver from '../utils/path-resolver.js';
+import { manifest } from '../contract.js';
 
 /**
  * Manages the UI for the Electron application, including generation and checking
@@ -31,11 +32,11 @@ export class ElectronUIManager {
     }
     
     const generator = new UI();
-    const contractDir = pathResolver.getContractDir();
     const outputDir = pathResolver.getGeneratedUIDir();
+    const templateDir = pathResolver.templatesDir;
     
     try {
-      await generator.generate(contractDir, outputDir, filename);
+      await generator.generate(manifest, outputDir, templateDir, filename);
       console.log(`Generated UI at: ${uiPath}`);
     } catch (error) {
       console.error('Failed to generate UI:', error);

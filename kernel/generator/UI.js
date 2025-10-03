@@ -1,17 +1,12 @@
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
-import pathResolver from '../utils/path-resolver.js';
 import { GENERATOR_CONSTANTS } from './constants.js';
-import { ManifestReader } from './utils/manifest-reader.js';
 import { StringBuilder } from './builders/string-builder.js';
 import { NumberBuilder } from './builders/number-builder.js';
 import { BooleanBuilder } from './builders/boolean-builder.js';
 import { EnumBuilder } from './builders/enum-builder.js';
 import { ArrayBuilder } from './builders/array-builder.js';
 import { UnionBuilder } from './builders/union-builder.js';
-import { StateHelpers } from './utils/state-helpers.js';
-import { ValidationHelpers } from './utils/validation-helpers.js';
 
 /**
  * Main UI Generator class that creates a complete SPA from contract manifests
@@ -30,59 +25,50 @@ export class UI {
 
   /**
    * Generate the complete SPA from manifests
-   * @param {string} contractDir - Path to the contract directory
+   * @param {Object} manifest - The contract manifest with global and command information
    * @param {string} outputDir - Path to the output directory
+   * @param {string} templateDir - Path to the templates directory
    * @param {string} outputFile - Name of the output file
    */
-  async generate(contractDir = '../../contract', outputDir = '../../generated-ui', outputFile = 'index.html') {
+  async generate(manifest, outputDir = './generated-ui', templateDir = './templates', outputFile = 'index.html') {
     try {
       // Check if templates directory exists
-      const templatesDir = pathResolver.getTemplatesDir();
-      
-      if (!fs.existsSync(templatesDir)) {
-        throw new Error(`Templates directory does not exist: ${templatesDir}. UI generation requires templates to be present in a /templates folder at the project root.`);
+      if (!fs.existsSync(templateDir)) {
+        throw new Error(`Templates directory does not exist: ${templateDir}. UI generation requires templates to be present in the specified templates directory.`);
       }
       
       // Check if templates directory is empty
-      const templateFiles = fs.readdirSync(templatesDir);
+      const templateFiles = fs.readdirSync(templateDir);
       if (templateFiles.length === 0) {
-        throw new Error(`Templates directory is empty: ${templatesDir}. UI generation requires template files to be present for proper generation.`);
+        throw new Error(`Templates directory is empty: ${templateDir}. UI generation requires template files to be present for proper generation.`);
       }
       
       console.log('Starting UI generation...');
       
-      // Read all manifests
-      const { global: globalManifest, commands: commandManifests } = ManifestReader.readAllManifests(contractDir);
-      console.log(`Read global manifest and ${commandManifests.length} command manifests`);
+      // Use the provided manifest directly
+      const globalManifest = manifest;
+      const commandManifests = manifest.commands || [];
+      console.log(`Using provided manifest with ${commandManifests.length} command manifests`);
       
-      // Read optional CSS from templates directory instead of contract
-      const cssContent = this.readCSSFromTemplates();
+      // Read optional CSS from templates directory
+      const cssContent = this.readCSSFromTemplates(templateDir);
       
       // Initialize state from global manifest
-      const initialState = StateHelpers.initializeState(globalManifest);
+      const initialState = globalManifest.stateDefaults || {};
       
       // Generate all command forms
-      const commandForms = commandManifests.map(cmd => this.generateCommandForm(cmd, initialState));
+      const commandForms = commandManifests.map(cmd => this.generateCommandForm(cmd, initialState, templateDir));
       
       // Ensure output directory exists
-      // If outputDir is an absolute path, use it directly; otherwise join with project root
-      let outputPath;
-      if (path.isAbsolute(outputDir)) {
-        outputPath = outputDir;
-      } else {
-        // Compute the output path relative to the project root
-        // The UI.js file is at kernel/generator/UI.js, so we go up 2 directories to reach project root
-        const currentFileDir = path.dirname(fileURLToPath(import.meta.url)); // kernel/generator/
-        const projectRoot = path.join(currentFileDir, '../..'); // Go up 2 levels to project root
-        outputPath = path.join(projectRoot, outputDir); // Add output directory
-      }
+      // If outputDir is an absolute path, use it directly; otherwise continue as is
+      let outputPath = outputDir;
       
       if (!fs.existsSync(outputPath)) {
         fs.mkdirSync(outputPath, { recursive: true });
       }
       
       // Generate separate files (HTML, CSS, and JS)
-      const html = await this.generateSeparateFiles(globalManifest, commandManifests, commandForms, cssContent, outputPath);
+      const html = await this.generateSeparateFiles(globalManifest, commandManifests, commandForms, cssContent, outputPath, templateDir);
       
       // Write the HTML file
       const htmlFilePath = path.join(outputPath, outputFile);
@@ -98,10 +84,11 @@ export class UI {
 
   /**
    * Get CSS content from the templates directory
+   * @param {string} templateDir - Path to the templates directory
    * @returns {string|null} CSS content if file exists, null otherwise
    */
-  readCSSFromTemplates() {
-    const cssPath = pathResolver.getTemplatePath('global.css');
+  readCSSFromTemplates(templateDir) {
+    const cssPath = path.join(templateDir, 'global.css');
     
     if (fs.existsSync(cssPath)) {
       return fs.readFileSync(cssPath, 'utf8');
@@ -115,7 +102,7 @@ export class UI {
    * @param {Object} state - Initial state
    * @returns {string} HTML for the command form
    */
-  generateCommandForm(commandManifest, state) {
+  generateCommandForm(commandManifest, state, templateDir) {
     // Generate parameter fields HTML
     let parameterFieldsHtml = '';
     
@@ -132,7 +119,7 @@ export class UI {
       }
       
       // Read and process the examples template
-      const examplesTemplatePath = pathResolver.getTemplatePath('command-examples.html');
+      const examplesTemplatePath = path.join(templateDir, 'command-examples.html');
       let examplesTemplate = fs.readFileSync(examplesTemplatePath, 'utf8');
       examplesTemplate = examplesTemplate.replace('{{EXAMPLE_LIST}}', examplesList);
       
@@ -140,7 +127,7 @@ export class UI {
     }
     
     // Read and process the form template
-    const formTemplatePath = pathResolver.getTemplatePath('command-form.html');
+    const formTemplatePath = path.join(templateDir, 'command-form.html');
     let formTemplate = fs.readFileSync(formTemplatePath, 'utf8');
     
     // Replace all placeholders in the template using global regex to replace ALL occurrences
@@ -192,8 +179,9 @@ export class UI {
    * @param {Array} commandForms - Array of generated command forms
    * @param {string|null} cssContent - Optional CSS content
    * @param {string} outputDir - Directory to output files
+   * @param {string} templateDir - Directory containing templates
    */
-  async generateSeparateFiles(globalManifest, commandManifests, commandForms, cssContent, outputDir) {
+  async generateSeparateFiles(globalManifest, commandManifests, commandForms, cssContent, outputDir, templateDir) {
     // Generate client-side JavaScript
     const clientSideJS = this.generateClientSideJavaScript(globalManifest, commandManifests);
     
@@ -207,7 +195,7 @@ export class UI {
     fs.writeFileSync(cssFilePath, cssContentToWrite);
     
     // Read the base template
-    const baseTemplatePath = pathResolver.getTemplatePath('spa-base.html');
+    const baseTemplatePath = path.join(templateDir, 'spa-base.html');
     let baseTemplate = fs.readFileSync(baseTemplatePath, 'utf8');
     
     // Replace top-level placeholders

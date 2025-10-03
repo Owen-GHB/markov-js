@@ -6,7 +6,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 /**
- * Launch the application with the given arguments and project root
+ * Launch the kernel infrastructure with the given arguments and project root
  * @param {string[]} args - Command line arguments
  * @param {string} projectRoot - The project root directory
  * @returns {Promise<void>}
@@ -46,11 +46,12 @@ export async function launch(args, projectRoot) {
     // Import and run the UI generator with proper paths
     const { UI } = await import('./generator/UI.js');
     const pathResolver = await import('./utils/path-resolver.js');
+    const { manifest } = await import('./contract.js'); // Import manifest directly
     const generator = new UI();
     // Use the centralized path resolver
-    const contractDir = pathResolver.contractDir;
     const outputDir = pathResolver.generatedUIDir;
-    return generator.generate(contractDir, outputDir, 'index.html')
+    const templateDir = pathResolver.templatesDir;
+    return generator.generate(manifest, outputDir, templateDir, 'index.html')
       .then(() => {
         console.log('✅ UI generation completed successfully!');
         process.exit(0);
@@ -97,16 +98,15 @@ export async function launch(args, projectRoot) {
     // Start server that serves both UI and API
     const { startServeServer } = await import('./transports/HTTP-serve.js');
     return startServeServer(port);
-  } else if (args.length > 0) {
-    // Check if we're being called directly with command line args
-    const { CLI } = await import('./transports/CLI.js');
-    const cli = new CLI();
-    return cli.run(args);
   } else {
-    // Default to REPL mode if no args
-    const { REPL } = await import('./transports/REPL.js');
-    const repl = new REPL();
-    return repl.start();
+    // For other kernel commands or to show help
+    console.log('Kernel command-line interface');
+    console.log('Available commands:');
+    console.log('  --generate, -g     Generate UI from contracts');
+    console.log('  --serve[=port]     Serve UI and API on specified port (default 8080)');
+    console.log('  --http[=port]      Serve API only on specified port (default 8080)');
+    console.log('  --electron, -e     Launch Electron application');
+    process.exit(0);
   }
 }
 
