@@ -4,6 +4,8 @@ import { CommandParser } from '../../CommandParser.js';
 import { CommandHandler } from '../../CommandHandler.js';
 import stateManager from '../../utils/StateManager.js';
 import { manifest } from '../../contract.js';
+import { HelpCommand } from './commands/help.js';
+import { ExitCommand } from './commands/exit.js';
 
 export class CLI {
 	constructor() {
@@ -11,6 +13,8 @@ export class CLI {
 		this.handler = new CommandHandler();
 		// Use shared state manager
 		this.state = stateManager.getStateMap();
+		this.helpCommand = new HelpCommand();
+		this.exitCommand = new ExitCommand();
 	}
 
 	/**
@@ -18,11 +22,54 @@ export class CLI {
 	 * @param {string[]} args - Command line arguments
 	 */
 	async run(args) {
-		if (args.length === 0 || args[0].toLowerCase() === 'help') {
-			return await this.showHelp();
+		if (args.length === 0) {
+			// Show help when no arguments provided
+			const helpContext = { manifest };
+			const result = await this.helpCommand.handle({ name: 'help', args: {} }, helpContext);
+			if (result.output) {
+				console.log(result.output);
+			}
+			process.exit(0);
 		}
-
+		
+		// Handle simple commands without parens
+		const firstArg = args[0];
+		if (firstArg.toLowerCase() === 'help') {
+			const helpArgs = args.slice(1);
+			const helpContext = { manifest };
+			const command = { 
+				name: 'help', 
+				args: helpArgs.length > 0 ? { command: helpArgs[0] } : {} 
+			};
+			const result = await this.helpCommand.handle(command, helpContext);
+			if (result.output) {
+				console.log(result.output);
+			}
+			process.exit(0);
+		}
+		
+		if (firstArg.toLowerCase() === 'exit') {
+			console.log('Goodbye!');
+			process.exit(0);
+		}
+		
+		// Join all arguments into a single command string for parsing
 		const input = args.join(' ');
+		
+		// Special handling for help and exit commands with function syntax
+		if (input.trim().toLowerCase() === 'help()' || input.trim().toLowerCase() === 'exit()') {
+			if (input.trim().toLowerCase() === 'help()') {
+				const helpContext = { manifest };
+				const result = await this.helpCommand.handle({ name: 'help', args: {} }, helpContext);
+				if (result.output) {
+					console.log(result.output);
+				}
+				process.exit(0);
+			} else {
+				console.log('Goodbye!');
+				process.exit(0);
+			}
+		}
 
 		// Create context with state for the parser
 		const context = { state: this.state, manifest };
@@ -30,8 +77,30 @@ export class CLI {
 
 		if (error) {
 			console.error(`❌ ${error}`);
-			await this.showHelp();
+			const helpContext = { manifest };
+			const result = await this.helpCommand.handle({ name: 'help', args: {} }, helpContext);
+			if (result.output) {
+				console.log(result.output);
+			}
 			process.exit(1);
+		}
+
+		// Handle built-in commands
+		if (command.name === 'help') {
+			const helpContext = { manifest };
+			const result = await this.helpCommand.handle(command, helpContext);
+			if (result.output) {
+				console.log(result.output);
+			}
+			process.exit(0);
+		}
+		
+		if (command.name === 'exit') {
+			const result = await this.exitCommand.handle(command, context);
+			if (result.output) {
+				console.log(result.output);
+			}
+			process.exit(0);
 		}
 
 		const result = await this.handler.handleCommand(command);
@@ -54,23 +123,14 @@ export class CLI {
 	}
 
 	/**
-	 * Display help message
+	 * Show help information
 	 */
 	async showHelp() {
-		// For CLI help, we'll get the help text directly from the help handler module
-		try {
-			const helpModule = await import('../../contract/help/handler.js');
-			const helpText = helpModule.getHelpText ? helpModule.getHelpText() : 
-						   (typeof helpModule.getHelpText === 'function' ? helpModule.getHelpText() : '');
-			console.log(helpText);
-		} catch (error) {
-			// Fallback if we can't load the help text
-			console.log('\n🔗 Command-Line Application\n=============================');
+		const helpContext = { manifest };
+		const result = await this.helpCommand.handle({ name: 'help', args: {} }, helpContext);
+		if (result.output) {
+			console.log(result.output);
 		}
-		
-		console.log('\nCommand Line Usage:');
-		console.log('  app-cli <command> [args...]');
-		console.log('  app-cli \'command(\"param\", key=value)\'');
 	}
 }
 

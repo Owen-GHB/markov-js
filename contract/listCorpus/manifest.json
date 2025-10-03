@@ -1,5 +1,8 @@
 {
   "name": "listCorpus",
+  "commandType": "external-method",
+  "modulePath": "textgen/index.js",
+  "methodName": "listCorpusFiles",
   "description": "List all available corpus files",
   "syntax": "listCorpus()",
   "parameters": [],

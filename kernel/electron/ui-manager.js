@@ -1,10 +1,8 @@
 import fs from 'fs';
-import { UI } from '../generator/UI.js';
 import pathResolver from '../utils/path-resolver.js';
-import { manifest } from '../contract.js';
 
 /**
- * Manages the UI for the Electron application, including generation and checking
+ * Manages the UI for the Electron application, including checking and loading
  */
 export class ElectronUIManager {
   /**
@@ -18,26 +16,32 @@ export class ElectronUIManager {
   }
 
   /**
-   * Generate the UI if it doesn't exist or force generation
+   * Check if the served UI directory exists and has required files
+   * @param {string} filename - The UI filename to check (default: 'index.html')
+   * @returns {boolean} True if the served UI directory exists and has the file
+   */
+  hasServedUI(filename = 'index.html') {
+    const servedDir = pathResolver.getServedUIDir();
+    const indexPath = path.join(servedDir, filename);
+    return fs.existsSync(servedDir) && fs.existsSync(indexPath);
+  }
+
+  /**
+   * Generate the UI (explicit generation - separate from serving)
    * @param {string} filename - The UI filename (default: 'index.html')
-   * @param {boolean} force - Whether to force regeneration even if file exists
    * @returns {Promise<void>}
    */
-  async generateUIIfNeeded(filename = 'index.html', force = false) {
-    const uiPath = pathResolver.getUIFilePath(filename);
+  async generateUI(filename = 'index.html') {
+    const { UI } = await import('../generator/UI.js');
+    const { manifest } = await import('../contract.js');
     
-    if (!force && fs.existsSync(uiPath)) {
-      // UI already exists, no need to generate
-      return;
-    }
-    
-    const generator = new UI();
     const outputDir = pathResolver.getGeneratedUIDir();
     const templateDir = pathResolver.templatesDir;
     
+    const generator = new UI();
     try {
       await generator.generate(manifest, outputDir, templateDir, filename);
-      console.log(`Generated UI at: ${uiPath}`);
+      console.log(`Generated UI at: ${path.join(outputDir, filename)}`);
     } catch (error) {
       console.error('Failed to generate UI:', error);
       throw error;
@@ -45,20 +49,26 @@ export class ElectronUIManager {
   }
 
   /**
-   * Get the UI file path
+   * Get the UI file path from the served UI directory
    * @param {string} filename - The UI filename (default: 'index.html')
    * @returns {string} The path to the UI file
    */
   getUIPath(filename = 'index.html') {
-    return pathResolver.getUIFilePath(filename);
+    const servedDir = pathResolver.getServedUIDir();
+    return path.join(servedDir, filename);
   }
 
   /**
-   * Load and return the UI content
+   * Load and return the UI content from the served UI directory
    * @param {string} filename - The UI filename (default: 'index.html')
    * @returns {string} The UI content
    */
   loadUIContent(filename = 'index.html') {
+    // Check if UI exists first
+    if (!this.hasServedUI(filename)) {
+      throw new Error(`UI files not found. Directory '${pathResolver.getServedUIDir()}' does not exist or is missing ${filename}.'`);
+    }
+    
     const uiPath = this.getUIPath(filename);
     return fs.readFileSync(uiPath, 'utf8');
   }

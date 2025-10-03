@@ -24,7 +24,9 @@ function initializeContractSync() {
   const commandDirs = items
     .filter(dirent => dirent.isDirectory() && 
               dirent.name !== 'index.js' && 
-              dirent.name !== 'global.json')
+              dirent.name !== 'global.json' &&
+              dirent.name !== 'exit' &&      // Filter out built-in commands
+              dirent.name !== 'help')         // Filter out built-in commands
     .map(dirent => dirent.name);
 
   // Load all manifest slices synchronously

@@ -18,22 +18,23 @@ const createWindow = () => {
     }
   });
 
-  // Load the generated UI
-  const uiPath = uiManager.getUIPath();
-  
-  // Check if UI exists, if not generate it first
-  if (!uiManager.hasUI()) {
-    console.log('Generated UI not found, generating...');
-    uiManager.generateUIIfNeeded().then(() => {
-      mainWindow.loadFile(uiPath);
-    }).catch(err => {
-      console.error('Failed to generate UI:', err);
+  // Load the UI from the served UI directory
+  try {
+    const uiPath = uiManager.getUIPath();
+    
+    // Check if UI exists, if not show error
+    if (!uiManager.hasServedUI()) {
+      console.error('UI files not found. Please generate UI files first using \'node kernel.js --generate\'');
       // Load a simple error page
-      mainWindow.loadURL(`data:text/html,<h1>UI Generation Failed</h1><p>${err.message}</p>`);
-    });
-  } else {
-    // Load the generated UI
-    mainWindow.loadFile(uiPath);
+      mainWindow.loadURL(`data:text/html,<h1>UI Files Not Found</h1><p>Please generate UI files first using 'node kernel.js --generate'</p>`);
+    } else {
+      // Load the generated UI
+      mainWindow.loadFile(uiPath);
+    }
+  } catch (err) {
+    console.error('Failed to load UI:', err);
+    // Load a simple error page
+    mainWindow.loadURL(`data:text/html,<h1>UI Loading Failed</h1><p>${err.message}</p>`);
   }
 
   // Open the DevTools.

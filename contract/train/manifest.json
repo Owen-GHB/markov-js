@@ -1,5 +1,8 @@
 {
   "name": "train",
+  "commandType": "external-method",
+  "modulePath": "textgen/index.js",
+  "methodName": "trainModel",
   "description": "Train a model from a text corpus file",
   "syntax": "train(file, modelType, [options])",
   "parameters": [

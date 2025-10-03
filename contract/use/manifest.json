@@ -1,5 +1,6 @@
 {
   "name": "use",
+  "commandType": "internal",
   "description": "Set the current model to use",
   "syntax": "use(modelName)",
   "parameters": [
@@ -16,5 +17,6 @@
       "currentModel": { "fromParam": "modelName" }
     }
   },
+  "successOutput": "✅ Using model: {{modelName}}",
   "examples": ["use(\"current_model.json\")"]
 }

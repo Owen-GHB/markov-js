@@ -1,5 +1,8 @@
 {
   "name": "pgb_download",
+  "commandType": "external-method",
+  "modulePath": "textgen/index.js",
+  "methodName": "downloadGutenberg",
   "description": "Download a book from Project Gutenberg",
   "syntax": "pgb_download(id|title, [options])",
   "parameters": [

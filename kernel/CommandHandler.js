@@ -1,4 +1,10 @@
 import { getHandler, manifest as contractManifest } from './contract.js';
+import path from 'path';
+import { fileURLToPath, pathToFileURL } from 'url';
+import pathResolver from './utils/path-resolver.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export class CommandHandler {
 	constructor() {
@@ -15,7 +21,47 @@ export class CommandHandler {
 		if (!command) return;
 		let result;
 		try {
-			// Get the handler function for this command dynamically from the contract
+			// Get the command specification from the manifest
+			const commandSpec = this.manifest.commands.find(c => c.name === command.name);
+			
+			if (!commandSpec) {
+				return {
+					error: `Unknown command: ${command.name}`,
+					output: null,
+				};
+			}
+			
+			// Handle internal commands declaratively when possible
+			if (commandSpec.commandType === 'internal') {
+				// Check if this is a fully declarative internal command
+				if (commandSpec.successOutput) {
+					// Handle declaratively without calling custom handler
+					return this.handleInternalCommand(command, commandSpec);
+				}
+				// Fall back to custom handler for internal commands that need special logic
+			}
+			
+			// Handle external-method commands - check for custom handler first, then fall back to auto-handling
+			if (commandSpec.commandType === 'external-method') {
+				// Try to get the custom handler function first (highest priority)
+				try {
+					const handlerFunction = await getHandler(command.name);
+					if (handlerFunction && typeof handlerFunction === 'function') {
+						// Use existing custom handler function
+						result = await handlerFunction(command.args);
+						return result;
+					}
+				} catch (handlerError) {
+					// Custom handler doesn't exist or failed to load, continue with auto-handling
+				}
+				
+				// Auto-handle external-method command if it has modulePath and methodName
+				if (commandSpec.modulePath && commandSpec.methodName) {
+					return await this.handleExternalMethod(command, commandSpec);
+				}
+			}
+			
+			// Handle custom commands and external-method commands with existing handlers (fallback for all other cases)
 			const handlerFunction = await getHandler(command.name);
 			
 			if (handlerFunction && typeof handlerFunction === 'function') {
@@ -40,5 +86,99 @@ export class CommandHandler {
 			};
 			return result;
 		}
+	}
+
+	/**
+	 * Handle a declarative internal command
+	 * @param {Object} command - The parsed command object
+	 * @param {Object} commandSpec - The command manifest specification
+	 * @returns {Object} - The result of the command
+	 */
+	handleInternalCommand(command, commandSpec) {
+		const { args = {} } = command;
+		
+		// Validate required parameters
+		if (commandSpec.parameters) {
+			for (const param of commandSpec.parameters) {
+				if (param.required && (args[param.name] === undefined || args[param.name] === null)) {
+					return {
+						error: `Parameter '${param.name}' is required for command '${commandSpec.name}'`,
+						output: null
+					};
+				}
+			}
+		}
+		
+		// Generate success output from template if provided
+		let output = null;
+		if (commandSpec.successOutput) {
+			output = this.renderTemplate(commandSpec.successOutput, args);
+		}
+		
+		return {
+			error: null,
+			output: output
+		};
+	}
+
+	/**
+	 * Handle an external-method command automatically
+	 * @param {Object} command - The parsed command object
+	 * @param {Object} commandSpec - The command manifest specification
+	 * @returns {Promise<Object>} - The result of the command
+	 */
+	async handleExternalMethod(command, commandSpec) {
+		const { args = {} } = command;
+		
+		try {
+			// Use the project root from the path resolver to resolve the module path
+			const projectRoot = pathResolver.getProjectRoot();
+			const modulePath = path.resolve(projectRoot, commandSpec.modulePath);
+			
+			// Convert to file URL for proper ES module loading
+			const moduleUrl = pathToFileURL(modulePath).href;
+			
+			// Dynamically import the module
+			const module = await import(moduleUrl);
+			
+			// Get the method from the module
+			const method = module[commandSpec.methodName];
+			
+			if (typeof method !== 'function') {
+				return {
+					error: `Method '${commandSpec.methodName}' not found or is not a function in module '${commandSpec.modulePath}'`,
+					output: null
+				};
+			}
+			
+			// Call the method with the command arguments
+			const result = await method(args);
+			return result;
+		} catch (error) {
+			return {
+				error: `Failed to execute external method '${commandSpec.methodName}' from '${commandSpec.modulePath}': ${error.message}`,
+				output: null
+			};
+		}
+	}
+
+	/**
+	 * Simple template renderer that substitutes {{paramName}} with parameter values
+	 * @param {string} template - Template string with {{param}} placeholders
+	 * @param {Object} params - Parameter values to substitute
+	 * @returns {string} - Rendered template
+	 */
+	renderTemplate(template, params) {
+		if (!template || typeof template !== 'string') {
+			return '';
+		}
+		
+		return template.replace(/\{\{([^}]+)\}\}/g, (match, paramName) => {
+			const trimmedParamName = paramName.trim();
+			if (params && params.hasOwnProperty(trimmedParamName)) {
+				return String(params[trimmedParamName]);
+			}
+			return match; // Keep original placeholder if param not found
+		});
 	}
 }

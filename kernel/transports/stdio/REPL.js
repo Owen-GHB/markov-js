@@ -6,6 +6,8 @@ import stateManager from '../../utils/StateManager.js';
 import { CommandHandler } from '../../CommandHandler.js';
 import { CommandParser } from '../../CommandParser.js';
 import { manifest } from '../../contract.js';
+import { HelpCommand } from './commands/help.js';
+import { ExitCommand } from './commands/exit.js';
 
 // Load configuration for history
 let config = { repl: { maxHistory: 100 } }; // fallback default
@@ -30,17 +32,12 @@ export class REPL {
 		this.loadHistory();
 		// Use shared state manager
 		this.state = stateManager.getStateMap();
+		this.helpCommand = new HelpCommand();
+		this.exitCommand = new ExitCommand();
 	}
 
 	async start() {
-		// Load help text first, then initialize REPL and event handlers
-		try {
-			// For REPL help, we'll get the help text directly from the help handler module
-		} catch (error) {
-			console.error('Error loading help text:', error);
-		}
-
-		// Initialize REPL instance after help text is displayed
+		// Initialize REPL instance
 		this.rl = readline.createInterface({
 			input: process.stdin,
 			output: process.stdout,
@@ -51,14 +48,127 @@ export class REPL {
 		// Load saved history into readline's history array for up/down navigation
 		this.rl.history = [...this.history].reverse(); // Reverse to match readline's order (newest first)
 
-		this.setupEventHandlers();
-		// Start the prompt after everything is set up
+		// Display welcome message and prompt
+		console.log(`🔗 ${manifest.name} - ${manifest.description}`);
+		console.log('='.repeat(Math.max(manifest.name.length + 2, 40)));
+		console.log('Type "help()" for available commands or "exit()" to quit.');
+		console.log('');
+
 		this.rl.prompt();
+
+		// Handle line input
+		this.rl.on('line', async (input) => {
+			input = input.trim();
+			
+			// Handle empty input
+			if (!input) {
+				this.rl.prompt();
+				return;
+			}
+
+			// Add command to history
+			this.addToHistory(input);
+
+			// Handle built-in commands
+			if (input.toLowerCase() === 'exit' || input.toLowerCase() === 'exit()') {
+				console.log('Goodbye!');
+				this.rl.close();
+				return;
+			}
+
+			if (input.toLowerCase() === 'help' || input.toLowerCase() === 'help()') {
+				const helpContext = { manifest };
+				const result = await this.helpCommand.handle({ name: 'help', args: {} }, helpContext);
+				if (result.output) console.log(result.output);
+				this.rl.prompt();
+				return;
+			}
+
+			// Create context with state for the parser
+			const context = { state: this.state, manifest };
+			const parsed = this.commandParser.parse(input, context);
+			
+			if (parsed.error) {
+				console.error(`❌ ${parsed.error}`);
+				this.rl.prompt();
+				return;
+			}
+
+			const command = parsed.command;
+			
+			// Handle built-in commands with parameters
+			if (command.name === 'help') {
+				const helpContext = { manifest };
+				const result = await this.helpCommand.handle(command, helpContext);
+				if (result.output) console.log(result.output);
+				this.rl.prompt();
+				return;
+			}
+			
+			if (command.name === 'exit') {
+				console.log('Goodbye!');
+				this.rl.close();
+				return;
+			}
+
+			// Handle regular commands
+			const result = await this.handler.handleCommand(command);
+
+			if (result.error) console.error(`❌ ${result.error}`);
+			if (result.output) console.log(result.output);
+
+			this.applySideEffects(command);
+			stateManager.saveState();
+			this.rl.prompt();
+		});
+
+		this.rl.on('close', () => {
+			console.log('\nGoodbye!');
+			process.exit(0);
+		});
+
+		process.on('SIGINT', () => {
+			console.log('\nUse "exit" or Ctrl+D to quit.');
+			this.rl.prompt();
+		});
+	}
+
+	applySideEffects(cmd) {
+		// Handle built-in exit command
+		if (cmd.name === 'exit') {
+			this.rl.close();
+			return;
+		}
+
+		// Use the shared state manager to apply side effects for regular commands
+		const spec = manifest.commands.find((c) => c.name === cmd.name);
+		if (spec) {
+			stateManager.applySideEffects(cmd, spec);
+		}
+	}
+
+	/* ---------- unchanged helpers ---------- */
+	commandCompleter(line) {
+		// Include built-in commands in completion
+		const commands = [...manifest.commands.map((c) => c.name), 'help', 'exit'];
+		const hits = commands.filter((c) => c.startsWith(line));
+		return [hits.length ? hits : commands, line];
 	}
 	
-	/* ---------- event handlers ---------- */
+	addToHistory(input) {
+		if (input.trim()) {
+			// Add to history if it's not a duplicate of the last entry
+			if (this.history.length === 0 || this.history[this.history.length - 1] !== input.trim()) {
+				this.history.push(input.trim());
+				// Keep only the most recent maxHistory entries
+				if (this.history.length > this.maxHistory) {
+					this.history = this.history.slice(-this.maxHistory);
+				}
+				this.saveHistory();
+			}
+		}
+	}
 
-	/* ---------- history management ---------- */
 	loadHistory() {
 		try {
 			if (fs.existsSync(this.historyFilePath)) {
@@ -87,86 +197,5 @@ export class REPL {
 		} catch (error) {
 			console.warn('⚠️ Could not save REPL history:', error.message);
 		}
-	}
-
-	addToHistory(input) {
-		if (input.trim()) {
-			// Add to history if it's not a duplicate of the last entry
-			if (this.history.length === 0 || this.history[this.history.length - 1] !== input.trim()) {
-				this.history.push(input.trim());
-				// Keep only the most recent maxHistory entries
-				if (this.history.length > this.maxHistory) {
-					this.history = this.history.slice(-this.maxHistory);
-				}
-				this.saveHistory();
-			}
-		}
-	}
-
-	/* ---------- event handlers ---------- */
-	setupEventHandlers() {
-		this.rl.on('line', async (input) => {
-			input = input.trim();
-			// Add command to readline's history for up/down navigation
-			if (input) {
-				this.rl.history.unshift(input);
-				// Limit history to maxHistory size
-				if (this.rl.history.length > this.maxHistory) {
-					this.rl.history = this.rl.history.slice(0, this.maxHistory);
-				}
-			}
-			
-			// Add command to persistent history file
-			this.addToHistory(input);
-			
-			const context = { state: this.state, manifest }; // Build context object
-			const parsed = this.commandParser.parse(input, context);
-			if (parsed.error) {
-				console.error(`❌ ${parsed.error}`);
-				this.rl.prompt();
-				return;
-			}
-
-			const command = parsed.command; // No need to fill defaults since parser handles it
-			const result = await this.handler.handleCommand(command);
-
-			if (result.error) console.error(`❌ ${result.error}`);
-			if (result.output) console.log(result.output);
-
-			this.applySideEffects(command);
-			stateManager.saveState();
-			this.rl.prompt();
-		});
-
-		this.rl.on('close', () => {
-			console.log('\nGoodbye!');
-			process.exit(0);
-		});
-
-		process.on('SIGINT', () => {
-			console.log('\nUse "exit" or Ctrl+D to quit.');
-			this.rl.prompt();
-		});
-	}
-
-	
-	applySideEffects(cmd) {
-		const spec = manifest.commands.find((c) => c.name === cmd.name);
-		if (!spec?.sideEffects) return;
-
-		if (spec.sideEffects?.builtin === 'exit') {
-			this.rl.close();
-			return;
-		}
-
-		// Use the shared state manager to apply side effects
-		stateManager.applySideEffects(cmd, spec);
-	}
-
-	/* ---------- unchanged helpers ---------- */
-	commandCompleter(line) {
-		const commands = manifest.commands.map((c) => c.name);
-		const hits = commands.filter((c) => c.startsWith(line));
-		return [hits.length ? hits : commands, line];
 	}
 }

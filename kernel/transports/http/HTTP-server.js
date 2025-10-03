@@ -3,6 +3,8 @@ import http from 'http';
 import fs from 'fs';
 import path from 'path';
 import pathResolver from '../../utils/path-resolver.js';
+import { CommandParser } from '../../CommandParser.js';
+import { CommandHandler } from '../../CommandHandler.js';
 
 // Load configuration from config directory using path resolver
 let config = { defaultHttpPort: 8080 }; // fallback default
@@ -20,8 +22,9 @@ export class HTTPServer {
   constructor(options = {}) {
     this.port = options.port || config.defaultHttpPort || 8080;
     this.staticDir = options.staticDir || null;
-    this.apiHandler = options.apiHandler || null;
     this.apiEndpoint = options.apiEndpoint || '/api';
+    this.commandParser = new CommandParser();
+    this.commandHandler = new CommandHandler();
   }
 
   start() {
@@ -60,9 +63,7 @@ export class HTTPServer {
         if (this.staticDir) {
           console.log(`   Serving static files from: ${this.staticDir}`);
         }
-        if (this.apiHandler) {
-          console.log(`   API available at: http://localhost:${this.port}${this.apiEndpoint}`);
-        }
+        console.log(`   API available at: http://localhost:${this.port}${this.apiEndpoint}`);
         if (this.staticDir) {
           console.log(`   UI available at: http://localhost:${this.port}/`);
         }
@@ -77,19 +78,21 @@ export class HTTPServer {
   }
 
   async handleAPIRequest(req, res) {
-    if (!this.apiHandler) {
-      res.writeHead(404, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'API not configured' }));
-      return;
-    }
-
     try {
       const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
-      let jsonString;
+      let commandString;
 
       if (req.method === 'GET') {
-        jsonString = parsedUrl.searchParams.get('json');
-        return await this.respond(jsonString, res);
+        commandString = parsedUrl.searchParams.get('command');
+        if (!commandString) {
+          // Fallback to 'json' parameter to maintain backward compatibility
+          commandString = parsedUrl.searchParams.get('json');
+        }
+        if (commandString) {
+          return await this.executeCommandAndRespond(commandString, res);
+        }
+        // If no command parameter, return 400
+        return this.sendErrorResponse(res, "Missing 'command' parameter", 400);
       }
 
       if (req.method === 'POST') {
@@ -98,33 +101,121 @@ export class HTTPServer {
         req.on('end', async () => {
           try {
             const contentType = req.headers['content-type'] || '';
+            
             if (contentType.includes('application/x-www-form-urlencoded')) {
               const params = new URLSearchParams(body);
-              jsonString = params.get('json');
+              commandString = params.get('command') || params.get('json'); // backward compatibility
             } else if (contentType.includes('application/json')) {
               const json = JSON.parse(body);
-              jsonString = json?.json;
+              commandString = json?.command || json?.json; // backward compatibility
             }
 
-            await this.respond(jsonString, res);
+            if (commandString) {
+              await this.executeCommandAndRespond(commandString, res);
+            } else {
+              this.sendErrorResponse(res, "Missing 'command' in request body", 400);
+            }
           } catch (err) {
-            res.writeHead(400, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ error: 'Invalid POST body', details: err.message }));
+            this.sendErrorResponse(res, `Invalid POST body: ${err.message}`, 400);
           }
         });
         return;
       }
 
-      res.writeHead(405, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Method not allowed' }));
+      this.sendErrorResponse(res, 'Method not allowed', 405);
     } catch (err) {
       console.error("API handler error:", err);
-      res.writeHead(500, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: "Internal server error", details: err.message }));
+      this.sendErrorResponse(res, `Internal server error: ${err.message}`, 500);
     }
   }
 
+  async executeCommandAndRespond(commandString, res) {
+    try {
+      // First, try to parse as JSON command object (for backward compatibility)
+      const jsonResult = await this.tryParseAsJsonCommand(commandString);
+      if (jsonResult.handled) {
+        return this.sendResponse(res, jsonResult.result);
+      }
+
+      // If not JSON, parse as command string using CommandParser
+      const context = { 
+        state: new Map(), // Use empty state map or get from state manager
+        manifest: (await import('../../contract.js')).manifest 
+      };
+      const { error, command } = this.commandParser.parse(commandString, context);
+
+      if (error) {
+        return this.sendErrorResponse(res, error, 400);
+      }
+
+      // Execute the parsed command
+      const result = await this.commandHandler.handleCommand(command);
+      return this.sendResponse(res, result);
+    } catch (err) {
+      console.error("Command execution error:", err);
+      return this.sendErrorResponse(res, err.message, 500);
+    }
+  }
+
+  /**
+   * Try to parse command string as JSON command object
+   * @param {string} commandString - The command string to parse
+   * @returns {Object} { handled: boolean, result: Object }
+   */
+  async tryParseAsJsonCommand(commandString) {
+    try {
+      const commandObj = JSON.parse(commandString);
+      if (commandObj && typeof commandObj === 'object' && commandObj.name) {
+        // This is a JSON command object, send directly to command handler
+        const result = await this.commandHandler.handleCommand(commandObj);
+        return { handled: true, result };
+      }
+    } catch (jsonError) {
+      // Not a JSON command object, continue with command string parsing
+    }
+    return { handled: false };
+  }
+
+  /**
+   * Send a response with appropriate status code
+   * @param {Object} res - HTTP response object
+   * @param {Object} result - Command result object
+   * @param {number} defaultStatusCode - Default status code if not in result
+   */
+  sendResponse(res, result) {
+    if (result.error) {
+      return this.sendErrorResponse(res, result.error, 400);
+    }
+
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(result));
+  }
+
+  /**
+   * Send an error response
+   * @param {Object} res - HTTP response object
+   * @param {string} errorMessage - Error message
+   * @param {number} statusCode - HTTP status code
+   */
+  sendErrorResponse(res, errorMessage, statusCode = 400) {
+    res.writeHead(statusCode, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: errorMessage }));
+  }
+
   async handleStaticRequest(req, res) {
+    // Check if static directory is configured
+    if (!this.staticDir) {
+      return this.sendErrorResponse(res, 'Static file serving not configured', 404);
+    }
+
+    // Check if the static directory exists and has index.html
+    const indexPath = path.join(this.staticDir, 'index.html');
+    if (!fs.existsSync(this.staticDir) || !fs.existsSync(indexPath)) {
+      return this.sendErrorResponse(res, 
+        `Directory '${this.staticDir}' does not exist or is missing index.html. Please generate UI files first using 'node kernel.js --generate'`, 
+        404);
+    }
+
     // Remove query parameters and normalize path
     const url = new URL(req.url, `http://${req.headers.host}`);
     let filePath = url.pathname;

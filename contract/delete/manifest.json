@@ -1,5 +1,8 @@
 {
   "name": "delete",
+  "commandType": "external-method",
+  "modulePath": "textgen/index.js",
+  "methodName": "deleteModelFile",
   "description": "Delete a saved model",
   "syntax": "delete(modelName)",
   "parameters": [

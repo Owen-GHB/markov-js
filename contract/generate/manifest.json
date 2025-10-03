@@ -1,5 +1,8 @@
 {
   "name": "generate",
+  "commandType": "external-method",
+  "modulePath": "textgen/index.js",
+  "methodName": "generateText",
   "description": "Generate text from a trained model",
   "syntax": "generate(modelName, [options])",
   "parameters": [

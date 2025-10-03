@@ -1,5 +1,8 @@
 {
   "name": "pgb_info",
+  "commandType": "external-method",
+  "modulePath": "textgen/index.js",
+  "methodName": "getGutenbergInfo",
   "description": "Get book details from Project Gutenberg",
   "syntax": "pgb_info(id_or_title)",
   "parameters": [

@@ -1,5 +1,8 @@
 {
   "name": "pgb_search",
+  "commandType": "external-method",
+  "modulePath": "textgen/index.js",
+  "methodName": "searchGutenberg",
   "description": "Search Project Gutenberg by title/author",
   "syntax": "pgb_search(query)",
   "parameters": [

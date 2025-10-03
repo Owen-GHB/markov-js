@@ -40,6 +40,16 @@ class KernelPathResolver {
   }
 
   /**
+   * Get the path to the served UI directory (for HTTP serving/Electron)
+   * @returns {string} Path to served UI directory
+   */
+  getServedUIDir() {
+    // For now, use the same directory as generated UI
+    // This can be customized later to point to a different location
+    return path.join(this.projectRoot, 'generated-ui');
+  }
+
+  /**
    * Get the path to a specific UI file
    * @param {string} filename - The UI filename (default: 'index.html')
    * @returns {string} Path to the UI file
@@ -131,6 +141,7 @@ const pathResolver = new KernelPathResolver();
 export const projectRoot = pathResolver.getProjectRoot();
 export const contractDir = pathResolver.getContractDir();
 export const generatedUIDir = pathResolver.getGeneratedUIDir();
+export const servedUIDir = pathResolver.getServedUIDir();
 export const electronPreloadPath = pathResolver.getElectronPreloadPath();
 export const contextDir = pathResolver.getContextDir();
 export const templatesDir = pathResolver.getTemplatesDir();
