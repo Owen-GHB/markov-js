@@ -35,6 +35,20 @@ export class CommandParser {
 
 		const trimmed = input.trim();
 
+		// First, try to parse as JSON command object
+		try {
+			const commandObj = JSON.parse(trimmed);
+			if (commandObj && typeof commandObj === 'object' && commandObj.name) {
+				// This is a valid JSON command object
+				return {
+					error: null,
+					command: commandObj
+				};
+			}
+		} catch (jsonError) {
+			// Not a JSON command object, continue with string parsing
+		}
+
 		// Try CLI-style parsing first
 		const cliMatch = trimmed.match(this.patterns.cliStyle);
 		if (cliMatch) {

@@ -1,20 +1,10 @@
 #!/usr/bin/env node
 
-import { CommandParser } from '../../CommandParser.js';
-import { CommandHandler } from '../../CommandHandler.js';
-import stateManager from '../../utils/StateManager.js';
-import { manifest } from '../../contract.js';
-import { HelpCommand } from './commands/help.js';
-import { ExitCommand } from './commands/exit.js';
+import { CommandProcessor } from '../../CommandProcessor.js';
 
 export class CLI {
 	constructor() {
-		this.parser = new CommandParser();
-		this.handler = new CommandHandler();
-		// Use shared state manager
-		this.state = stateManager.getStateMap();
-		this.helpCommand = new HelpCommand();
-		this.exitCommand = new ExitCommand();
+		this.processor = new CommandProcessor();
 	}
 
 	/**
@@ -23,90 +13,33 @@ export class CLI {
 	 */
 	async run(args) {
 		if (args.length === 0) {
-			// Show help when no arguments provided
-			const helpContext = { manifest };
-			const result = await this.helpCommand.handle({ name: 'help', args: {} }, helpContext);
+			// Show help when no arguments provided by processing the help command
+			const result = await this.processor.processCommand('help()');
+
+			if (result.error) {
+				console.error(`❌ ${result.error}`);
+				process.exit(1);
+			}
+			
 			if (result.output) {
 				console.log(result.output);
 			}
 			process.exit(0);
 		}
-		
-		// Handle simple commands without parens
-		const firstArg = args[0];
-		if (firstArg.toLowerCase() === 'help') {
-			const helpArgs = args.slice(1);
-			const helpContext = { manifest };
-			const command = { 
-				name: 'help', 
-				args: helpArgs.length > 0 ? { command: helpArgs[0] } : {} 
-			};
-			const result = await this.helpCommand.handle(command, helpContext);
-			if (result.output) {
-				console.log(result.output);
-			}
-			process.exit(0);
-		}
-		
-		if (firstArg.toLowerCase() === 'exit') {
-			console.log('Goodbye!');
-			process.exit(0);
-		}
-		
+
 		// Join all arguments into a single command string for parsing
 		const input = args.join(' ');
-		
-		// Special handling for help and exit commands with function syntax
-		if (input.trim().toLowerCase() === 'help()' || input.trim().toLowerCase() === 'exit()') {
-			if (input.trim().toLowerCase() === 'help()') {
-				const helpContext = { manifest };
-				const result = await this.helpCommand.handle({ name: 'help', args: {} }, helpContext);
-				if (result.output) {
-					console.log(result.output);
-				}
-				process.exit(0);
-			} else {
-				console.log('Goodbye!');
-				process.exit(0);
-			}
-		}
 
-		// Create context with state for the parser
-		const context = { state: this.state, manifest };
-		const { error, command } = this.parser.parse(input, context);
-
-		if (error) {
-			console.error(`❌ ${error}`);
-			const helpContext = { manifest };
-			const result = await this.helpCommand.handle({ name: 'help', args: {} }, helpContext);
-			if (result.output) {
-				console.log(result.output);
-			}
-			process.exit(1);
-		}
-
-		// Handle built-in commands
-		if (command.name === 'help') {
-			const helpContext = { manifest };
-			const result = await this.helpCommand.handle(command, helpContext);
-			if (result.output) {
-				console.log(result.output);
-			}
-			process.exit(0);
-		}
-		
-		if (command.name === 'exit') {
-			const result = await this.exitCommand.handle(command, context);
-			if (result.output) {
-				console.log(result.output);
-			}
-			process.exit(0);
-		}
-
-		const result = await this.handler.handleCommand(command);
+		// Process the command using the shared processor
+		const result = await this.processor.processCommand(input);
 
 		if (result.error) {
 			console.error(`❌ ${result.error}`);
+			// Show help on error
+			const helpResult = await this.processor.processCommand('help()');
+			if (helpResult.output) {
+				console.log(helpResult.output);
+			}
 			process.exit(1);
 		}
 
@@ -114,11 +47,9 @@ export class CLI {
 			console.log(result.output);
 		}
 
-		// Apply side effects and save state if command was successful
-		const commandSpec = manifest.commands.find(c => c.name === command.name);
-		if (commandSpec) {
-			stateManager.applySideEffects(command, commandSpec);
-			stateManager.saveState();
+		// Check if the command requested exit
+		if (result.exit) {
+			process.exit(0);
 		}
 	}
 
@@ -126,8 +57,7 @@ export class CLI {
 	 * Show help information
 	 */
 	async showHelp() {
-		const helpContext = { manifest };
-		const result = await this.helpCommand.handle({ name: 'help', args: {} }, helpContext);
+		const result = await this.processor.processCommand('help()');
 		if (result.output) {
 			console.log(result.output);
 		}

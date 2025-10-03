@@ -3,8 +3,7 @@ import http from 'http';
 import fs from 'fs';
 import path from 'path';
 import pathResolver from '../../utils/path-resolver.js';
-import { CommandParser } from '../../CommandParser.js';
-import { CommandHandler } from '../../CommandHandler.js';
+import { CommandProcessor } from '../../CommandProcessor.js';
 
 // Load configuration from config directory using path resolver
 let config = { defaultHttpPort: 8080 }; // fallback default
@@ -23,8 +22,7 @@ export class HTTPServer {
     this.port = options.port || config.defaultHttpPort || 8080;
     this.staticDir = options.staticDir || null;
     this.apiEndpoint = options.apiEndpoint || '/api';
-    this.commandParser = new CommandParser();
-    this.commandHandler = new CommandHandler();
+    this.commandProcessor = new CommandProcessor();
   }
 
   start() {
@@ -131,49 +129,13 @@ export class HTTPServer {
 
   async executeCommandAndRespond(commandString, res) {
     try {
-      // First, try to parse as JSON command object (for backward compatibility)
-      const jsonResult = await this.tryParseAsJsonCommand(commandString);
-      if (jsonResult.handled) {
-        return this.sendResponse(res, jsonResult.result);
-      }
-
-      // If not JSON, parse as command string using CommandParser
-      const context = { 
-        state: new Map(), // Use empty state map or get from state manager
-        manifest: (await import('../../contract.js')).manifest 
-      };
-      const { error, command } = this.commandParser.parse(commandString, context);
-
-      if (error) {
-        return this.sendErrorResponse(res, error, 400);
-      }
-
-      // Execute the parsed command
-      const result = await this.commandHandler.handleCommand(command);
+      // Process command using the shared processor
+      const result = await this.commandProcessor.processCommand(commandString);
       return this.sendResponse(res, result);
     } catch (err) {
       console.error("Command execution error:", err);
       return this.sendErrorResponse(res, err.message, 500);
     }
-  }
-
-  /**
-   * Try to parse command string as JSON command object
-   * @param {string} commandString - The command string to parse
-   * @returns {Object} { handled: boolean, result: Object }
-   */
-  async tryParseAsJsonCommand(commandString) {
-    try {
-      const commandObj = JSON.parse(commandString);
-      if (commandObj && typeof commandObj === 'object' && commandObj.name) {
-        // This is a JSON command object, send directly to command handler
-        const result = await this.commandHandler.handleCommand(commandObj);
-        return { handled: true, result };
-      }
-    } catch (jsonError) {
-      // Not a JSON command object, continue with command string parsing
-    }
-    return { handled: false };
   }
 
   /**
