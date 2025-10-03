@@ -1,6 +1,83 @@
 # Markov Chain Text Generator
 
-A versatile text generation tool implementing Markov chains, Variable-Length Markov Models (VLMM), and Hidden Markov Models (HMM) with a command-line interface.
+A versatile text generation tool implementing Markov chains, Variable-Length Markov Models (VLMM), and Hidden Markov Models (HMM) with a command-line interface and multiple transport mechanisms.
+
+---
+
+## 🧠 Architecture Overview
+
+This application is built on a **message-passing kernel framework** that automatically discovers and executes commands defined in domain-specific contracts. The architecture cleanly separates:
+
+- **Application Domain** (`textgen/`) - Core text generation logic
+- **Interface Domain** (`kernel/transports/`) - Multiple access methods (CLI, HTTP, Electron)
+- **Contract System** (`contract/`) - Command definitions and manifests
+- **Kernel Core** (`kernel/`) - Command orchestration and processing
+
+### Command Types
+
+The system supports three distinct command handling strategies:
+
+1. **External-Method Commands** (`train`, `generate`, etc.) - Automatically call domain methods
+2. **Internal Commands** (`use`, etc.) - Declarative state manipulation (no handler files needed)
+3. **Custom Commands** (`randomize`) - Special business logic requiring custom handlers
+
+### Transport System
+
+Commands work seamlessly across multiple interfaces:
+- **CLI** - Direct command-line execution
+- **REPL** - Interactive shell with tab completion
+- **HTTP API** - RESTful web API
+- **HTTP Serve** - Web server with UI and API
+- **Electron** - Desktop application
+- **Native** - Direct programmatic API
+
+## 🧱 Kernel Architecture
+
+### Message-Passing Kernel Framework
+
+This application is built on a **message-passing kernel framework** that provides:
+
+1. **Universal Command Processing** - Works with any domain by defining commands in contracts
+2. **Multiple Transport Mechanisms** - CLI, REPL, HTTP API, HTTP Serve, Electron, Native
+3. **Automatic Command Discovery** - Scans contract directory and discovers all commands
+4. **Declarative Configuration** - Commands defined entirely in JSON manifests
+5. **State Management** - Persistent state that survives across command invocations
+6. **Runtime Fallbacks** - Parameters automatically fall back to state values
+7. **Template Strings** - Dynamic values in side effects using template substitution
+8. **Cross-Platform UI** - Automatically generates web interfaces from contracts
+
+### Command Types
+
+The system supports three distinct command handling strategies:
+
+1. **External-Method Commands** (`train`, `generate`, etc.)
+   - Automatically delegate to domain methods
+   - No handler files needed
+   - Defined with `commandType: "external-method"` in manifests
+
+2. **Internal Commands** (`use`, etc.)
+   - Pure state manipulation
+   - No handler files needed
+   - Behavior defined entirely in manifests
+   - Defined with `commandType: "internal"` in manifests
+
+3. **Custom Commands** (`randomize`, etc.)
+   - Special business logic requiring custom implementation
+   - Require handler files
+   - Defined with `commandType: "custom"` in manifests
+
+### Transport System
+
+Commands work seamlessly across multiple interfaces:
+
+- **CLI** - Direct command-line execution (`node main.js command()`)
+- **REPL** - Interactive shell with tab completion (`node main.js`)
+- **HTTP API** - RESTful web API (`node main.js --http=8080`)
+- **HTTP Serve** - Web server with UI and API (`node main.js --serve=8080`)
+- **Electron** - Desktop application (`node main.js --electron`)
+- **Native** - Direct programmatic API access
+
+---
 
 ---
 
@@ -38,25 +115,64 @@ A versatile text generation tool implementing Markov chains, Variable-Length Mar
 
 1. Ensure you have **Node.js (v14+)** installed.
 2. Clone this repository.
-3. Make the CLI executable:
+3. Install dependencies:
 
 ```bash
-chmod +x markov-cli.js
+npm install
+```
+
+4. (Optional) Install Electron for desktop UI:
+
+```bash
+npm install --save-dev electron
 ```
 
 ---
 
 ## Usage
 
-### Running the CLI
+### Running the Application
 
 ```bash
-./markov-cli.js
-# or
-node markov-cli.js
+# Direct execution (REPL mode)
+node main.js
+
+# Command-line execution
+node main.js <command> [args...]
+
+# Generate web UI
+node main.js --generate
+
+# Serve web UI and API
+node main.js --serve[=port]
+
+# HTTP API only
+node main.js --http[=port]
+
+# Launch Electron application
+node main.js --electron
 ```
 
 ### Basic Commands
+
+| Command                             | Description                 | Example                                  |
+| ----------------------------------- | --------------------------- | ---------------------------------------- |
+| `train(file, modelType, [options])` | Train a new model           | `train("sample.txt", "markov", order=3)` |
+| `generate(modelName, [options])`    | Generate text from model    | `generate("model.json", length=50)`      |
+| `listModels()`                      | List available models       | `listModels()`                           |
+| `listCorpus()`                      | List available corpus files | `listCorpus()`                           |
+| `delete("model.json")`              | Delete a model              | `delete("old_model.json")`               |
+| `use("model.json")`                 | Set current model           | `use("model.json")`                      |
+| `help()`                            | Show help                   | `help()`                                 |
+| `exit()`                            | Exit the program            | `exit()`                                 |
+
+### Project Gutenberg Commands
+
+| Command                             | Description                           | Example                                |
+| ----------------------------------- | ------------------------------------- | -------------------------------------- |
+| `pgb_download(id_or_title, [file])` | Download a book from Project Gutenberg | `pgb_download(1342, file="pride.txt")` |
+| `pgb_info(id_or_title)`             | Get book details                      | `pgb_info("Pride and Prejudice")`      |
+| `pgb_search(query)`                 | Search by title/author                | `pgb_search("Sherlock Holmes")`        |
 
 | Command                             | Description                 | Example                                  |
 | ----------------------------------- | --------------------------- | ---------------------------------------- |
@@ -124,25 +240,56 @@ exit;
 
 ### Training a Model
 
-```javascript
-// Train a 3rd-order Markov model
-train('sample.txt', 'markov', (order = 3));
+```bash
+# Train a 3rd-order Markov model
+node main.js train("sample.txt", "markov", order=3)
 
-// Train a VLMM model with custom name
-train('poems.txt', 'vlmm', (modelName = 'poems_vlmm.json'));
+# Train a VLMM model with custom name
+node main.js train("poems.txt", "vlmm", modelName="poems_vlmm.json")
 ```
 
 ### Generating Text
 
-```javascript
-// Basic generation
-generate('model.json');
+```bash
+# Basic generation
+node main.js generate("model.json")
 
-// Generate with specific parameters
-generate('model.json', (length = 50), (temperature = 1.2));
+# Generate with specific parameters
+node main.js generate("model.json", length=50, temperature=1.2)
 
-// Generate with a prompt
-generate('model.json', (prompt = 'The quick brown fox'));
+# Generate with a prompt
+node main.js generate("model.json", prompt="The quick brown fox")
+```
+
+### Using the Web Interface
+
+```bash
+# Generate the web UI
+node main.js --generate
+
+# Serve both UI and API
+node main.js --serve=8080
+
+# Access at: http://localhost:8080/
+```
+
+### Using the Desktop Application
+
+```bash
+# Launch Electron application
+node main.js --electron
+```
+
+### Using the HTTP API
+
+```bash
+# Start HTTP API server
+node main.js --http=8080
+
+# Call API with JSON command
+curl -X POST http://localhost:8080/api \
+  -H "Content-Type: application/json" \
+  -d '{"json":"{\"name\":\"generate\",\"args\":{\"modelName\":\"model.json\",\"length\":50}}"}'
 ```
 
 ---

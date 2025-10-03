@@ -1,25 +1,36 @@
 # 🧠 Message-Passing Kernel Framework
 
-A generic, domain-agnostic command processing engine that automatically discovers and executes commands defined in your domain-specific contract.
+A generic, domain-agnostic command processing engine that automatically discovers and executes commands defined in your domain-specific contract, with support for multiple transports and built-in command types.
 
 ## 🎯 Purpose
 
 This kernel provides a universal command processing system that works with any domain. Simply define your commands in a contract folder and the kernel automatically discovers, validates, and executes them through multiple interfaces.
 
-## 📁 Project Structure
+## 📁 Modern Project Structure
 
 ```
 your-project/
-├── kernel/           # This generic command engine (copy once)
-├── contract/         # Your domain-specific commands (write for each project)
-│   ├── global.json   # Domain configuration (prompt, defaults, etc.)
-│   ├── command1/     # Directory for each command
-│   │   ├── handler.js    # Command implementation
-│   │   └── manifest.json # Command definition
+├── kernel/                    # Generic command engine (copy once)
+│   ├── transports/           # Interface-specific implementations
+│   │   ├── stdio/           # CLI and REPL interfaces
+│   │   ├── http/            # HTTP server and API
+│   │   ├── electron/        # Electron desktop application
+│   │   └── native/          # Direct programmatic API
+│   ├── generator/            # UI generation system
+│   ├── utils/               # Shared utilities
+│   ├── contract.js          # Contract loading and management
+│   └── CommandHandler.js    # Core command processing
+├── contract/                # Your domain-specific commands (write for each project)
+│   ├── global.json          # Domain configuration (prompt, defaults, etc.)
+│   ├── command1/            # Directory for each command
+│   │   ├── handler.js       # Custom command implementation (optional)
+│   │   └── manifest.json    # Command definition
 │   └── command2/
 │       ├── handler.js
 │       └── manifest.json
-└── main.js           # Your project's entry point (see below)
+├── textgen/                 # Domain-specific logic (e.g., text generation)
+├── generated-ui/            # Auto-generated web interface
+└── main.js                  # Your project's entry point
 ```
 
 ## 🚀 Quick Start
@@ -44,26 +55,13 @@ Create a `/contract` directory with your domain-specific commands:
 }
 ```
 
-**contract/yourcommand/handler.js**
-```javascript
-/**
- * Handle the "yourcommand" command
- * @param {Object} params - Command parameters
- * @returns {Object} - Result with error/output
- */
-export default async function handleYourcommand(params) {
-  // Your command implementation here
-  return {
-    error: null,
-    output: "Command executed successfully!"
-  };
-}
-```
-
 **contract/yourcommand/manifest.json**
 ```json
 {
   "name": "yourcommand",
+  "commandType": "external-method",
+  "modulePath": "textgen/index.js",
+  "methodName": "yourDomainMethod",
   "description": "Description of what your command does",
   "syntax": "yourcommand(param1, [options])",
   "parameters": [
@@ -82,30 +80,11 @@ Create a `main.js` file at your project root:
 
 ```javascript
 #!/usr/bin/env node
+import { launch } from './kernel/main.js';
 
-// Check if we're being called directly with command line args
-if (process.argv.length > 2) {
-  import('./kernel/transports/CLI.js')
-    .then(({ CLI }) => {
-      const cli = new CLI();
-      cli.run(process.argv.slice(2));
-    })
-    .catch((err) => {
-      console.error('❌ Failed to load CLI:', err.message);
-      process.exit(1);
-    });
-} else {
-  // Default to REPL mode if no args
-  import('./kernel/transports/REPL.js')
-    .then(async ({ REPL }) => {
-      const repl = new REPL();
-      await repl.start();
-    })
-    .catch((err) => {
-      console.error('❌ Failed to start REPL:', err.message);
-      process.exit(1);
-    });
-}
+// Launch with current directory as project root
+const projectRoot = process.cwd();
+launch(process.argv.slice(2), projectRoot);
 ```
 
 ### 4. Run Your Application
@@ -115,135 +94,56 @@ node main.js yourcommand param1=value1
 
 # REPL mode  
 node main.js
-> yourcommand param1=value1
+
+# Generate web UI
+node main.js --generate
+
+# Serve web UI and API
+node main.js --serve=3000
+
+# Launch Electron app
+node main.js --electron
 ```
 
-## 🧠 Advanced Features
+## 🧠 Command Types
 
-### State Management
-The kernel provides persistent state management that persists across command invocations:
+The kernel supports three distinct command types with different handling strategies:
 
-```javascript
-// In global.json
-{
-  "stateDefaults": {
-    "currentUser": null,
-    "currentProject": null,
-    "lastResult": null
-  }
-}
-
-// In command manifest
-{
-  "sideEffects": {
-    "setState": {
-      "currentProject": { "fromParam": "projectName" },
-      "lastResult": { "template": "Processed {{fileName}}" }
-    }
-  }
-}
-```
-
-### Context Passing
-Commands receive contextual information automatically:
-```javascript
-export default async function handleCommand(params, context) {
-  const { state, manifest } = context;
-  const currentUser = state.get('currentUser');
-  // Use context for decisions
-}
-```
-
-### Runtime Fallbacks
-Parameters can automatically fall back to state values:
+### 1. External-Method Commands (`commandType: "external-method"`)
+Automatically handled by calling domain methods:
 ```json
 {
-  "parameters": [
-    {
-      "name": "projectName",
-      "type": "string", 
-      "required": true,
-      "runtimeFallback": "currentProject"
-    }
-  ]
+  "name": "train",
+  "commandType": "external-method",
+  "modulePath": "textgen/index.js",
+  "methodName": "trainModel"
 }
 ```
+No handler file needed - the kernel automatically calls `textgen.trainModel()`.
 
-### Template Strings
-Use template strings for dynamic values in side effects:
+### 2. Internal Commands (`commandType: "internal"`) 
+Handled declaratively with template-based output:
 ```json
 {
-  "sideEffects": {
-    "setState": {
-      "currentProject": { "fromParam": "projectName" },
-      "projectFile": { "template": "{{projectName}}.json" }
-    }
-  }
+  "name": "use",
+  "commandType": "internal",
+  "successOutput": "✅ Using model: {{modelName}}",
+  "parameters": [...]
 }
 ```
+No handler file needed - behavior defined entirely in manifest.
 
-## 🧩 How It Works
-
-### Automatic Command Discovery
-The kernel automatically scans your `/contract` directory at startup and discovers all commands by reading their `manifest.json` files. No configuration needed!
-
-### Universal Handler Interface
-All command handlers follow the same simple pattern:
-```javascript
-export default async function handleCommandname(params) {
-  // Implementation
-  return { error: null, output: "Result" };
+### 3. Custom Commands (`commandType: "custom"`)
+Require custom handler implementation:
+```json
+{
+  "name": "randomize",
+  "commandType": "custom"
 }
 ```
+Must provide `handler.js` with custom logic.
 
-### Multiple Transports
-The same commands work through multiple interfaces:
-- **CLI** - Command-line arguments (`yourcommand param=value`)
-- **REPL** - Interactive shell with command completion
-- **JSON** - Programmatic JSON interface
-
-### Zero Coupling
-The kernel contains zero domain-specific logic. All domain configuration lives in your `/contract` folder.
-
-## 🛠️ Command Handler Development
-
-### Handler Structure
-Each handler must:
-1. Be in its own directory under `/contract/commandname/`
-2. Export its main function as `default`
-3. Return `{ error: string|null, output: string|null }`
-4. Follow the parameter specification in its manifest
-
-### Example Handler
-```javascript
-export default async function handleExample(params) {
-  const { requiredParam, optionalParam = "default" } = params || {};
-  
-  if (!requiredParam) {
-    return {
-      error: "requiredParam is required",
-      output: null
-    };
-  }
-  
-  try {
-    // Your implementation here
-    const result = `Processed ${requiredParam} with ${optionalParam}`;
-    
-    return {
-      error: null,
-      output: result
-    };
-  } catch (error) {
-    return {
-      error: `Processing failed: ${error.message}`,
-      output: null
-    };
-  }
-}
-```
-
-## 🌐 Transport Interfaces
+## 🔄 Transport System
 
 The kernel provides multiple interfaces to access your commands:
 
@@ -281,40 +181,91 @@ node main.js --serve=3000
 # API available at: http://localhost:3000/api
 ```
 
-### JSON Transport
-Direct programmatic access:
+### Electron Transport
+Desktop application with native UI:
+```bash
+# Launch Electron app
+node main.js --electron
+```
+
+### Native Transport
+Direct programmatic API access:
 ```javascript
-import { JSONAPI } from './kernel/transports/JSON.js';
+import { JSONAPI } from './kernel/transports/native/JSON.js';
 const api = new JSONAPI();
 const result = await api.handleInput('{"name":"yourcommand","args":{"param":"value"}}');
 ```
 
-## 🏗️ Modular Architecture
+## 🧩 How It Works
 
-### Reusable HTTP Server
-The kernel includes a flexible HTTP server that can:
-- Serve static content (web UI)
-- Handle API requests
-- Support both GET and POST endpoints
-- Include CORS headers for web applications
+### Automatic Command Discovery
+The kernel automatically scans your `/contract` directory and discovers all commands by reading their `manifest.json` files. No configuration needed!
 
-### Transport Layer
-- **`HTTP-server.js`**: Reusable HTTP server class
-- **`HTTP.js`**: API-only server (maintains backward compatibility)
-- **`HTTP-serve.js`**: Combined UI and API server
-- **`CLI.js`**: Command-line interface
-- **`REPL.js`**: Interactive shell
-- **`JSON.js`**: JSON-based interface
+### Smart Command Routing
+Based on `commandType` in manifests:
+- **`external-method`**: Kernel automatically calls specified domain method
+- **`internal`**: Kernel handles declaratively using manifest templates
+- **`custom`**: Kernel delegates to custom `handler.js` implementation
 
-## 📋 Manifest Schema
+### Multiple Transports, Single Interface
+All command types work seamlessly across all transports - write once, use everywhere.
 
-Each command must provide a `manifest.json` that defines:
-- Command name and description
-- Parameter specifications with types and validation
-- Syntax examples and usage information
-- Side effects and state management rules
+### Zero Domain Coupling
+The kernel contains zero domain-specific logic. All domain configuration and business logic lives in your `/contract` and `/textgen` folders.
 
-The kernel uses these manifests for automatic parameter validation, help text generation, command completion, and UI form generation.
+## 🛠️ Advanced Features
+
+### State Management
+The kernel provides persistent state management that persists across command invocations:
+
+```javascript
+// In global.json
+{
+  "stateDefaults": {
+    "currentUser": null,
+    "currentProject": null,
+    "lastResult": null
+  }
+}
+
+// In command manifest
+{
+  "sideEffects": {
+    "setState": {
+      "currentProject": { "fromParam": "projectName" },
+      "lastResult": { "template": "Processed {{fileName}}" }
+    }
+  }
+}
+```
+
+### Runtime Fallbacks
+Parameters can automatically fall back to state values:
+```json
+{
+  "parameters": [
+    {
+      "name": "projectName",
+      "type": "string", 
+      "required": true,
+      "runtimeFallback": "currentProject"
+    }
+  ]
+}
+```
+
+### Template Strings
+Use template strings for dynamic values in side effects:
+```json
+{
+  "sideEffects": {
+    "setState": {
+      "currentProject": { "fromParam": "projectName" },
+      "projectFile": { "template": "{{projectName}}.json" }
+    }
+  }
+}
+```
 
 ## 🌐 Web UI Generation
 
@@ -325,14 +276,36 @@ The kernel automatically generates complete web interfaces from your contract ma
 - State management and fallbacks
 - Cross-platform compatibility (web and Electron)
 
+Generate UI with: `node main.js --generate`
+
+## 🏗️ Architecture Highlights
+
+### Clean Separation of Concerns
+- **Application Domain** (`textgen/`) - Your business logic
+- **Interface Domain** (`kernel/transports/`) - How users interact
+- **Contract System** (`contract/`) - Command definitions
+- **Kernel Core** (`kernel/`) - Command orchestration
+
+### Built-in Command Types
+- **External-Method**: Automatic domain method delegation (80%+ of commands)
+- **Internal**: Declarative state manipulation (no handler files needed)
+- **Custom**: Special business logic (handler files required)
+
+### Transport Independence
+Each transport operates independently with clear interfaces:
+- **stdio**: CLI, REPL, direct execution
+- **http**: REST API, web serving
+- **electron**: Desktop application
+- **native**: Programmatic access
+
 ## 🔄 Extensibility
 
 The kernel is designed for extension:
-- Add new transports by implementing the same interface
+- Add new transports by implementing transport interfaces
 - Extend functionality through the contract manifest system
 - Customize behavior through domain-specific configuration
-- Maintain backward compatibility while evolving features
 - Generate complete web UIs from command contracts
 - Serve both UI and API from the same server
+- Support for plugin architectures (future)
 
 Just copy the kernel once and focus on writing your domain-specific commands!
