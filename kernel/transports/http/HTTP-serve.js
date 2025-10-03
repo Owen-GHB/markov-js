@@ -1,4 +1,4 @@
-import { JSONAPI } from './JSON.js';
+import { JSONAPI } from '../native/JSON.js';
 import { HTTPServer } from './HTTP-server.js';
 import pathResolver from '../utils/path-resolver.js';
 

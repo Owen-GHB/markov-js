@@ -1,11 +1,11 @@
 import readline from 'readline';
 import fs from 'fs';
 import path from 'path';
-import pathResolver from '../utils/path-resolver.js';
-import stateManager from '../utils/StateManager.js';
-import { CommandHandler } from '../CommandHandler.js';
-import { CommandParser } from '../CommandParser.js';
-import { manifest } from '../contract.js';
+import pathResolver from '../../utils/path-resolver.js';
+import stateManager from '../../utils/StateManager.js';
+import { CommandHandler } from '../../CommandHandler.js';
+import { CommandParser } from '../../CommandParser.js';
+import { manifest } from '../../contract.js';
 
 // Load configuration for history
 let config = { repl: { maxHistory: 100 } }; // fallback default

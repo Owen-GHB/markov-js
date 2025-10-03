@@ -2,7 +2,7 @@ import { URL } from 'url';
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
-import pathResolver from '../utils/path-resolver.js';
+import pathResolver from '../../utils/path-resolver.js';
 
 // Load configuration from config directory using path resolver
 let config = { defaultHttpPort: 8080 }; // fallback default

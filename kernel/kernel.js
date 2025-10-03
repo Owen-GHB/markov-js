@@ -77,7 +77,7 @@ export async function launch(args, projectRoot) {
     }
     
     // Start HTTP server (API only)
-    const { startServer } = await import('./transports/HTTP.js');
+    const { startServer } = await import('./transports/http/HTTP.js');
     return startServer(port);
   }
   // Check if we should start HTTP server serving both UI and API
@@ -96,7 +96,7 @@ export async function launch(args, projectRoot) {
     }
     
     // Start server that serves both UI and API
-    const { startServeServer } = await import('./transports/HTTP-serve.js');
+    const { startServeServer } = await import('./transports/http/HTTP-serve.js');
     return startServeServer(port);
   } else {
     // For other kernel commands or to show help
@@ -110,8 +110,4 @@ export async function launch(args, projectRoot) {
   }
 }
 
-// If this file is run directly (not imported), launch with current directory as project root
-if (import.meta.url === `file://${__filename}`) {
-  const projectRoot = process.cwd();
-  launch(process.argv.slice(2), projectRoot);
-}
+// Note: This file is not meant to be run directly. Use kernel.js in the project root.

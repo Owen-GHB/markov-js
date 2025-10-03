@@ -15,19 +15,15 @@ export async function launch(args, projectRoot) {
   // Default to REPL mode if no args or if args are application-specific
   if (args.length === 0) {
     // Default to REPL mode if no args
-    const { REPL } = await import('./transports/REPL.js');
+    const { REPL } = await import('./transports/stdio/REPL.js');
     const repl = new REPL();
     return repl.start();
   } else {
     // Check if we're being called directly with command line args
-    const { CLI } = await import('./transports/CLI.js');
+    const { CLI } = await import('./transports/stdio/CLI.js');
     const cli = new CLI();
     return cli.run(args);
   }
 }
 
-// If this file is run directly (not imported), launch with current directory as project root
-if (import.meta.url === `file://${__filename}`) {
-  const projectRoot = process.cwd();
-  launch(process.argv.slice(2), projectRoot);
-}
+// Note: This file is not meant to be run directly. Use main.js in the project root.

@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
-import { CommandParser } from '../CommandParser.js';
-import { CommandHandler } from '../CommandHandler.js';
-import stateManager from '../utils/StateManager.js';
-import { manifest } from '../contract.js';
+import { CommandParser } from '../../CommandParser.js';
+import { CommandHandler } from '../../CommandHandler.js';
+import stateManager from '../../utils/StateManager.js';
+import { manifest } from '../../contract.js';
 
 export class CLI {
 	constructor() {
