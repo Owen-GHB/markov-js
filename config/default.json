@@ -2,5 +2,14 @@
   "defaultHttpPort": 8080,
   "repl": {
     "maxHistory": 100
+  },
+  "paths": {
+    "contractDir": "contract",
+    "generatedUIDir": "generated-ui",
+    "servedUIDir": "generated-ui",
+    "configDir": "config",
+    "contextDir": "context",
+    "templatesDir": "templates",
+    "electronPreloadPath": "electron-preload.js"
   }
 }

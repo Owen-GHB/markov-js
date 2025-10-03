@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { GENERATOR_CONSTANTS } from './constants.js';
+import pathResolver from '../utils/path-resolver.js';
 import { StringBuilder } from './builders/string-builder.js';
 import { NumberBuilder } from './builders/number-builder.js';
 import { BooleanBuilder } from './builders/boolean-builder.js';
@@ -30,17 +31,21 @@ export class UI {
    * @param {string} templateDir - Path to the templates directory
    * @param {string} outputFile - Name of the output file
    */
-  async generate(manifest, outputDir = './generated-ui', templateDir = './templates', outputFile = 'index.html') {
+  async generate(manifest, outputDir = null, templateDir = null, outputFile = 'index.html') {
     try {
+      // Use path resolver for default directories if not provided
+      const resolvedOutputDir = outputDir || pathResolver.getGeneratedUIDir();
+      const resolvedTemplateDir = templateDir || pathResolver.getTemplatesDir();
+      
       // Check if templates directory exists
-      if (!fs.existsSync(templateDir)) {
-        throw new Error(`Templates directory does not exist: ${templateDir}. UI generation requires templates to be present in the specified templates directory.`);
+      if (!fs.existsSync(resolvedTemplateDir)) {
+        throw new Error(`Templates directory does not exist: ${resolvedTemplateDir}. UI generation requires templates to be present in the specified templates directory.`);
       }
       
       // Check if templates directory is empty
-      const templateFiles = fs.readdirSync(templateDir);
+      const templateFiles = fs.readdirSync(resolvedTemplateDir);
       if (templateFiles.length === 0) {
-        throw new Error(`Templates directory is empty: ${templateDir}. UI generation requires template files to be present for proper generation.`);
+        throw new Error(`Templates directory is empty: ${resolvedTemplateDir}. UI generation requires template files to be present for proper generation.`);
       }
       
       console.log('Starting UI generation...');
@@ -51,24 +56,24 @@ export class UI {
       console.log(`Using provided manifest with ${commandManifests.length} command manifests`);
       
       // Read optional CSS from templates directory
-      const cssContent = this.readCSSFromTemplates(templateDir);
+      const cssContent = this.readCSSFromTemplates(resolvedTemplateDir);
       
       // Initialize state from global manifest
       const initialState = globalManifest.stateDefaults || {};
       
       // Generate all command forms
-      const commandForms = commandManifests.map(cmd => this.generateCommandForm(cmd, initialState, templateDir));
+      const commandForms = commandManifests.map(cmd => this.generateCommandForm(cmd, initialState, resolvedTemplateDir));
       
       // Ensure output directory exists
       // If outputDir is an absolute path, use it directly; otherwise continue as is
-      let outputPath = outputDir;
+      let outputPath = resolvedOutputDir;
       
       if (!fs.existsSync(outputPath)) {
         fs.mkdirSync(outputPath, { recursive: true });
       }
       
       // Generate separate files (HTML, CSS, and JS)
-      const html = await this.generateSeparateFiles(globalManifest, commandManifests, commandForms, cssContent, outputPath, templateDir);
+      const html = await this.generateSeparateFiles(globalManifest, commandManifests, commandForms, cssContent, outputPath, resolvedTemplateDir);
       
       // Write the HTML file
       const htmlFilePath = path.join(outputPath, outputFile);

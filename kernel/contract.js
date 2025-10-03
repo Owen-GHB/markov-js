@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import pathResolver from './utils/path-resolver.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,13 +14,13 @@ function initializeContractSync() {
     return contractCache;
   }
 
-  // Load global manifest from contract directory
+  // Load global manifest from contract directory using path resolver
   const globalManifest = JSON.parse(
-    fs.readFileSync(path.join(__dirname, '../contract/global.json'), 'utf8')
+    fs.readFileSync(path.join(pathResolver.getContractDir(), 'global.json'), 'utf8')
   );
 
-  // Get all command directories from the contract folder
-  const contractDir = path.join(__dirname, '../contract');
+  // Get all command directories from the contract folder using path resolver
+  const contractDir = pathResolver.getContractDir();
   const items = fs.readdirSync(contractDir, { withFileTypes: true });
   const commandDirs = items
     .filter(dirent => dirent.isDirectory() && 
@@ -79,9 +80,11 @@ function initializeContractSync() {
         return null;
       }
       
-      // Load the handler function from the handler file
+      // Load the handler function from the handler file using path resolver
       // Modern handlers export their main function as default
-      const handlerModule = await import(`../contract/${commandDir}/handler.js`);
+      const contractDir = pathResolver.getContractDir();
+      const handlerPath = path.join(contractDir, commandDir, 'handler.js');
+      const handlerModule = await import(handlerPath);
       
       // Check if it exports a default function (modern approach)
       if (handlerModule.default && typeof handlerModule.default === 'function') {

@@ -1,5 +1,6 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 
 /**
  * Centralized path resolver for the entire kernel
@@ -13,6 +14,29 @@ class KernelPathResolver {
     const currentFileDir = path.dirname(fileURLToPath(import.meta.url)); // kernel/utils/
     this.projectRoot = path.join(currentFileDir, '..'); // Go up 1 level to kernel/
     this.projectRoot = path.join(this.projectRoot, '..'); // Go up 1 more level to project root
+    
+    // Load configuration for path overrides
+    this.config = this.loadConfig();
+  }
+
+  /**
+   * Load configuration for path overrides
+   * @returns {Object} Configuration object with path overrides
+   */
+  loadConfig() {
+    // Use the hardcoded default config path to avoid circular dependency
+    const hardcodedConfigPath = path.join(this.projectRoot, 'config', 'default.json');
+    try {
+      if (fs.existsSync(hardcodedConfigPath)) {
+        const configFile = fs.readFileSync(hardcodedConfigPath, 'utf8');
+        const loadedConfig = JSON.parse(configFile);
+        return loadedConfig;
+      }
+    } catch (error) {
+      console.warn('⚠️ Could not load config file for path overrides, using defaults:', error.message);
+    }
+    // Return empty config if loading fails
+    return {};
   }
 
   /**
@@ -28,7 +52,8 @@ class KernelPathResolver {
    * @returns {string} Path to contract directory
    */
   getContractDir() {
-    return path.join(this.projectRoot, 'contract');
+    const configPath = this.config.paths?.contractDir || 'contract';
+    return path.join(this.projectRoot, configPath);
   }
 
   /**
@@ -36,7 +61,8 @@ class KernelPathResolver {
    * @returns {string} Path to generated UI directory
    */
   getGeneratedUIDir() {
-    return path.join(this.projectRoot, 'generated-ui');
+    const configPath = this.config.paths?.generatedUIDir || 'generated-ui';
+    return path.join(this.projectRoot, configPath);
   }
 
   /**
@@ -46,7 +72,8 @@ class KernelPathResolver {
   getServedUIDir() {
     // For now, use the same directory as generated UI
     // This can be customized later to point to a different location
-    return path.join(this.projectRoot, 'generated-ui');
+    const configPath = this.config.paths?.servedUIDir || this.config.paths?.generatedUIDir || 'generated-ui';
+    return path.join(this.projectRoot, configPath);
   }
 
   /**
@@ -63,7 +90,13 @@ class KernelPathResolver {
    * @returns {string} Path to electron preload script
    */
   getElectronPreloadPath() {
-    return path.join(this.projectRoot, 'electron-preload.js');
+    const configPath = this.config.paths?.electronPreloadPath || 'electron-preload.js';
+    // If the path is relative, join it with project root
+    if (configPath.startsWith('.')) {
+      return path.join(this.projectRoot, configPath);
+    } else {
+      return configPath;
+    }
   }
 
   /**
@@ -87,7 +120,8 @@ class KernelPathResolver {
    * @returns {string} Path to config directory
    */
   getConfigDir() {
-    return path.join(this.projectRoot, 'config');
+    const configPath = this.config.paths?.configDir || 'config';
+    return path.join(this.projectRoot, configPath);
   }
 
   /**
@@ -104,7 +138,8 @@ class KernelPathResolver {
    * @returns {string} Path to context directory
    */
   getContextDir() {
-    return path.join(this.projectRoot, 'context');
+    const configPath = this.config.paths?.contextDir || 'context';
+    return path.join(this.projectRoot, configPath);
   }
 
   /**
@@ -121,7 +156,8 @@ class KernelPathResolver {
    * @returns {string} Path to templates directory
    */
   getTemplatesDir() {
-    return path.join(this.projectRoot, 'templates');
+    const configPath = this.config.paths?.templatesDir || 'templates';
+    return path.join(this.projectRoot, configPath);
   }
 
   /**
