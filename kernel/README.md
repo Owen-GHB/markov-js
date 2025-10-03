@@ -28,7 +28,7 @@ your-project/
 │   └── command2/
 │       ├── handler.js
 │       └── manifest.json
-├── textgen/                 # Domain-specific logic (e.g., text generation)
+├── yourDomain/                # Domain-specific logic
 ├── generated-ui/            # Auto-generated web interface
 └── main.js                  # Your project's entry point
 ```
@@ -60,7 +60,7 @@ Create a `/contract` directory with your domain-specific commands:
 {
   "name": "yourcommand",
   "commandType": "external-method",
-  "modulePath": "textgen/index.js",
+  "modulePath": "yourDomain/index.js",
   "methodName": "yourDomainMethod",
   "description": "Description of what your command does",
   "syntax": "yourcommand(param1, [options])",
@@ -113,21 +113,21 @@ The kernel supports three distinct command types with different handling strateg
 Automatically handled by calling domain methods:
 ```json
 {
-  "name": "train",
+  "name": "yourCommand",
   "commandType": "external-method",
-  "modulePath": "textgen/index.js",
-  "methodName": "trainModel"
+  "modulePath": "yourDomain/index.js",
+  "methodName": "yourMethod"
 }
 ```
-No handler file needed - the kernel automatically calls `textgen.trainModel()`.
+No handler file needed - the kernel automatically calls `yourDomain.yourMethod()`.
 
 ### 2. Internal Commands (`commandType: "internal"`) 
-Handled declaratively with template-based output:
+Handled declaratively with template-based output to set state for the REPL and CLI:
 ```json
 {
   "name": "use",
   "commandType": "internal",
-  "successOutput": "✅ Using model: {{modelName}}",
+  "successOutput": "✅ Using value: {{someParamValue}}",
   "parameters": [...]
 }
 ```
@@ -199,7 +199,7 @@ const result = await api.handleInput('{"name":"yourcommand","args":{"param":"val
 ## 🧩 How It Works
 
 ### Automatic Command Discovery
-The kernel automatically scans your `/contract` directory and discovers all commands by reading their `manifest.json` files. No configuration needed!
+The kernel automatically scans your `/contract` directory and discovers all commands by reading their `manifest.json` files.
 
 ### Smart Command Routing
 Based on `commandType` in manifests:
@@ -211,7 +211,7 @@ Based on `commandType` in manifests:
 All command types work seamlessly across all transports - write once, use everywhere.
 
 ### Zero Domain Coupling
-The kernel contains zero domain-specific logic. All domain configuration and business logic lives in your `/contract` and `/textgen` folders.
+The kernel contains zero domain-specific logic. All domain configuration and business logic lives in your `/contract` and `/yourDomain` folders.
 
 ## 🛠️ Advanced Features
 
@@ -281,15 +281,15 @@ Generate UI with: `node main.js --generate`
 ## 🏗️ Architecture Highlights
 
 ### Clean Separation of Concerns
-- **Application Domain** (`textgen/`) - Your business logic
+- **Application Domain** (`yourDomain/`) - Your business logic
 - **Interface Domain** (`kernel/transports/`) - How users interact
 - **Contract System** (`contract/`) - Command definitions
 - **Kernel Core** (`kernel/`) - Command orchestration
 
 ### Built-in Command Types
-- **External-Method**: Automatic domain method delegation (80%+ of commands)
+- **External-Method**: Automatic domain method delegation
 - **Internal**: Declarative state manipulation (no handler files needed)
-- **Custom**: Special business logic (handler files required)
+- **Custom**: Special custom logic (handler files required)
 
 ### Transport Independence
 Each transport operates independently with clear interfaces:
@@ -297,15 +297,5 @@ Each transport operates independently with clear interfaces:
 - **http**: REST API, web serving
 - **electron**: Desktop application
 - **native**: Programmatic access
-
-## 🔄 Extensibility
-
-The kernel is designed for extension:
-- Add new transports by implementing transport interfaces
-- Extend functionality through the contract manifest system
-- Customize behavior through domain-specific configuration
-- Generate complete web UIs from command contracts
-- Serve both UI and API from the same server
-- Support for plugin architectures (future)
 
 Just copy the kernel once and focus on writing your domain-specific commands!
