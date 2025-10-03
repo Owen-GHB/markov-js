@@ -41,27 +41,20 @@ export class CommandHandler {
 				// Fall back to custom handler for internal commands that need special logic
 			}
 			
-			// Handle external-method commands - check for custom handler first, then fall back to auto-handling
+			// Handle external-method commands - auto-handle directly without custom handler lookup
 			if (commandSpec.commandType === 'external-method') {
-				// Try to get the custom handler function first (highest priority)
-				try {
-					const handlerFunction = await getHandler(command.name);
-					if (handlerFunction && typeof handlerFunction === 'function') {
-						// Use existing custom handler function
-						result = await handlerFunction(command.args);
-						return result;
-					}
-				} catch (handlerError) {
-					// Custom handler doesn't exist or failed to load, continue with auto-handling
-				}
-				
 				// Auto-handle external-method command if it has modulePath and methodName
 				if (commandSpec.modulePath && commandSpec.methodName) {
 					return await this.handleExternalMethod(command, commandSpec);
+				} else {
+					return {
+						error: `External-method command '${command.name}' missing modulePath or methodName in manifest`,
+						output: null
+					};
 				}
 			}
 			
-			// Handle custom commands and external-method commands with existing handlers (fallback for all other cases)
+			// Handle custom commands - look for custom handler files
 			const handlerFunction = await getHandler(command.name);
 			
 			if (handlerFunction && typeof handlerFunction === 'function') {
