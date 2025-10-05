@@ -33,16 +33,34 @@ export async function launch(args, projectRoot) {
       console.warn('⚠️ Could not load config for REPL, using defaults:', error.message);
     }
     
-    const repl = new REPL();
-    const paths = {
-      configFilePath: configFilePath,
-      contextFilePath: pathResolver.getContextFilePath('repl-history.json')
+    const fullConfig = {
+      paths: {
+        configFilePath: configFilePath,
+        contextFilePath: pathResolver.getContextFilePath('repl-history.json'),
+        replHistoryFilePath: pathResolver.getContextFilePath('repl-history.json')
+      },
+      repl: { maxHistory: 100 } // fallback default
     };
-    return repl.start(paths, config);
+    
+    // Merge loaded config into the default config
+    if (config && typeof config === 'object') {
+      Object.assign(fullConfig, config);
+    }
+    
+    const repl = new REPL();
+    return repl.start(fullConfig);
   } else {
     // Check if we're being called directly with command line args
     const { CLI } = await import('./transports/stdio/CLI.js');
-    const cli = new CLI();
+    const pathResolverModule = await import('./utils/path-resolver.js');
+    const pathResolver = pathResolverModule.default;
+    
+    const config = {
+      paths: {
+        contextFilePath: pathResolver.getContextFilePath('state.json')
+      }
+    };
+    const cli = new CLI(config);
     return cli.run(args);
   }
 }

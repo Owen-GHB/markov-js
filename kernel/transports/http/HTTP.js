@@ -9,17 +9,25 @@ export class HTTPServer {
     this.port = options.port || 8080; // Will be overridden in start() if paths are provided
     this.staticDir = options.staticDir || null;
     this.apiEndpoint = options.apiEndpoint || '/api';
-    this.commandProcessor = new CommandProcessor();
+    this.commandProcessor = null; // Will be initialized in start method
   }
 
-  start(paths = {}, config = {}) {
-    // Validate required paths and config
-    if (typeof paths !== 'object' || paths === null) {
-      throw new Error('paths parameter must be an object');
-    }
+  start(config = {}) {
+    // Validate config object
     if (typeof config !== 'object' || config === null) {
       throw new Error('config parameter must be an object');
     }
+    
+    // Extract paths from nested config object
+    const paths = config.paths || {};
+    
+    // Check if required paths are provided
+    if (!paths.contextFilePath) {
+      throw new Error('config.paths must include contextFilePath for state management');
+    }
+    
+    // Initialize command processor with required paths
+    this.commandProcessor = new CommandProcessor(paths);
     
     // Use provided config with fallback defaults
     const effectiveConfig = { defaultHttpPort: 8080, ...config };

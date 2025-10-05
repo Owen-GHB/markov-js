@@ -38,7 +38,20 @@ function initializeContractSync() {
     try {
       // Load manifest slice from contract directory
       const manifestPath = path.join(contractDir, dir, 'manifest.json');
-      const manifestSlice = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+      let manifestSlice = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+      
+      // If this is an external-method command, resolve the module path ahead of time
+      if (manifestSlice.commandType === 'external-method' && manifestSlice.modulePath) {
+        // Use the project root from the path resolver to resolve the module path
+        const projectRoot = pathResolver.getProjectRoot();
+        const absoluteModulePath = path.resolve(projectRoot, manifestSlice.modulePath);
+        // Add the resolvedAbsolutePath to the manifest for use by the command handler
+        manifestSlice = {
+          ...manifestSlice,
+          resolvedAbsolutePath: absoluteModulePath
+        };
+      }
+      
       commands.push(manifestSlice);
 
       // For handlers, we need to use dynamic imports, but we can prepare the mappings

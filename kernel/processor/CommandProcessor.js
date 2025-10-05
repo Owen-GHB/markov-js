@@ -1,16 +1,22 @@
 import { CommandParser } from './CommandParser.js';
 import { CommandHandler } from './CommandHandler.js';
-import stateManager from './StateManager.js';
+import StateManager from './StateManager.js';
 import { manifest } from '../contract.js';
 
 /**
  * Consolidates shared command processing logic across all transports
  */
 export class CommandProcessor {
-  constructor() {
+  constructor(paths) {
+    // Validate paths parameter
+    if (!paths || typeof paths !== 'object' || !paths.contextFilePath) {
+      throw new Error('CommandProcessor requires a paths object with contextFilePath property');
+    }
+    
+    this.stateManager = new StateManager(paths);
     this.parser = new CommandParser();
     this.handler = new CommandHandler();
-    this.state = stateManager.getStateMap();
+    this.state = this.stateManager.getStateMap();
   }
 
   /**
@@ -75,8 +81,8 @@ export class CommandProcessor {
       if (!result.error) {
         const commandSpec = manifest.commands.find(c => c.name === command.name);
         if (commandSpec) {
-          stateManager.applySideEffects(command, commandSpec);
-          stateManager.saveState();
+          this.stateManager.applySideEffects(command, commandSpec);
+          this.stateManager.saveState();
         }
       }
 
@@ -257,8 +263,8 @@ export class CommandProcessor {
       if (!result.error) {
         const commandSpec = manifest.commands.find(c => c.name === command.name);
         if (commandSpec) {
-          stateManager.applySideEffects(command, commandSpec);
-          stateManager.saveState();
+          this.stateManager.applySideEffects(command, commandSpec);
+          this.stateManager.saveState();
         }
       }
 

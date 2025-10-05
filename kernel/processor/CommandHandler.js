@@ -1,10 +1,5 @@
 import { getHandler, manifest as contractManifest } from '../contract.js';
-import path from 'path';
-import { fileURLToPath, pathToFileURL } from 'url';
-import pathResolver from '../utils/path-resolver.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { pathToFileURL } from 'url';
 
 export class CommandHandler {
 	constructor() {
@@ -124,12 +119,11 @@ export class CommandHandler {
 		const { args = {} } = command;
 		
 		try {
-			// Use the project root from the path resolver to resolve the module path
-			const projectRoot = pathResolver.getProjectRoot();
-			const modulePath = path.resolve(projectRoot, commandSpec.modulePath);
+			// Use the pre-resolved absolute path from the manifest
+			const resolvedModulePath = commandSpec.resolvedAbsolutePath || commandSpec.modulePath;
 			
 			// Convert to file URL for proper ES module loading
-			const moduleUrl = pathToFileURL(modulePath).href;
+			const moduleUrl = pathToFileURL(resolvedModulePath).href;
 			
 			// Dynamically import the module
 			const module = await import(moduleUrl);
@@ -139,7 +133,7 @@ export class CommandHandler {
 			
 			if (typeof method !== 'function') {
 				return {
-					error: `Method '${commandSpec.methodName}' not found or is not a function in module '${commandSpec.modulePath}'`,
+					error: `Method '${commandSpec.methodName}' not found or is not a function in module '${resolvedModulePath}'`,
 					output: null
 				};
 			}
@@ -149,7 +143,7 @@ export class CommandHandler {
 			return result;
 		} catch (error) {
 			return {
-				error: `Failed to execute external method '${commandSpec.methodName}' from '${commandSpec.modulePath}': ${error.message}`,
+				error: `Failed to execute external method '${commandSpec.methodName}' from '${resolvedModulePath}': ${error.message}`,
 				output: null
 			};
 		}

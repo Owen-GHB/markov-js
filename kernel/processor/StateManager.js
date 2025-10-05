@@ -1,15 +1,18 @@
 import fs from 'fs';
 import path from 'path';
-import pathResolver from '../utils/path-resolver.js';
 import { manifest } from '../contract.js';
 
 /**
  * Manages persistent state for the application
  */
 export class StateManager {
-  constructor() {
+  constructor(paths) {
+    if (!paths || typeof paths !== 'object' || !paths.contextFilePath) {
+      throw new Error('StateManager requires a paths object with contextFilePath property');
+    }
+    
     this.state = new Map(Object.entries(manifest.stateDefaults || {}));
-    this.stateFilePath = pathResolver.getContextFilePath('state.json');
+    this.stateFilePath = paths.contextFilePath;
     this.loadState();
   }
 
@@ -179,8 +182,5 @@ export class StateManager {
   }
 }
 
-// Create a singleton instance
-const stateManager = new StateManager();
-
-// Export both the class and the instance
-export default stateManager;
+// Export the class, but not the singleton since it now requires a paths parameter
+export default StateManager;

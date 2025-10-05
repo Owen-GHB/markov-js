@@ -1,8 +1,11 @@
 import { CommandProcessor } from '../../processor/CommandProcessor.js';
 
 export class JSONAPI {
-	constructor() {
-		this.processor = new CommandProcessor();
+	constructor(paths) {
+		if (!paths || typeof paths !== 'object' || !paths.contextFilePath) {
+			throw new Error('JSONAPI requires a paths object with contextFilePath property');
+		}
+		this.processor = new CommandProcessor(paths);
 	}
 
 	/**

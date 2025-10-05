@@ -3,8 +3,18 @@
 import { CommandProcessor } from '../../processor/CommandProcessor.js';
 
 export class CLI {
-	constructor() {
-		this.processor = new CommandProcessor();
+	constructor(config) {
+		if (!config || typeof config !== 'object') {
+			throw new Error('CLI requires a config object');
+		}
+		
+		// Extract paths from nested config object
+		const paths = config.paths || {};
+		
+		if (!paths.contextFilePath) {
+			throw new Error('CLI config requires paths with contextFilePath property');
+		}
+		this.processor = new CommandProcessor(paths);
 	}
 
 	/**
@@ -64,7 +74,6 @@ export class CLI {
 	}
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
-	const cli = new CLI();
-	cli.run(process.argv.slice(2));
-}
+// The CLI class now requires paths to be passed in, so direct execution from this file
+// is not possible without the path resolver. This functionality would need to be handled
+// by the main application which has access to the path resolver.

@@ -97,12 +97,16 @@ export async function launch(args, projectRoot) {
       apiEndpoint: '/' // Serve API directly at root (original behavior)
     });
     
-    // Prepare paths object with only the paths this transport needs
-    const paths = {
-      configFilePath: configFilePath
+    // Prepare single config object with paths nested inside
+    const fullConfig = {
+      paths: {
+        configFilePath: configFilePath,
+        contextFilePath: pathResolver.getContextFilePath('state.json')
+      },
+      ...config
     };
     
-    return server.start(paths, config);
+    return server.start(fullConfig);
   }
   // Check if we should start HTTP server serving both UI and API
   else if (args.find(arg => arg.startsWith('--serve'))) {
@@ -143,13 +147,17 @@ export async function launch(args, projectRoot) {
       apiEndpoint: '/api'
     });
     
-    // Prepare paths object with only the paths this transport needs
-    const paths = {
-      configFilePath: configFilePath,
-      servedUIDir: pathResolver.servedUIDir
+    // Prepare single config object with paths nested inside
+    const fullConfig = {
+      paths: {
+        configFilePath: configFilePath,
+        servedUIDir: pathResolver.servedUIDir,
+        contextFilePath: pathResolver.getContextFilePath('state.json')
+      },
+      ...config
     };
     
-    return server.start(paths, config);
+    return server.start(fullConfig);
   } else {
     // For other kernel commands or to show help
     console.log('Kernel command-line interface');
