@@ -9,6 +9,26 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 /**
+ * Load configuration from file with fallback to defaults
+ * @param {string} configFilePath - Path to configuration file
+ * @param {Object} defaultConfig - Default configuration values
+ * @returns {Object} Loaded configuration merged with defaults
+ */
+function loadConfig(configFilePath, defaultConfig = {}) {
+  let config = { ...defaultConfig };
+  try {
+    if (fs.existsSync(configFilePath)) {
+      const configFile = fs.readFileSync(configFilePath, 'utf8');
+      const loadedConfig = JSON.parse(configFile);
+      config = { ...config, ...loadedConfig };
+    }
+  } catch (error) {
+    console.warn('⚠️ Could not load config file, using defaults:', error.message);
+  }
+  return config;
+}
+
+/**
  * Launch the kernel infrastructure with the given arguments and project root
  * @param {string[]} args - Command line arguments
  * @param {string} projectRoot - The project root directory
@@ -81,28 +101,22 @@ export async function launch(args, projectRoot) {
     const { HTTPServer } = await import('./transports/http/HTTP.js'); // Dynamic import for transport
     const { manifest } = await import('./contract.js');
     
-    // Load configuration ahead of time (using static imports at top)
-    let config = { defaultHttpPort: 8080 }; // fallback default
+    // Load configuration with fallback defaults
+    const defaultConfig = { defaultHttpPort: 8080 }; // fallback default
     const configFilePath = pathResolver.getConfigFilePath();
-    try {
-      if (fs.existsSync(configFilePath)) {
-        const configFile = fs.readFileSync(configFilePath, 'utf8');
-        config = { ...config, ...JSON.parse(configFile) };
-      }
-    } catch (error) {
-      console.warn('⚠️ Could not load config file, using defaults:', error.message);
-    }
+    const config = loadConfig(configFilePath, defaultConfig);
     
     const server = new HTTPServer({
       port: port,
       apiEndpoint: '/' // Serve API directly at root (original behavior)
     });
     
-    // Prepare single config object with paths nested inside
+    // Prepare standardized config object with paths
     const fullConfig = {
       paths: {
         configFilePath: configFilePath,
-        contextFilePath: pathResolver.getContextFilePath('state.json')
+        contextFilePath: pathResolver.getContextFilePath('state.json'),
+        contractDir: pathResolver.getContractDir()
       },
       ...config
     };
@@ -128,17 +142,10 @@ export async function launch(args, projectRoot) {
     const { HTTPServer } = await import('./transports/http/HTTP.js'); // Dynamic import for transport
     const { manifest } = await import('./contract.js');
     
-    // Load configuration ahead of time (using static imports at top)
-    let config = { defaultHttpPort: 8080 }; // fallback default
+    // Load configuration with fallback defaults
+    const defaultConfig = { defaultHttpPort: 8080 }; // fallback default
     const configFilePath = pathResolver.getConfigFilePath();
-    try {
-      if (fs.existsSync(configFilePath)) {
-        const configFile = fs.readFileSync(configFilePath, 'utf8');
-        config = { ...config, ...JSON.parse(configFile) };
-      }
-    } catch (error) {
-      console.warn('⚠️ Could not load config file, using defaults:', error.message);
-    }
+    const config = loadConfig(configFilePath, defaultConfig);
     
     // Use the path resolver to get the served UI directory
     const staticDir = pathResolver.servedUIDir;
@@ -149,12 +156,13 @@ export async function launch(args, projectRoot) {
       apiEndpoint: '/api'
     });
     
-    // Prepare single config object with paths nested inside
+    // Prepare standardized config object with paths
     const fullConfig = {
       paths: {
         configFilePath: configFilePath,
         servedUIDir: pathResolver.servedUIDir,
-        contextFilePath: pathResolver.getContextFilePath('state.json')
+        contextFilePath: pathResolver.getContextFilePath('state.json'),
+        contractDir: pathResolver.getContractDir()
       },
       ...config
     };

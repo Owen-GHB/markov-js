@@ -1,14 +1,32 @@
-import { getHandler } from '../contract.js';
 import { pathToFileURL } from 'url';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export class CommandHandler {
-	constructor(manifest) {
+	constructor(manifest, config = {}) {
 		// Validate manifest parameter
 		if (!manifest || typeof manifest !== 'object') {
 			throw new Error('CommandHandler requires a manifest object');
 		}
 		
+		// Validate config parameter
+		if (typeof config !== 'object' || config === null) {
+			throw new Error('CommandHandler requires a config object');
+		}
+		
+		// Extract contractDir from paths in config
+		if (!config.paths || !config.paths.contractDir) {
+			throw new Error('CommandHandler config requires paths.contractDir property');
+		}
+		
 		this.manifest = manifest;
+		this.contractDir = config.paths.contractDir;
+		// Initialize handler cache for custom command handlers
+		this.handlerCache = new Map();
 	}
 
 	/**
@@ -54,7 +72,7 @@ export class CommandHandler {
 			}
 			
 			// Handle custom commands - look for custom handler files
-			const handlerFunction = await getHandler(command.name);
+			const handlerFunction = await this.getHandler(command.name);
 			
 			if (handlerFunction && typeof handlerFunction === 'function') {
 				// Call the handler function directly with the command arguments
@@ -171,5 +189,82 @@ export class CommandHandler {
 			}
 			return match; // Keep original placeholder if param not found
 		});
+	}
+	
+	/**
+	 * Get or load a handler for a specific command
+	 * @param {string} commandName - The command name to get handler for
+	 * @returns {Function|null} - The handler function or null if not found
+	 */
+	async getHandler(commandName) {
+		// Check if handler is already cached
+		if (this.handlerCache.has(commandName)) {
+			return this.handlerCache.get(commandName);
+		}
+		
+		// Find the command in the manifest to locate its directory
+		const commandSpec = this.manifest.commands.find(c => c.name === commandName);
+		if (!commandSpec) {
+			console.warn(`Warning: Could not find command ${commandName} in manifest`);
+			return null;
+		}
+		
+		try {
+			// Build the handler file path using the stored contractDir
+			const handlerPath = path.join(this.contractDir, commandName, 'handler.js');
+			
+			// Check if the handler file exists
+			if (!fs.existsSync(handlerPath)) {
+				console.warn(`Warning: Handler file not found at: ${handlerPath}`);
+				return null;
+			}
+			
+			// Convert to file URL for proper ES module loading
+			const moduleUrl = pathToFileURL(handlerPath).href;
+			
+			// Dynamically import the handler module
+			const handlerModule = await import(moduleUrl);
+			
+			let handlerFunction = null;
+			
+			// Check if it exports a default function (modern approach)
+			if (handlerModule.default && typeof handlerModule.default === 'function') {
+				handlerFunction = handlerModule.default;
+			}
+			// Check if it exports a class with a method (legacy approach for backward compatibility)
+			else {
+				for (const key of Object.keys(handlerModule)) {
+					const HandlerClass = handlerModule[key];
+					if (HandlerClass && typeof HandlerClass === 'function' && HandlerClass.name && HandlerClass.name.endsWith('Handler')) {
+						const handlerInstance = new HandlerClass();
+						// Try to find the appropriate method name based on command name
+						const methodName = 'handle' + commandName.charAt(0).toUpperCase() + commandName.slice(1)
+							.replace(/_([a-z])/g, (match, letter) => letter.toUpperCase())
+							.replace(/([A-Z])/g, (match, letter, index) => 
+								index === 0 ? letter.toLowerCase() : letter);
+						
+						if (typeof handlerInstance[methodName] === 'function') {
+							// Create a wrapper function that calls the method
+							handlerFunction = async (args) => {
+								return await handlerInstance[methodName](args);
+							};
+							break;
+						}
+					}
+				}
+			}
+			
+			if (!handlerFunction) {
+				console.warn(`Warning: Handler for ${commandName} does not export a default function or compatible class method`);
+				return null;
+			}
+			
+			// Cache the handler for future use
+			this.handlerCache.set(commandName, handlerFunction);
+			return handlerFunction;
+		} catch (error) {
+			console.warn(`Warning: Could not load handler from ${commandName}/handler.js:`, error.message);
+			return null;
+		}
 	}
 }

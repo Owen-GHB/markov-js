@@ -6,7 +6,7 @@ import StateManager from './StateManager.js';
  * Consolidates shared command processing logic across all transports
  */
 export class CommandProcessor {
-  constructor(paths, manifest) {
+  constructor(paths, manifest, config = {}) {
     // Validate paths parameter
     if (!paths || typeof paths !== 'object' || !paths.contextFilePath) {
       throw new Error('CommandProcessor requires a paths object with contextFilePath property');
@@ -17,10 +17,22 @@ export class CommandProcessor {
       throw new Error('CommandProcessor requires a manifest object');
     }
     
+    // Validate config parameter
+    if (typeof config !== 'object' || config === null) {
+      throw new Error('CommandProcessor requires a config object');
+    }
+    
+    // Validate contractDir in config (should be in paths)
+    const contractDir = config.paths && config.paths.contractDir;
+    if (!contractDir) {
+      throw new Error('CommandProcessor config requires paths.contractDir property');
+    }
+    
     this.manifest = manifest;
     this.stateManager = new StateManager(paths, manifest);
     this.parser = new CommandParser(manifest);
-    this.handler = new CommandHandler(manifest); // Pass manifest to CommandHandler
+    // Pass the full config with contractDir in paths to CommandHandler
+    this.handler = new CommandHandler(manifest, config); // Pass manifest and full config to CommandHandler
     this.state = this.stateManager.getStateMap();
   }
 

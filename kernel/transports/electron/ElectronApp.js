@@ -35,8 +35,8 @@ class ElectronUIManager {
  * Handles commands for the Electron application via IPC
  */
 class ElectronCommandHandler {
-  constructor(paths, manifest) {
-    this.commandProcessor = new CommandProcessor(paths, manifest);
+  constructor(paths, manifest, config) {
+    this.commandProcessor = new CommandProcessor(paths, manifest, config);
   }
 
   /**
@@ -144,8 +144,8 @@ export class ElectronApp {
     // Store paths for use by UI manager methods
     this.paths = paths;
     
-    // Initialize command handler with required paths and manifest
-    this.commandHandler = new ElectronCommandHandler(paths, manifest);
+    // Initialize command handler with required paths, manifest and config
+    this.commandHandler = new ElectronCommandHandler(paths, manifest, config);
     
     // Use provided config with potential defaults
     const effectiveConfig = { ...config };

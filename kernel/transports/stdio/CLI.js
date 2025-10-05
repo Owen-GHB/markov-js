@@ -19,7 +19,7 @@ export class CLI {
 		if (!paths.contextFilePath) {
 			throw new Error('CLI config requires paths with contextFilePath property');
 		}
-		this.processor = new CommandProcessor(paths, manifest);
+		this.processor = new CommandProcessor(paths, manifest, config);
 	}
 
 	/**
