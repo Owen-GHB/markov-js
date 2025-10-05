@@ -447,28 +447,59 @@ export class UI {
         
         // API execution function that makes HTTP requests or uses Electron IPC
         async function executeCommand(command) {
-          // Check if we're in Electron environment
-          if (window.electronAPI) {
+          // More thorough check for Electron environment
+          const isElectron = window && window.electronAPI && typeof window.electronAPI.executeCommand === 'function';
+          
+          if (isElectron) {
             // Use IPC to send command to main process
-            return await window.electronAPI.executeCommand(command);
-          } else {
-            // Make HTTP API call to the /api endpoint
-            console.log('Sending command to API:', command);
-            
             try {
-              // First, try POST request with JSON body
-              const response = await fetch('/api', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                  json: JSON.stringify(command) // Server expects the command inside a json property
-                })
+              const result = await window.electronAPI.executeCommand(command);
+              return result;
+            } catch (error) {
+              // Fallback to HTTP if IPC fails
+            }
+          }
+          
+          // Make HTTP API call to the /api endpoint (default behavior if not in Electron or if IPC failed)
+          try {
+            // First, try POST request with JSON body
+            const response = await fetch('/api', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                json: JSON.stringify(command) // Server expects the command inside a json property
+              })
+            });
+            
+            if (!response.ok) {
+              // If response is not OK, try to parse error message
+              let errorText = 'HTTP Error: ' + response.status;
+              try {
+                const errorData = await response.json();
+                if (errorData.error) {
+                  errorText = errorData.error;
+                }
+              } catch (e) {
+                // If we can't parse the error as JSON, use status text
+                errorText = response.statusText || errorText;
+              }
+              throw new Error(errorText);
+            }
+            
+            const result = await response.json();
+            return result;
+          } catch (postError) {
+            // If POST fails, try GET request as fallback
+            try {
+              const urlParams = new URLSearchParams({
+                json: JSON.stringify(command)
               });
               
+              const response = await fetch('/api?' + urlParams.toString());
+              
               if (!response.ok) {
-                // If response is not OK, try to parse error message
                 let errorText = 'HTTP Error: ' + response.status;
                 try {
                   const errorData = await response.json();
@@ -476,7 +507,6 @@ export class UI {
                     errorText = errorData.error;
                   }
                 } catch (e) {
-                  // If we can't parse the error as JSON, use status text
                   errorText = response.statusText || errorText;
                 }
                 throw new Error(errorText);
@@ -484,36 +514,8 @@ export class UI {
               
               const result = await response.json();
               return result;
-            } catch (postError) {
-              // If POST fails, try GET request as fallback
-              console.warn('POST request failed, trying GET request as fallback:', postError);
-              
-              try {
-                const urlParams = new URLSearchParams({
-                  json: JSON.stringify(command)
-                });
-                
-                const response = await fetch('/api?' + urlParams.toString());
-                
-                if (!response.ok) {
-                  let errorText = 'HTTP Error: ' + response.status;
-                  try {
-                    const errorData = await response.json();
-                    if (errorData.error) {
-                      errorText = errorData.error;
-                    }
-                  } catch (e) {
-                    errorText = response.statusText || errorText;
-                  }
-                  throw new Error(errorText);
-                }
-                
-                const result = await response.json();
-                return result;
-              } catch (getError) {
-                console.error('Both POST and GET API calls failed:', getError);
-                throw getError;
-              }
+            } catch (getError) {
+              throw getError;
             }
           }
         }

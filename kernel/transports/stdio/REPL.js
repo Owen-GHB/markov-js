@@ -1,32 +1,41 @@
 import readline from 'readline';
 import fs from 'fs';
 import path from 'path';
-import pathResolver from '../../utils/path-resolver.js';
-import { CommandProcessor } from '../../CommandProcessor.js';
-
-// Load configuration for history
-let config = { repl: { maxHistory: 100 } }; // fallback default
-try {
-  const configPath = pathResolver.getConfigFilePath('default.json');
-  if (fs.existsSync(configPath)) {
-    const configFile = fs.readFileSync(configPath, 'utf8');
-    const loadedConfig = JSON.parse(configFile);
-    config = { ...config, ...loadedConfig };
-  }
-} catch (error) {
-  console.warn('⚠️ Could not load config for REPL history, using defaults:', error.message);
-}
+import { CommandProcessor } from '../../processor/CommandProcessor.js';
 
 export class REPL {
 	constructor() {
 		this.processor = new CommandProcessor();
-		this.maxHistory = config.repl.maxHistory || 100;
+		// These will be initialized in the start method
+		this.maxHistory = 100;
 		this.history = [];
-		this.historyFilePath = pathResolver.getContextFilePath('repl-history.json');
+		this.historyFilePath = null;
+	}
+
+	async initialize(paths = {}, config = {}) {
+		// Validate required paths and config
+		if (typeof paths !== 'object' || paths === null) {
+			throw new Error('paths parameter must be an object');
+		}
+		if (typeof config !== 'object' || config === null) {
+			throw new Error('config parameter must be an object');
+		}
+		
+		// Use provided config with fallback defaults
+		const effectiveConfig = { repl: { maxHistory: 100 }, ...config };
+		
+		// Use provided paths for file paths (configPath will be ignored since we now get config directly)
+		const historyFilePath = paths.replHistoryFilePath || paths.contextFilePath || 'context/repl-history.json';
+		
+		this.maxHistory = effectiveConfig.repl?.maxHistory || 100;
+		this.historyFilePath = historyFilePath;
 		this.loadHistory();
 	}
 
-	async start() {
+	async start(paths = {}, config = {}) {
+		// Initialize with provided path and config values at the beginning of start
+		await this.initialize(paths, config);
+		
 		// Initialize REPL instance
 		this.rl = readline.createInterface({
 			input: process.stdin,
@@ -75,7 +84,6 @@ export class REPL {
 		});
 
 		this.rl.on('close', () => {
-			console.log('\nGoodbye!');
 			process.exit(0);
 		});
 

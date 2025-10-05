@@ -1,7 +1,7 @@
-import { getHandler, manifest as contractManifest } from './contract.js';
+import { getHandler, manifest as contractManifest } from '../contract.js';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
-import pathResolver from './utils/path-resolver.js';
+import pathResolver from '../utils/path-resolver.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

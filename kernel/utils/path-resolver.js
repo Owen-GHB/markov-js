@@ -100,12 +100,8 @@ class KernelPathResolver {
    */
   getElectronPreloadPath() {
     const configPath = this.config.paths?.electronPreloadPath || 'electron-preload.js';
-    // If the path is relative, join it with project root
-    if (configPath.startsWith('.')) {
-      return path.join(this.projectRoot, configPath);
-    } else {
-      return configPath;
-    }
+    // Always return absolute path for Electron preload
+    return path.resolve(this.projectRoot, configPath);
   }
 
   /**
@@ -176,6 +172,28 @@ class KernelPathResolver {
    */
   getTemplatePath(filename) {
     return path.join(this.getTemplatesDir(), filename);
+  }
+
+  /**
+   * Get an object containing all available paths
+   * @returns {Object} Object with all path values
+   */
+  getAllPaths() {
+    return {
+      projectRoot: this.getProjectRoot(),
+      kernelDir: this.getKernelDir(),
+      contractDir: this.getContractDir(),
+      generatedUIDir: this.getGeneratedUIDir(),
+      servedUIDir: this.getServedUIDir(),
+      electronPreloadPath: this.getElectronPreloadPath(),
+      configDir: this.getConfigDir(),
+      contextDir: this.getContextDir(),
+      templatesDir: this.getTemplatesDir(),
+      // Include some example paths with common filenames
+      configFilePath: this.getConfigFilePath(),
+      uiFilePath: this.getUIFilePath(),
+      templatesDirPath: this.getTemplatesDir()
+    };
   }
 }
 

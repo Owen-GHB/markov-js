@@ -1,78 +1,14 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
-import { ElectronUIManager } from './kernel/transports/electron/ui-manager.js';
-import { ElectronCommandHandler } from './kernel/transports/electron/command-handler.js';
+import { ElectronApp } from './kernel/transports/electron/ElectronApp.js';
 import pathResolver from './kernel/utils/path-resolver.js';
 
-const createWindow = () => {
-  const uiManager = new ElectronUIManager();
-  const commandHandler = new ElectronCommandHandler();
-
-  // Create the browser window.
-  const mainWindow = new BrowserWindow({
-    width: 1200,
-    height: 800,
-    webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
-      preload: pathResolver.getElectronPreloadPath(),
-    }
-  });
-
-  // Load the UI from the served UI directory
-  try {
-    const uiPath = uiManager.getUIPath();
-    
-    // Check if UI exists, if not show error
-    if (!uiManager.hasServedUI()) {
-      console.error('UI files not found. Please generate UI files first using \'node kernel.js --generate\'');
-      // Load a simple error page
-      mainWindow.loadURL(`data:text/html,<h1>UI Files Not Found</h1><p>Please generate UI files first using 'node kernel.js --generate'</p>`);
-    } else {
-      // Load the generated UI
-      mainWindow.loadFile(uiPath);
-    }
-  } catch (err) {
-    console.error('Failed to load UI:', err);
-    // Load a simple error page
-    mainWindow.loadURL(`data:text/html,<h1>UI Loading Failed</h1><p>${err.message}</p>`);
-  }
-
-  // Open the DevTools.
-  mainWindow.webContents.openDevTools();
+// Create and start the Electron application with default settings
+const electronApp = new ElectronApp();
+const paths = {
+  electronPreloadPath: pathResolver.getElectronPreloadPath(),
+  servedUIDir: pathResolver.getServedUIDir(),
+  generatedUIDir: pathResolver.getGeneratedUIDir(),
+  templatesDir: pathResolver.getTemplatesDir(),
+  uiFilePath: pathResolver.getUIFilePath()
 };
-
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
-app.whenReady().then(() => {
-  createWindow();
-
-  app.on('activate', () => {
-    // On macOS it's common to re-create a window in the app when the
-    // dock icon is clicked and there are no other windows open.
-    if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
-    }
-  });
-});
-
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
-});
-
-// IPC handler to execute commands via the kernel
-ipcMain.handle('execute-command', async (event, command) => {
-  const handler = new ElectronCommandHandler();
-  return await handler.executeCommand(command);
-});
-
-// IPC handler to get manifests
-ipcMain.handle('get-manifests', () => {
-  const handler = new ElectronCommandHandler();
-  return handler.getManifests();
-});
+const config = {};
+electronApp.start(paths, config);

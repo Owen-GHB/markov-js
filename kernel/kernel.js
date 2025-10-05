@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
+import pathResolver from './utils/path-resolver.js';
+import { manifest } from './contract.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -44,11 +47,9 @@ export async function launch(args, projectRoot) {
   // Check if we should regenerate UI
   else if (args.find(arg => arg === '--generate' || arg === '-g')) {
     // Import and run the UI generator with proper paths
-    const { UI } = await import('./generator/UI.js');
-    const pathResolver = await import('./utils/path-resolver.js');
-    const { manifest } = await import('./contract.js'); // Import manifest directly
+    const { UI } = await import('./generator/UI.js'); // Dynamic import for generator
     const generator = new UI();
-    // Use the centralized path resolver
+    // Use the centralized path resolver (static import at top)
     const outputDir = pathResolver.generatedUIDir;
     const templateDir = pathResolver.templatesDir;
     return generator.generate(manifest, outputDir, templateDir, 'index.html')
@@ -76,9 +77,32 @@ export async function launch(args, projectRoot) {
       }
     }
     
-    // Start HTTP server (API only)
-    const { startServer } = await import('./transports/http/HTTP.js');
-    return startServer(port);
+    // Start HTTP server (API only) - instantiate directly instead of using HTTP.js
+    const { HTTPServer } = await import('./transports/http/HTTP.js'); // Dynamic import for transport
+    
+    // Load configuration ahead of time (using static imports at top)
+    let config = { defaultHttpPort: 8080 }; // fallback default
+    const configFilePath = pathResolver.getConfigFilePath();
+    try {
+      if (fs.existsSync(configFilePath)) {
+        const configFile = fs.readFileSync(configFilePath, 'utf8');
+        config = { ...config, ...JSON.parse(configFile) };
+      }
+    } catch (error) {
+      console.warn('⚠️ Could not load config file, using defaults:', error.message);
+    }
+    
+    const server = new HTTPServer({
+      port: port,
+      apiEndpoint: '/' // Serve API directly at root (original behavior)
+    });
+    
+    // Prepare paths object with only the paths this transport needs
+    const paths = {
+      configFilePath: configFilePath
+    };
+    
+    return server.start(paths, config);
   }
   // Check if we should start HTTP server serving both UI and API
   else if (args.find(arg => arg.startsWith('--serve'))) {
@@ -95,9 +119,37 @@ export async function launch(args, projectRoot) {
       }
     }
     
-    // Start server that serves both UI and API
-    const { startServeServer } = await import('./transports/http/HTTP-serve.js');
-    return startServeServer(port);
+    // Start server that serves both UI and API - instantiate directly instead of using HTTP-serve.js
+    const { HTTPServer } = await import('./transports/http/HTTP.js'); // Dynamic import for transport
+    
+    // Load configuration ahead of time (using static imports at top)
+    let config = { defaultHttpPort: 8080 }; // fallback default
+    const configFilePath = pathResolver.getConfigFilePath();
+    try {
+      if (fs.existsSync(configFilePath)) {
+        const configFile = fs.readFileSync(configFilePath, 'utf8');
+        config = { ...config, ...JSON.parse(configFile) };
+      }
+    } catch (error) {
+      console.warn('⚠️ Could not load config file, using defaults:', error.message);
+    }
+    
+    // Use the path resolver to get the served UI directory
+    const staticDir = pathResolver.servedUIDir;
+    
+    const server = new HTTPServer({
+      port: port,
+      staticDir: staticDir,
+      apiEndpoint: '/api'
+    });
+    
+    // Prepare paths object with only the paths this transport needs
+    const paths = {
+      configFilePath: configFilePath,
+      servedUIDir: pathResolver.servedUIDir
+    };
+    
+    return server.start(paths, config);
   } else {
     // For other kernel commands or to show help
     console.log('Kernel command-line interface');

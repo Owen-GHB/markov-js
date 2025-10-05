@@ -1,7 +1,7 @@
 import { CommandParser } from './CommandParser.js';
 import { CommandHandler } from './CommandHandler.js';
-import stateManager from './utils/StateManager.js';
-import { manifest } from './contract.js';
+import stateManager from './StateManager.js';
+import { manifest } from '../contract.js';
 
 /**
  * Consolidates shared command processing logic across all transports

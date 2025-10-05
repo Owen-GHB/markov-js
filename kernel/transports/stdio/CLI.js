@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { CommandProcessor } from '../../CommandProcessor.js';
+import { CommandProcessor } from '../../processor/CommandProcessor.js';
 
 export class CLI {
 	constructor() {

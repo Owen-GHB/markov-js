@@ -1,10 +1,8 @@
-import { CommandHandler } from '../../CommandHandler.js';
-import { CommandParser } from '../../CommandParser.js';
+import { CommandProcessor } from '../../processor/CommandProcessor.js';
 
 export class JSONAPI {
 	constructor() {
-		this.app = new CommandHandler();
-		this.parser = new CommandParser();
+		this.processor = new CommandProcessor();
 	}
 
 	/**
@@ -14,15 +12,8 @@ export class JSONAPI {
 	 */
 	async handleInput(input) {
 		try {
-			// Use the unified parser which handles both JSON and string formats
-			const context = {}; // Empty context
-			const { error, command } = this.parser.parse(input, context);
-			
-			if (error) {
-				return { error: error, output: null };
-			}
-			
-			return await this.app.handleCommand(command);
+			// Use the unified CommandProcessor to handle the input
+			return await this.processor.processCommand(input);
 		} catch (error) {
 			return { error: error.message, output: null };
 		}

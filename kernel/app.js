@@ -16,8 +16,29 @@ export async function launch(args, projectRoot) {
   if (args.length === 0) {
     // Default to REPL mode if no args
     const { REPL } = await import('./transports/stdio/REPL.js');
+    const pathResolverModule = await import('./utils/path-resolver.js');
+    const pathResolver = pathResolverModule.default;
+    const fs = await import('fs');
+    
+    // Load configuration ahead of time
+    let config = { repl: { maxHistory: 100 } }; // fallback default
+    const configFilePath = pathResolver.getConfigFilePath();
+    try {
+      if (fs.existsSync(configFilePath)) {
+        const configFile = fs.readFileSync(configFilePath, 'utf8');
+        const loadedConfig = JSON.parse(configFile);
+        config = { ...config, ...loadedConfig };
+      }
+    } catch (error) {
+      console.warn('⚠️ Could not load config for REPL, using defaults:', error.message);
+    }
+    
     const repl = new REPL();
-    return repl.start();
+    const paths = {
+      configFilePath: configFilePath,
+      contextFilePath: pathResolver.getContextFilePath('repl-history.json')
+    };
+    return repl.start(paths, config);
   } else {
     // Check if we're being called directly with command line args
     const { CLI } = await import('./transports/stdio/CLI.js');

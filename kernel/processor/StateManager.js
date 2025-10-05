@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import pathResolver from './path-resolver.js';
+import pathResolver from '../utils/path-resolver.js';
 import { manifest } from '../contract.js';
 
 /**
