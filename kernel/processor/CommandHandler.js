@@ -1,10 +1,14 @@
-import { getHandler, manifest as contractManifest } from '../contract.js';
+import { getHandler } from '../contract.js';
 import { pathToFileURL } from 'url';
 
 export class CommandHandler {
-	constructor() {
-		// Initialize with the manifest
-		this.manifest = contractManifest;
+	constructor(manifest) {
+		// Validate manifest parameter
+		if (!manifest || typeof manifest !== 'object') {
+			throw new Error('CommandHandler requires a manifest object');
+		}
+		
+		this.manifest = manifest;
 	}
 
 	/**

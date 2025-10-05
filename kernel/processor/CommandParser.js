@@ -1,6 +1,5 @@
 import { parseObjectStyle } from './parsers/Objective.js';
 import { parseFunctionStyle } from './parsers/Functional.js';
-import { manifest } from '../contract.js';
 /**
  * Command parser for REPL-style interface
  *
@@ -10,7 +9,13 @@ import { manifest } from '../contract.js';
  * - command param1 param2 key=value
  */
 export class CommandParser {
-	constructor() {
+	constructor(manifest) {
+		// Validate manifest parameter
+		if (!manifest || typeof manifest !== 'object') {
+			throw new Error('CommandParser requires a manifest object');
+		}
+		
+		this.manifest = manifest;
 		this.patterns = {
 			objectCall: /^(\w+)\s*\(\s*(\{.*\})\s*\)\s*$/,
 			funcCall: /^(\w+)\s*\(\s*([^)]*)\s*\)\s*$/,
@@ -52,7 +57,7 @@ export class CommandParser {
 		// Try CLI-style parsing first
 		const cliMatch = trimmed.match(this.patterns.cliStyle);
 		if (cliMatch) {
-			const spec = manifest.commands.find(
+			const spec = this.manifest.commands.find(
 				(c) => c.name.toLowerCase() === cliMatch[1].toLowerCase(),
 			);
 			if (!(spec && spec.parameters.every((p) => !p.required))) {
@@ -87,7 +92,7 @@ export class CommandParser {
 	}
 
 	parseCliStyle(command, argsString, context = {}) {
-		const spec = manifest.commands.find(
+		const spec = this.manifest.commands.find(
 			(c) => c.name.toLowerCase() === command.toLowerCase(),
 		);
 		if (!spec) return { error: `Unknown command: ${command}`, command: null };
@@ -132,7 +137,7 @@ export class CommandParser {
 	 * @returns {{error: string|null, command: Object|null}}
 	 */
 	parseObjectStyle([, name, argsString], context = {}) {
-		return parseObjectStyle([, name, argsString], context);
+		return parseObjectStyle([, name, argsString], context, this.manifest);
 	}
 
 	/**
@@ -142,6 +147,6 @@ export class CommandParser {
 	 * @returns {{error: string|null, command: Object|null}}
 	 */
 	parseFunctionStyle([, name, argsString], context = {}) {
-		return parseFunctionStyle([, name, argsString], context);
+		return parseFunctionStyle([, name, argsString], context, this.manifest);
 	}
 }

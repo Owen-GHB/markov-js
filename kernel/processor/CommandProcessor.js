@@ -1,21 +1,26 @@
 import { CommandParser } from './CommandParser.js';
 import { CommandHandler } from './CommandHandler.js';
 import StateManager from './StateManager.js';
-import { manifest } from '../contract.js';
 
 /**
  * Consolidates shared command processing logic across all transports
  */
 export class CommandProcessor {
-  constructor(paths) {
+  constructor(paths, manifest) {
     // Validate paths parameter
     if (!paths || typeof paths !== 'object' || !paths.contextFilePath) {
       throw new Error('CommandProcessor requires a paths object with contextFilePath property');
     }
     
-    this.stateManager = new StateManager(paths);
-    this.parser = new CommandParser();
-    this.handler = new CommandHandler();
+    // Validate manifest parameter
+    if (!manifest || typeof manifest !== 'object') {
+      throw new Error('CommandProcessor requires a manifest object');
+    }
+    
+    this.manifest = manifest;
+    this.stateManager = new StateManager(paths, manifest);
+    this.parser = new CommandParser(manifest);
+    this.handler = new CommandHandler(manifest); // Pass manifest to CommandHandler
     this.state = this.stateManager.getStateMap();
   }
 
@@ -43,7 +48,7 @@ export class CommandProcessor {
         
         const context = {
           state: this.state,
-          manifest: manifest,
+          manifest: this.manifest,
           ...additionalContext
         };
         
@@ -63,7 +68,7 @@ export class CommandProcessor {
       // For all other commands, create context and parse normally
       const context = {
         state: this.state,
-        manifest: manifest,
+        manifest: this.manifest,
         ...additionalContext
       };
 
@@ -79,7 +84,7 @@ export class CommandProcessor {
 
       // Apply side effects and save state if command was successful
       if (!result.error) {
-        const commandSpec = manifest.commands.find(c => c.name === command.name);
+        const commandSpec = this.manifest.commands.find(c => c.name === command.name);
         if (commandSpec) {
           this.stateManager.applySideEffects(command, commandSpec);
           this.stateManager.saveState();
@@ -261,7 +266,7 @@ export class CommandProcessor {
 
       // Apply side effects and save state if command was successful
       if (!result.error) {
-        const commandSpec = manifest.commands.find(c => c.name === command.name);
+        const commandSpec = this.manifest.commands.find(c => c.name === command.name);
         if (commandSpec) {
           this.stateManager.applySideEffects(command, commandSpec);
           this.stateManager.saveState();
@@ -290,7 +295,7 @@ export class CommandProcessor {
    * @returns {Object} - The application manifest
    */
   getManifest() {
-    return manifest;
+    return this.manifest;
   }
 
   /**

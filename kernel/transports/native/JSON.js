@@ -1,11 +1,19 @@
 import { CommandProcessor } from '../../processor/CommandProcessor.js';
+import { manifest } from '../../contract.js';
 
 export class JSONAPI {
-	constructor(paths) {
-		if (!paths || typeof paths !== 'object' || !paths.contextFilePath) {
-			throw new Error('JSONAPI requires a paths object with contextFilePath property');
+	constructor(config) {
+		if (!config || typeof config !== 'object') {
+			throw new Error('JSONAPI requires a config object');
 		}
-		this.processor = new CommandProcessor(paths);
+		
+		// Extract paths from nested config object
+		const paths = config.paths || {};
+		
+		if (!paths.contextFilePath) {
+			throw new Error('JSONAPI config requires paths with contextFilePath property');
+		}
+		this.processor = new CommandProcessor(paths, manifest);
 	}
 
 	/**

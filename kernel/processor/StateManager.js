@@ -1,17 +1,22 @@
 import fs from 'fs';
 import path from 'path';
-import { manifest } from '../contract.js';
 
 /**
  * Manages persistent state for the application
  */
 export class StateManager {
-  constructor(paths) {
+  constructor(paths, manifest) {
     if (!paths || typeof paths !== 'object' || !paths.contextFilePath) {
       throw new Error('StateManager requires a paths object with contextFilePath property');
     }
     
-    this.state = new Map(Object.entries(manifest.stateDefaults || {}));
+    // Validate manifest parameter
+    if (!manifest || typeof manifest !== 'object') {
+      throw new Error('StateManager requires a manifest object');
+    }
+    
+    this.manifest = manifest;
+    this.state = new Map(Object.entries(this.manifest.stateDefaults || {}));
     this.stateFilePath = paths.contextFilePath;
     this.loadState();
   }
@@ -26,7 +31,7 @@ export class StateManager {
         const savedState = JSON.parse(stateData);
         if (savedState && typeof savedState === 'object') {
           // Load only valid state keys from manifest defaults
-          const defaultState = manifest.stateDefaults || {};
+          const defaultState = this.manifest.stateDefaults || {};
           for (const [key, defaultValue] of Object.entries(defaultState)) {
             if (key in savedState) {
               this.state.set(key, savedState[key]);
@@ -40,7 +45,7 @@ export class StateManager {
     } catch (error) {
       console.warn('⚠️ Could not load persistent state, using defaults:', error.message);
       // Initialize with manifest defaults
-      const defaultState = manifest.stateDefaults || {};
+      const defaultState = this.manifest.stateDefaults || {};
       for (const [key, value] of Object.entries(defaultState)) {
         this.state.set(key, value);
       }
@@ -59,7 +64,7 @@ export class StateManager {
       }
       
       // Create serializable state object with only the default state keys
-      const defaultState = manifest.stateDefaults || {};
+      const defaultState = this.manifest.stateDefaults || {};
       const stateToSave = {};
       
       for (const [key] of Object.entries(defaultState)) {

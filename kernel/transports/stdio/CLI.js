@@ -3,9 +3,14 @@
 import { CommandProcessor } from '../../processor/CommandProcessor.js';
 
 export class CLI {
-	constructor(config) {
+	constructor(config, manifest) {
 		if (!config || typeof config !== 'object') {
 			throw new Error('CLI requires a config object');
+		}
+		
+		// Validate manifest parameter
+		if (!manifest || typeof manifest !== 'object') {
+			throw new Error('CLI requires a manifest object');
 		}
 		
 		// Extract paths from nested config object
@@ -14,7 +19,7 @@ export class CLI {
 		if (!paths.contextFilePath) {
 			throw new Error('CLI config requires paths with contextFilePath property');
 		}
-		this.processor = new CommandProcessor(paths);
+		this.processor = new CommandProcessor(paths, manifest);
 	}
 
 	/**

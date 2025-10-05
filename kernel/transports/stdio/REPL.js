@@ -32,10 +32,15 @@ export class REPL {
 		this.loadHistory();
 	}
 
-	async start(config = {}) {
+	async start(config = {}, manifest) {
 		// Validate config object
 		if (typeof config !== 'object' || config === null) {
 			throw new Error('config parameter must be an object');
+		}
+		
+		// Validate manifest parameter
+		if (!manifest || typeof manifest !== 'object') {
+			throw new Error('start method requires a manifest object');
 		}
 		
 		// Extract paths from nested config object
@@ -46,8 +51,8 @@ export class REPL {
 			throw new Error('config.paths must include contextFilePath for state management');
 		}
 		
-		// Initialize command processor with required paths
-		this.processor = new CommandProcessor(paths);
+		// Initialize command processor with required paths and manifest
+		this.processor = new CommandProcessor(paths, manifest);
 		
 		// Initialize with provided path and config values at the beginning of start
 		await this.initialize(config);

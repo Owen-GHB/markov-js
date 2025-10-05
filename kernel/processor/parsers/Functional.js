@@ -1,13 +1,13 @@
 import { ParserUtils } from './Utils.js';
-import { manifest } from '../../contract.js';
 
 /**
  * Parse a command in function style
  * @param {string[]} match - Destructured match from regex
  * @param {Object} context - Optional context with runtime state
+ * @param {Object} manifest - The application manifest
  * @returns {{error: string|null, command: Object|null}}
  */
-export function parseFunctionStyle([, name, argsString], context = {}) {
+export function parseFunctionStyle([, name, argsString], context = {}, manifest) {
 	const commandName = name.toLowerCase();
 
 	// Find the command in manifest

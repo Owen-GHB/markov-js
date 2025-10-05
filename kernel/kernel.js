@@ -79,6 +79,7 @@ export async function launch(args, projectRoot) {
     
     // Start HTTP server (API only) - instantiate directly instead of using HTTP.js
     const { HTTPServer } = await import('./transports/http/HTTP.js'); // Dynamic import for transport
+    const { manifest } = await import('./contract.js');
     
     // Load configuration ahead of time (using static imports at top)
     let config = { defaultHttpPort: 8080 }; // fallback default
@@ -106,7 +107,7 @@ export async function launch(args, projectRoot) {
       ...config
     };
     
-    return server.start(fullConfig);
+    return server.start(fullConfig, manifest);
   }
   // Check if we should start HTTP server serving both UI and API
   else if (args.find(arg => arg.startsWith('--serve'))) {
@@ -125,6 +126,7 @@ export async function launch(args, projectRoot) {
     
     // Start server that serves both UI and API - instantiate directly instead of using HTTP-serve.js
     const { HTTPServer } = await import('./transports/http/HTTP.js'); // Dynamic import for transport
+    const { manifest } = await import('./contract.js');
     
     // Load configuration ahead of time (using static imports at top)
     let config = { defaultHttpPort: 8080 }; // fallback default
@@ -157,7 +159,7 @@ export async function launch(args, projectRoot) {
       ...config
     };
     
-    return server.start(fullConfig);
+    return server.start(fullConfig, manifest);
   } else {
     // For other kernel commands or to show help
     console.log('Kernel command-line interface');

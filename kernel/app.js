@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { manifest } from './contract.js';
+import pathResolver from './utils/path-resolver.js';
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -16,9 +19,6 @@ export async function launch(args, projectRoot) {
   if (args.length === 0) {
     // Default to REPL mode if no args
     const { REPL } = await import('./transports/stdio/REPL.js');
-    const pathResolverModule = await import('./utils/path-resolver.js');
-    const pathResolver = pathResolverModule.default;
-    const fs = await import('fs');
     
     // Load configuration ahead of time
     let config = { repl: { maxHistory: 100 } }; // fallback default
@@ -48,19 +48,17 @@ export async function launch(args, projectRoot) {
     }
     
     const repl = new REPL();
-    return repl.start(fullConfig);
+    return repl.start(fullConfig, manifest);
   } else {
     // Check if we're being called directly with command line args
     const { CLI } = await import('./transports/stdio/CLI.js');
-    const pathResolverModule = await import('./utils/path-resolver.js');
-    const pathResolver = pathResolverModule.default;
     
     const config = {
       paths: {
         contextFilePath: pathResolver.getContextFilePath('state.json')
       }
     };
-    const cli = new CLI(config);
+    const cli = new CLI(config, manifest);
     return cli.run(args);
   }
 }

@@ -35,8 +35,8 @@ class ElectronUIManager {
  * Handles commands for the Electron application via IPC
  */
 class ElectronCommandHandler {
-  constructor(paths) {
-    this.commandProcessor = new CommandProcessor(paths);
+  constructor(paths, manifest) {
+    this.commandProcessor = new CommandProcessor(paths, manifest);
   }
 
   /**
@@ -122,10 +122,15 @@ export class ElectronApp {
     });
   }
 
-  async start(config = {}) {
+  async start(config = {}, manifest) {
     // Validate config object
     if (typeof config !== 'object' || config === null) {
       throw new Error('config parameter must be an object');
+    }
+    
+    // Validate manifest parameter
+    if (!manifest || typeof manifest !== 'object') {
+      throw new Error('start method requires a manifest object');
     }
     
     // Extract paths from nested config object
@@ -139,8 +144,8 @@ export class ElectronApp {
     // Store paths for use by UI manager methods
     this.paths = paths;
     
-    // Initialize command handler with required paths
-    this.commandHandler = new ElectronCommandHandler(paths);
+    // Initialize command handler with required paths and manifest
+    this.commandHandler = new ElectronCommandHandler(paths, manifest);
     
     // Use provided config with potential defaults
     const effectiveConfig = { ...config };
