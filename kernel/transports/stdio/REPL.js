@@ -5,21 +5,21 @@ import { CommandProcessor } from '../../processor/CommandProcessor.js';
 
 export class REPL {
 	constructor() {
-		this.processor = new CommandProcessor();
 		// These will be initialized in the start method
+		this.processor = null;
 		this.maxHistory = 100;
 		this.history = [];
 		this.historyFilePath = null;
 	}
 
-	async initialize(paths = {}, config = {}) {
-		// Validate required paths and config
-		if (typeof paths !== 'object' || paths === null) {
-			throw new Error('paths parameter must be an object');
-		}
+	async initialize(config = {}) {
+		// Validate config object
 		if (typeof config !== 'object' || config === null) {
 			throw new Error('config parameter must be an object');
 		}
+		
+		// Extract paths from nested config object
+		const paths = config.paths || {};
 		
 		// Use provided config with fallback defaults
 		const effectiveConfig = { repl: { maxHistory: 100 }, ...config };
@@ -32,9 +32,25 @@ export class REPL {
 		this.loadHistory();
 	}
 
-	async start(paths = {}, config = {}) {
+	async start(config = {}) {
+		// Validate config object
+		if (typeof config !== 'object' || config === null) {
+			throw new Error('config parameter must be an object');
+		}
+		
+		// Extract paths from nested config object
+		const paths = config.paths || {};
+		
+		// Check if required paths are provided
+		if (!paths.contextFilePath) {
+			throw new Error('config.paths must include contextFilePath for state management');
+		}
+		
+		// Initialize command processor with required paths
+		this.processor = new CommandProcessor(paths);
+		
 		// Initialize with provided path and config values at the beginning of start
-		await this.initialize(paths, config);
+		await this.initialize(config);
 		
 		// Initialize REPL instance
 		this.rl = readline.createInterface({
