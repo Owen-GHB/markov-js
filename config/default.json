@@ -4,6 +4,7 @@
     "maxHistory": 100
   },
   "paths": {
+    "kernelDir": "kernel",
     "contractDir": "contract",
     "generatedUIDir": "generated-ui",
     "servedUIDir": "generated-ui",

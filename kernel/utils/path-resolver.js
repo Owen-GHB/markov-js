@@ -48,6 +48,15 @@ class KernelPathResolver {
   }
 
   /**
+   * Get the path to the kernel directory
+   * @returns {string} Path to kernel directory
+   */
+  getKernelDir() {
+    const configPath = this.config.paths?.kernelDir || 'kernel';
+    return path.join(this.projectRoot, configPath);
+  }
+
+  /**
    * Get the path to the contract directory
    * @returns {string} Path to contract directory
    */
@@ -175,6 +184,7 @@ const pathResolver = new KernelPathResolver();
 
 // Export individual path functions for direct import
 export const projectRoot = pathResolver.getProjectRoot();
+export const kernelDir = pathResolver.getKernelDir();
 export const contractDir = pathResolver.getContractDir();
 export const generatedUIDir = pathResolver.getGeneratedUIDir();
 export const servedUIDir = pathResolver.getServedUIDir();
