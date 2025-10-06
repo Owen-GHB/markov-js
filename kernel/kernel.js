@@ -1,12 +1,5 @@
-#!/usr/bin/env node
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { buildConfig } from './utils/config-loader.js';
-import pathResolver from './utils/path-resolver.js';
 import { manifest } from './contract.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 /**
  * Launch the kernel infrastructure with the given arguments and project root
@@ -15,9 +8,11 @@ const __dirname = path.dirname(__filename);
  * @returns {Promise<void>}
  */
 export async function launch(args, projectRoot) {
+  // Build unified configuration once at the beginning
+  const config = buildConfig(projectRoot);
+  
   // Check if we should run in Electron
-  const electronArg = args.find(arg => arg === '--electron' || arg === '-e');
-  if (electronArg) {
+  if (args.includes('--electron')) {
     // Launch Electron using npx, which will run electron-main.js
     // The electron-main.js handles UI generation and window creation
     return import('child_process')
@@ -45,17 +40,11 @@ export async function launch(args, projectRoot) {
       });
   }
   // Check if we should regenerate UI
-  else if (args.find(arg => arg === '--generate' || arg === '-g')) {
+  else if (args.includes('--generate')) {
     // Import and run the UI generator with proper paths
-    const { UI } = await import('./generator/UI.js'); // Dynamic import for generator
-    const generator = new UI();
+    const generator = await import('./plugins/generator/index.js'); // Dynamic import for generator plugin
     
-    // Build unified configuration
-    const config = buildConfig(projectRoot);
-    
-    const outputDir = config.paths.generatedUIDir;
-    const templateDir = config.paths.templatesDir;
-    return generator.generate(manifest, outputDir, templateDir, 'index.html')
+    return generator.run(config, manifest)
       .then(() => {
         console.log('✅ UI generation completed successfully!');
         process.exit(0);
@@ -80,19 +69,16 @@ export async function launch(args, projectRoot) {
       }
     }
     
-    // Start HTTP server (API only) - instantiate directly instead of using HTTP.js
-    const { HTTPServer } = await import('./transports/http/HTTP.js'); // Dynamic import for transport
-    const { manifest } = await import('./contract.js');
+    // Start HTTP server (API only) - use plugin wrapper
+    const httpPlugin = await import('./plugins/http/index.js'); // Dynamic import for HTTP plugin
     
     // Build unified configuration
     const config = buildConfig(projectRoot);
     
-    const server = new HTTPServer({
+    return httpPlugin.start(config, manifest, {
       port: port,
       apiEndpoint: '/' // Serve API directly at root (original behavior)
     });
-    
-    return server.start(config, manifest);
   }
   // Check if we should start HTTP server serving both UI and API
   else if (args.find(arg => arg.startsWith('--serve'))) {
@@ -109,28 +95,25 @@ export async function launch(args, projectRoot) {
       }
     }
     
-    // Start server that serves both UI and API - instantiate directly instead of using HTTP-serve.js
-    const { HTTPServer } = await import('./transports/http/HTTP.js'); // Dynamic import for transport
-    const { manifest } = await import('./contract.js');
+    // Start server that serves both UI and API - use plugin wrapper
+    const httpPlugin = await import('./plugins/http/index.js'); // Dynamic import for HTTP plugin
     
-    // Build unified configuration
-    const config = buildConfig(projectRoot);
+    // Build unified configuration at the beginning
+    // const config = buildConfig(projectRoot);
     
-    const server = new HTTPServer({
+    return httpPlugin.start(config, manifest, {
       port: port,
       staticDir: config.paths.servedUIDir, // Use path from unified config
       apiEndpoint: '/api'
     });
-    
-    return server.start(config, manifest);
   } else {
     // For other kernel commands or to show help
     console.log('Kernel command-line interface');
     console.log('Available commands:');
-    console.log('  --generate, -g     Generate UI from contracts');
-    console.log('  --serve[=port]     Serve UI and API on specified port (default 8080)');
-    console.log('  --http[=port]      Serve API only on specified port (default 8080)');
-    console.log('  --electron, -e     Launch Electron application');
+    console.log('  --generate             Generate UI from contracts');
+    console.log('  --serve[=port]         Serve UI and API on specified port (default 8080)');
+    console.log('  --http[=port]          Serve API only on specified port (default 8080)');
+    console.log('  --electron             Launch Electron application');
     process.exit(0);
   }
 }

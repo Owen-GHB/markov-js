@@ -25,7 +25,7 @@ class KernelPathResolver {
    */
   loadConfig() {
     // Use the hardcoded default config path to avoid circular dependency
-    const hardcodedConfigPath = path.join(this.projectRoot, 'config', 'default.json');
+    const hardcodedConfigPath = path.join(this.projectRoot, 'kernel', 'config.json');
     try {
       if (fs.existsSync(hardcodedConfigPath)) {
         const configFile = fs.readFileSync(hardcodedConfigPath, 'utf8');
@@ -131,11 +131,12 @@ class KernelPathResolver {
 
   /**
    * Get the path to a specific config file
-   * @param {string} filename - The config filename (default: 'default.json')
+   * @param {string} filename - The config filename (default: 'config.json' for kernel config)
    * @returns {string} Path to the config file
    */
-  getConfigFilePath(filename = 'default.json') {
-    return path.join(this.getConfigDir(), filename);
+  getConfigFilePath(filename = 'config.json') {
+    // For kernel config, always use the kernel directory
+    return path.join(this.projectRoot, 'kernel', filename);
   }
 
   /**

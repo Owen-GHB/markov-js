@@ -32,15 +32,44 @@ function loadConfigFromFile(configFilePath, defaultConfig = {}) {
  * @returns {Object} Complete configuration with resolved paths
  */
 export function buildConfig(projectRoot) {
-  const configFilePath = path.join(projectRoot, 'config', 'default.json');
+  const configFilePath = path.join(projectRoot, 'kernel', 'config.json');
   
-  // Load user configuration from file
-  const userConfig = loadConfigFromFile(configFilePath, {
-    defaultHttpPort: 8080,
-    repl: { maxHistory: 100 }
+  // Load kernel configuration from file
+  const kernelConfig = loadConfigFromFile(configFilePath, {
+    http: { port: 8080 },
+    repl: { maxHistory: 100 },
+    paths: {
+      kernelDir: "kernel",
+      contractDir: "contract",
+      configDir: "config",
+      contextDir: "context"
+    },
+    plugins: {}
   });
 
-  // Build complete paths using path resolver and user config
+  // Load configuration for each enabled plugin and merge their paths
+  const allPluginPaths = {};
+  if (kernelConfig.plugins) {
+    for (const [pluginName, pluginConfig] of Object.entries(kernelConfig.plugins)) {
+      if (pluginConfig.enabled) {
+        // Load plugin-specific config
+        const pluginConfigPath = path.join(projectRoot, 'kernel', 'plugins', pluginName, 'config.json');
+        if (fs.existsSync(pluginConfigPath)) {
+          try {
+            const pluginFileConfig = JSON.parse(fs.readFileSync(pluginConfigPath, 'utf8'));
+            // If the plugin has specific paths, merge them
+            if (pluginFileConfig.paths) {
+              Object.assign(allPluginPaths, pluginFileConfig.paths);
+            }
+          } catch (error) {
+            console.warn(`⚠️ Could not load config for plugin ${pluginName}:`, error.message);
+          }
+        }
+      }
+    }
+  }
+
+  // Build complete paths using path resolver and kernel config
   const resolvedPaths = {
     // Core paths that must be calculated by kernel
     configFilePath: configFilePath,
@@ -50,7 +79,7 @@ export function buildConfig(projectRoot) {
     servedUIDir: pathResolver.getServedUIDir(),
     electronPreloadPath: pathResolver.getElectronPreloadPath(),
     
-    // Use user config paths with kernel fallbacks
+    // Use kernel config paths with kernel fallbacks
     kernelDir: pathResolver.getKernelDir(),
     generatedUIDir: pathResolver.getGeneratedUIDir(),
     contextDir: pathResolver.getContextDir(),
@@ -58,12 +87,19 @@ export function buildConfig(projectRoot) {
     uiFilePath: pathResolver.getUIFilePath(),
   };
 
+  // Combine all paths in the right order for overrides:
+  // 1. Plugin paths (defaults)
+  // 2. Kernel config paths (overrides plugin defaults) 
+  // 3. Resolved paths (kernel-calculated, can be overridden by kernel config)
+  const combinedPaths = {
+    ...allPluginPaths,           // Plugin defaults first
+    ...kernelConfig.paths,      // Kernel config overrides take precedence
+    ...resolvedPaths             // Resolved paths come after kernel config but can be overridden
+  };
+
   // Build and return complete config object
   return {
-    ...userConfig,
-    paths: {
-      ...userConfig.paths,
-      ...resolvedPaths
-    }
+    ...kernelConfig,
+    paths: combinedPaths
   };
 }

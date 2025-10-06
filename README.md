@@ -9,7 +9,7 @@ A versatile text generation tool implementing Markov chains, Variable-Length Mar
 This application follows a **modular kernel architecture** with clean separation of concerns. The architecture cleanly separates:
 
 - **Application Domain** (`textgen/`) - Core text generation logic
-- **Interface Domain** (`kernel/transports/`) - Multiple access methods (CLI, HTTP, Electron)
+- **Interface Domain** (`kernel/plugins/`) - Multiple access methods (CLI, HTTP, Electron)
 - **Contract System** (`contract/`) - Command definitions and manifests
 - **Kernel Core** (`kernel/`) - Command orchestration and processing
 
@@ -29,7 +29,6 @@ Commands work seamlessly across multiple interfaces:
 - **HTTP API** - RESTful web API
 - **HTTP Serve** - Web server with UI and API
 - **Electron** - Desktop application
-- **Native** - Direct programmatic API
 
 ## 🧱 Kernel Architecture
 
@@ -38,7 +37,7 @@ Commands work seamlessly across multiple interfaces:
 The kernel provides a robust foundation that includes:
 
 1. **Universal Command Processing** - Works with any domain by defining commands in contracts
-2. **Multiple Transport Mechanisms** - CLI, REPL, HTTP API, HTTP Serve, Electron, Native
+2. **Multiple Transport Mechanisms** - CLI, REPL, HTTP API, HTTP Serve, Electron
 3. **Automatic Command Discovery** - Scans contract directory and discovers all commands
 4. **Declarative Configuration** - Commands defined entirely in JSON manifests
 5. **State Management** - Persistent state that survives across command invocations
@@ -75,7 +74,7 @@ Commands work seamlessly across multiple interfaces:
 - **HTTP API** - RESTful web API (`node main.js --http=8080`)
 - **HTTP Serve** - Web server with UI and API (`node main.js --serve=8080`)
 - **Electron** - Desktop application (`node main.js --electron`)
-- **Native** - Direct programmatic API access
+
 
 ---
 

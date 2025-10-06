@@ -24,10 +24,10 @@ The Markov-js project implements a generic, domain-agnostic command processing e
 
 The kernel provides multiple interface transports:
 
-- **stdio** (`/kernel/transports/stdio/`) - CLI and REPL interfaces
-- **http** (`/kernel/transports/http/`) - HTTP server and API (not examined directly)
-- **electron** (`/kernel/transports/electron/`) - Electron desktop application
-- **native** (`/kernel/transports/native/`) - Direct programmatic API (not examined directly)
+- **stdio** (`/kernel/plugins/stdio/`) - CLI and REPL interfaces
+- **http** (`/kernel/plugins/http/`) - HTTP server and API (not examined directly)
+- **electron** (`/kernel/plugins/electron/`) - Electron desktop application
+
 
 ### Utilities
 
@@ -94,7 +94,7 @@ The system uses persistent state management with:
 Electron integration works through:
 - `electron-main.js` - Electron application entry point
 - `electron-preload.js` - Secure IPC communication setup
-- `kernel/transports/electron/` - Command handling and UI management
+- `kernel/plugins/electron/` - Command handling and UI management
 - Generated UI from contract manifests served to Electron
 
 ## Key Design Principles

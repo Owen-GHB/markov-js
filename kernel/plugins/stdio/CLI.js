@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 import { CommandProcessor } from '../../processor/CommandProcessor.js';
 
 export class CLI {

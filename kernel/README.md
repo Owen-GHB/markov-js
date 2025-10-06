@@ -15,7 +15,6 @@ your-project/
 │   │   ├── stdio/           # CLI and REPL interfaces
 │   │   ├── http/            # HTTP server and API
 │   │   ├── electron/        # Electron desktop application
-│   │   └── native/          # Direct programmatic API
 │   ├── generator/            # UI generation system
 │   ├── utils/               # Shared utilities
 │   ├── contract.js          # Contract loading and management (manifest loading only)
@@ -194,14 +193,6 @@ Desktop application with native UI:
 node main.js --electron
 ```
 
-### Native Transport
-Direct programmatic API access:
-```javascript
-import { JSONAPI } from './kernel/transports/native/JSON.js';
-const api = new JSONAPI();
-const result = await api.handleInput('{"name":"yourcommand","args":{"param":"value"}}');
-```
-
 ## 🧩 How It Works
 
 ### Automatic Command Discovery
@@ -288,7 +279,7 @@ Generate UI with: `node main.js --generate`
 
 ### Clean Separation of Concerns
 - **Application Domain** (`yourDomain/`) - Your business logic
-- **Interface Domain** (`kernel/transports/`) - How users interact
+- **Interface Domain** (`kernel/plugins/`) - How users interact
 - **Contract System** (`contract/`) - Command definitions
 - **Kernel Core** (`kernel/`) - Command orchestration
 

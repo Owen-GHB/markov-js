@@ -35,10 +35,10 @@ export class HTTPServer {
     this.commandProcessor = new CommandProcessor(config, manifest);
     
     // Use provided config with fallback defaults
-    const effectiveConfig = { defaultHttpPort: 8080, ...config };
+    const effectiveConfig = { http: { port: 8080 }, ...config };
     
     // Override port if provided in config
-    const effectivePort = this.port || effectiveConfig.defaultHttpPort || 8080;
+    const effectivePort = this.port || effectiveConfig.http?.port || 8080;
     const effectiveStaticDir = this.staticDir || paths.servedUIDir || null;
 
     return new Promise((resolve, reject) => {

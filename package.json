@@ -25,6 +25,6 @@
 		"prettier": "^3.6.2"
 	},
 	"bin": {
-		"markov-gen": "kernel/transports/CLI.js"
+		"markov-gen": "main.js"
 	}
 }

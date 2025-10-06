@@ -1,7 +1,6 @@
 import fs from 'fs';
 import path from 'path';
 import { GENERATOR_CONSTANTS } from './constants.js';
-import pathResolver from '../utils/path-resolver.js';
 import { StringBuilder } from './builders/string-builder.js';
 import { NumberBuilder } from './builders/number-builder.js';
 import { BooleanBuilder } from './builders/boolean-builder.js';
@@ -26,26 +25,23 @@ export class UI {
 
   /**
    * Generate the complete SPA from manifests
+   * @param {Object} config - Configuration object containing paths and settings
    * @param {Object} manifest - The contract manifest with global and command information
-   * @param {string} outputDir - Path to the output directory
-   * @param {string} templateDir - Path to the templates directory
-   * @param {string} outputFile - Name of the output file
    */
-  async generate(manifest, outputDir = null, templateDir = null, outputFile = 'index.html') {
+  async run(config, manifest) {
     try {
-      // Use path resolver for default directories if not provided
-      const resolvedOutputDir = outputDir || pathResolver.getGeneratedUIDir();
-      const resolvedTemplateDir = templateDir || pathResolver.getTemplatesDir();
+      const outputDir = config.paths.generatedUIDir;
+      const templateDir = config.paths.templatesDir;
       
       // Check if templates directory exists
-      if (!fs.existsSync(resolvedTemplateDir)) {
-        throw new Error(`Templates directory does not exist: ${resolvedTemplateDir}. UI generation requires templates to be present in the specified templates directory.`);
+      if (!fs.existsSync(templateDir)) {
+        throw new Error(`Templates directory does not exist: ${templateDir}. UI generation requires templates to be present in the specified templates directory.`);
       }
       
       // Check if templates directory is empty
-      const templateFiles = fs.readdirSync(resolvedTemplateDir);
+      const templateFiles = fs.readdirSync(templateDir);
       if (templateFiles.length === 0) {
-        throw new Error(`Templates directory is empty: ${resolvedTemplateDir}. UI generation requires template files to be present for proper generation.`);
+        throw new Error(`Templates directory is empty: ${templateDir}. UI generation requires template files to be present for proper generation.`);
       }
       
       console.log('Starting UI generation...');
@@ -56,30 +52,30 @@ export class UI {
       console.log(`Using provided manifest with ${commandManifests.length} command manifests`);
       
       // Read optional CSS from templates directory
-      const cssContent = this.readCSSFromTemplates(resolvedTemplateDir);
+      const cssContent = this.readCSSFromTemplates(templateDir);
       
       // Initialize state from global manifest
       const initialState = globalManifest.stateDefaults || {};
       
       // Generate all command forms
-      const commandForms = commandManifests.map(cmd => this.generateCommandForm(cmd, initialState, resolvedTemplateDir));
+      const commandForms = commandManifests.map(cmd => this.generateCommandForm(cmd, initialState, templateDir));
       
       // Ensure output directory exists
       // If outputDir is an absolute path, use it directly; otherwise continue as is
-      let outputPath = resolvedOutputDir;
+      let outputPath = outputDir;
       
       if (!fs.existsSync(outputPath)) {
         fs.mkdirSync(outputPath, { recursive: true });
       }
       
       // Generate separate files (HTML, CSS, and JS)
-      const html = await this.generateSeparateFiles(globalManifest, commandManifests, commandForms, cssContent, outputPath, resolvedTemplateDir);
+      const html = await this.generateSeparateFiles(globalManifest, commandManifests, commandForms, cssContent, outputPath, templateDir);
       
       // Write the HTML file
-      const htmlFilePath = path.join(outputPath, outputFile);
+      const htmlFilePath = path.join(outputPath, 'index.html');
       fs.writeFileSync(htmlFilePath, html);
       
-      console.log(`Generated UI written to: ${htmlFilePath}`);
+      console.log(`Generated UI written to: ${outputPath}`);
       console.log('UI generation completed successfully!');
     } catch (error) {
       console.error('Error during UI generation:', error);
