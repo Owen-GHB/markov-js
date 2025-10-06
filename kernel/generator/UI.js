@@ -111,7 +111,10 @@ export class UI {
     // Generate parameter fields HTML
     let parameterFieldsHtml = '';
     
-    for (const param of commandManifest.parameters || []) {
+    for (const paramName in commandManifest.parameters || {}) {
+      const param = commandManifest.parameters[paramName];
+      // Add the name to the param object for use in the builder
+      param.name = paramName;
       parameterFieldsHtml += this.generateParameterField(param, state);
     }
     
@@ -331,10 +334,13 @@ export class UI {
           
           // Map form fields to command arguments
           // Use form-scoped selection instead of global document.getElementById to avoid ID conflicts
-          for (const param of cmdManifest.parameters || []) {
+          const paramManifests = cmdManifest.parameters || {};
+          for (const paramName in paramManifests) {
+            const param = paramManifests[paramName];
+            param.name = paramName; // Ensure name is available in the param object
             // Find the field within the current form using the data attribute that's already in the HTML
-            const field = form.querySelector('[data-param-name="' + param.name + '"]');
-            let value;
+            const field = form.querySelector('[data-param-name=\"' + param.name + '\"]');
+            let value; // Declare value variable
             
             if (field) {
               // Extract value from the form field
@@ -400,7 +406,7 @@ export class UI {
         
         // Validate a command
         function validateCommand(command, cmdManifest) {
-          const paramManifests = cmdManifest.parameters || [];
+          const paramManifests = cmdManifest.parameters || {};
           return {
             isValid: true,  // Simplified, would use actual validation in a real implementation
             errors: []

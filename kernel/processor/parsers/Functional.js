@@ -21,9 +21,9 @@ export function parseFunctionStyle([, name, argsString], context = {}, manifest)
 		};
 	}
 
-	const parameters = command.parameters || [];
-	const requiredParams = parameters.filter((p) => p.required);
-	const optionalParams = parameters.filter((p) => !p.required);
+	const parameters = command.parameters || {};
+	const requiredParams = Object.entries(parameters).filter(([_, p]) => p.required).map(([name, param]) => ({name, ...param}));
+	const optionalParams = Object.entries(parameters).filter(([_, p]) => !p.required).map(([name, param]) => ({name, ...param}));
 
 	let args = {};
 	const argPairs = argsString
@@ -46,17 +46,16 @@ export function parseFunctionStyle([, name, argsString], context = {}, manifest)
 			}
 
 			// Validate parameter exists
-			const param = parameters.find(
-				(p) => p.name.toLowerCase() === key.toLowerCase(),
-			);
-			if (!param) {
+			const paramName = Object.keys(parameters).find(p => p.toLowerCase() === key.toLowerCase());
+			if (!paramName) {
 				return {
 					error: `Unknown parameter: ${key}`,
 					command: null,
 				};
 			}
-
-			args[param.name] = ParserUtils.normalizeValue(valueStr);
+			
+			const param = parameters[paramName];
+			args[paramName] = ParserUtils.normalizeValue(valueStr);
 		} else {
 			// Positional parameter
 			if (positionalIndex >= requiredParams.length) {
@@ -100,8 +99,9 @@ export function parseFunctionStyle([, name, argsString], context = {}, manifest)
 	}
 
 	// Validate arguments against manifest specs
-	for (const param of parameters) {
-		const value = args[param.name];
+	for (const paramName in parameters) {
+		const param = parameters[paramName];
+		const value = args[paramName];
 		if (value === undefined && !param.required) continue;
 
 		// Type validation for union types
@@ -175,25 +175,25 @@ export function parseFunctionStyle([, name, argsString], context = {}, manifest)
 		// If no type validation passed, return error
 		if (!typeValidationPassed) {
 			return {
-				error: `Parameter ${param.name} must be of type: ${param.type}`,
+				error: `Parameter ${paramName} must be of type: ${param.type}`,
 				command: null,
 			};
 		}
 
 		// Update args with parsed value
-		args[param.name] = parsedValue;
+		args[paramName] = parsedValue;
 
 		// Range validation for numbers
 		if (types.includes('integer') || types.includes('number')) {
 			if (param.min !== undefined && parsedValue < param.min) {
 				return {
-					error: `Parameter ${param.name} must be at least ${param.min}`,
+					error: `Parameter ${paramName} must be at least ${param.min}`,
 					command: null,
 				};
 			}
 			if (param.max !== undefined && parsedValue > param.max) {
 				return {
-					error: `Parameter ${param.name} must be at most ${param.max}`,
+					error: `Parameter ${paramName} must be at most ${param.max}`,
 					command: null,
 				};
 			}
@@ -202,7 +202,7 @@ export function parseFunctionStyle([, name, argsString], context = {}, manifest)
 		// Enum validation
 		if (param.enum && !param.enum.includes(parsedValue)) {
 			return {
-				error: `Parameter ${param.name} must be one of: ${param.enum.join(', ')}`,
+				error: `Parameter ${paramName} must be one of: ${param.enum.join(', ')}`,
 				command: null,
 			};
 		}

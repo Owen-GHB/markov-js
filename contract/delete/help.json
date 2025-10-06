@@ -1,0 +1,5 @@
+{
+  "description": "Delete a saved model",
+  "syntax": "delete(modelName)",
+  "examples": ["delete(\"old_model.json\")"]
+}

@@ -51,8 +51,8 @@ export class REPL {
 			throw new Error('config.paths must include contextFilePath for state management');
 		}
 		
-		// Initialize command processor with required paths, manifest and config
-		this.processor = new CommandProcessor(paths, manifest, config);
+		// Initialize command processor with unified config and manifest
+		this.processor = new CommandProcessor(config, manifest);
 		
 		// Initialize with provided path and config values at the beginning of start
 		await this.initialize(config);

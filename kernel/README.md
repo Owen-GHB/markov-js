@@ -1,4 +1,4 @@
-# 🧠 Message-Passing Kernel Framework
+# 🧠 Modular Kernel Framework
 
 A generic, domain-agnostic command processing engine that automatically discovers and executes commands defined in your domain-specific contract, with support for multiple transports and built-in command types.
 
@@ -18,8 +18,10 @@ your-project/
 │   │   └── native/          # Direct programmatic API
 │   ├── generator/            # UI generation system
 │   ├── utils/               # Shared utilities
-│   ├── contract.js          # Contract loading and management
-│   └── CommandHandler.js    # Core command processing
+│   ├── contract.js          # Contract loading and management (manifest loading only)
+│   ├── CommandHandler.js    # Core command processing (custom handler loading)
+│   ├── CommandProcessor.js # Command processing pipeline with state management
+│   └── CommandParser.js     # Command parsing from user input
 ├── contract/                # Your domain-specific commands (write for each project)
 │   ├── global.json          # Domain configuration (prompt, defaults, etc.)
 │   ├── command1/            # Directory for each command
@@ -32,6 +34,8 @@ your-project/
 ├── generated-ui/            # Auto-generated web interface
 └── main.js                  # Your project's entry point
 ```
+
+Note: The contract loader (`kernel/contract.js`) now focuses solely on manifest loading and caching, with module path resolution performed ahead-of-time to simplify command execution. Custom handlers are loaded on-demand by CommandHandler rather than maintained in a global registry.
 
 ## 🚀 Quick Start
 
@@ -80,12 +84,14 @@ Create a `main.js` file at your project root:
 
 ```javascript
 #!/usr/bin/env node
-import { launch } from './kernel/main.js';
+import { launch } from './kernel/app.js';
 
 // Launch with current directory as project root
 const projectRoot = process.cwd();
 launch(process.argv.slice(2), projectRoot);
 ```
+
+Note: The entry point is now a thin wrapper that delegates to `kernel/app.js`, maintaining clean separation of concerns.
 
 ### 4. Run Your Application
 ```bash
@@ -203,9 +209,9 @@ The kernel automatically scans your `/contract` directory and discovers all comm
 
 ### Smart Command Routing
 Based on `commandType` in manifests:
-- **`external-method`**: Kernel automatically calls specified domain method
+- **`external-method`**: Kernel automatically calls specified domain method (with ahead-of-time path resolution)
 - **`internal`**: Kernel handles declaratively using manifest templates
-- **`custom`**: Kernel delegates to custom `handler.js` implementation
+- **`custom`**: Kernel delegates to custom `handler.js` implementation (loaded on-demand with local caching)
 
 ### Multiple Transports, Single Interface
 All command types work seamlessly across all transports - write once, use everywhere.
@@ -287,9 +293,9 @@ Generate UI with: `node main.js --generate`
 - **Kernel Core** (`kernel/`) - Command orchestration
 
 ### Built-in Command Types
-- **External-Method**: Automatic domain method delegation
+- **External-Method**: Automatic domain method delegation (with ahead-of-time path resolution)
 - **Internal**: Declarative state manipulation (no handler files needed)
-- **Custom**: Special custom logic (handler files required)
+- **Custom**: Special custom logic (handler files required, loaded on-demand)
 
 ### Transport Independence
 Each transport operates independently with clear interfaces:
@@ -297,5 +303,8 @@ Each transport operates independently with clear interfaces:
 - **http**: REST API, web serving
 - **electron**: Desktop application
 - **native**: Programmatic access
+
+### Dependency Injection
+All kernel components receive dependencies through constructor parameters, enabling better testability and maintainability.
 
 Just copy the kernel once and focus on writing your domain-specific commands!

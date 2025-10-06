@@ -3,77 +3,38 @@
   "commandType": "external-method",
   "modulePath": "textgen/index.js",
   "methodName": "generateText",
-  "description": "Generate text from a trained model",
-  "syntax": "generate(modelName, [options])",
-  "parameters": [
-    {
-      "name": "modelName",
+  "parameters": {
+    "modelName": {
       "type": "string",
-      "required": true,
-      "description": "Model file to use for generation",
-      "runtimeFallback": "currentModel"
+      "required": true
     },
-    {
-      "name": "length",
+    "length": {
       "type": "integer",
-      "required": false,
-      "default": 100,
-      "min": 1,
-      "description": "Maximum number of tokens to generate"
+      "required": false
     },
-    {
-      "name": "min_tokens",
+    "min_tokens": {
       "type": "integer",
-      "required": false,
-      "default": 50,
-      "min": 1,
-      "description": "Minimum number of tokens to generate"
+      "required": false
     },
-    {
-      "name": "temperature",
+    "temperature": {
       "type": "number",
-      "required": false,
-      "default": 1.0,
-      "min": 0.0,
-      "max": 2.0,
-      "description": "Randomness factor (lower = more predictable)"
+      "required": false
     },
-    {
-      "name": "prompt",
+    "prompt": {
       "type": "string",
-      "required": false,
-      "description": "Starting text for generation"
+      "required": false
     },
-    {
-      "name": "stop",
+    "stop": {
       "type": "array",
-      "required": false,
-      "default": [".", "!", "?"],
-      "description": "Stop tokens that end generation"
+      "required": false
     },
-    {
-      "name": "samples",
+    "samples": {
       "type": "integer",
-      "required": false,
-      "default": 1,
-      "min": 1,
-      "description": "Number of samples to generate"
+      "required": false
     },
-    {
-      "name": "allowRepetition",
+    "allowRepetition": {
       "type": "boolean",
-      "required": false,
-      "default": true,
-      "description": "Allow immediate token repetition"
+      "required": false
     }
-  ],
-  "sideEffects": {
-    "setState": {
-      "currentModel": { "fromParam": "modelName" }
-    }
-  },
-  "examples": [
-    "generate(\"model.json\", length=50, temperature=0.8)",
-    "generate({modelName: \"story_model.json\", prompt: \"Once upon a time\"})"
-  ]
+  }
 }

@@ -1,0 +1,5 @@
+{
+  "description": "Set the current model to use",
+  "syntax": "use(modelName)",
+  "examples": ["use(\"current_model.json\")"]
+}

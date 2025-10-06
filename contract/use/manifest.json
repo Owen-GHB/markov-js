@@ -1,22 +1,10 @@
 {
   "name": "use",
   "commandType": "internal",
-  "description": "Set the current model to use",
-  "syntax": "use(modelName)",
-  "parameters": [
-    {
-      "name": "modelName",
+  "parameters": {
+    "modelName": {
       "type": "string",
-      "required": true,
-      "description": "Name of the model to set as current",
-      "runtimeFallback": "currentModel"
+      "required": true
     }
-  ],
-  "sideEffects": {
-    "setState": {
-      "currentModel": { "fromParam": "modelName" }
-    }
-  },
-  "successOutput": "✅ Using model: {{modelName}}",
-  "examples": ["use(\"current_model.json\")"]
+  }
 }

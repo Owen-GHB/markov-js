@@ -3,20 +3,10 @@
   "commandType": "external-method",
   "modulePath": "textgen/index.js",
   "methodName": "deleteModelFile",
-  "description": "Delete a saved model",
-  "syntax": "delete(modelName)",
-  "parameters": [
-    {
-      "name": "modelName",
+  "parameters": {
+    "modelName": {
       "type": "string",
-      "required": true,
-      "description": "Name of the model file to delete"
+      "required": true
     }
-  ],
-  "sideEffects": {
-    "clearStateIf": {
-      "currentModel": { "fromParam": "modelName" }
-    }
-  },
-  "examples": ["delete(\"old_model.json\")"]
+  }
 }

@@ -1,32 +1,12 @@
 #!/usr/bin/env node
 import path from 'path';
 import { fileURLToPath } from 'url';
-import fs from 'fs';
+import { buildConfig } from './utils/config-loader.js';
 import pathResolver from './utils/path-resolver.js';
 import { manifest } from './contract.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-/**
- * Load configuration from file with fallback to defaults
- * @param {string} configFilePath - Path to configuration file
- * @param {Object} defaultConfig - Default configuration values
- * @returns {Object} Loaded configuration merged with defaults
- */
-function loadConfig(configFilePath, defaultConfig = {}) {
-  let config = { ...defaultConfig };
-  try {
-    if (fs.existsSync(configFilePath)) {
-      const configFile = fs.readFileSync(configFilePath, 'utf8');
-      const loadedConfig = JSON.parse(configFile);
-      config = { ...config, ...loadedConfig };
-    }
-  } catch (error) {
-    console.warn('⚠️ Could not load config file, using defaults:', error.message);
-  }
-  return config;
-}
 
 /**
  * Launch the kernel infrastructure with the given arguments and project root
@@ -69,9 +49,12 @@ export async function launch(args, projectRoot) {
     // Import and run the UI generator with proper paths
     const { UI } = await import('./generator/UI.js'); // Dynamic import for generator
     const generator = new UI();
-    // Use the centralized path resolver (static import at top)
-    const outputDir = pathResolver.generatedUIDir;
-    const templateDir = pathResolver.templatesDir;
+    
+    // Build unified configuration
+    const config = buildConfig(projectRoot);
+    
+    const outputDir = config.paths.generatedUIDir;
+    const templateDir = config.paths.templatesDir;
     return generator.generate(manifest, outputDir, templateDir, 'index.html')
       .then(() => {
         console.log('✅ UI generation completed successfully!');
@@ -101,27 +84,15 @@ export async function launch(args, projectRoot) {
     const { HTTPServer } = await import('./transports/http/HTTP.js'); // Dynamic import for transport
     const { manifest } = await import('./contract.js');
     
-    // Load configuration with fallback defaults
-    const defaultConfig = { defaultHttpPort: 8080 }; // fallback default
-    const configFilePath = pathResolver.getConfigFilePath();
-    const config = loadConfig(configFilePath, defaultConfig);
+    // Build unified configuration
+    const config = buildConfig(projectRoot);
     
     const server = new HTTPServer({
       port: port,
       apiEndpoint: '/' // Serve API directly at root (original behavior)
     });
     
-    // Prepare standardized config object with paths
-    const fullConfig = {
-      paths: {
-        configFilePath: configFilePath,
-        contextFilePath: pathResolver.getContextFilePath('state.json'),
-        contractDir: pathResolver.getContractDir()
-      },
-      ...config
-    };
-    
-    return server.start(fullConfig, manifest);
+    return server.start(config, manifest);
   }
   // Check if we should start HTTP server serving both UI and API
   else if (args.find(arg => arg.startsWith('--serve'))) {
@@ -142,32 +113,16 @@ export async function launch(args, projectRoot) {
     const { HTTPServer } = await import('./transports/http/HTTP.js'); // Dynamic import for transport
     const { manifest } = await import('./contract.js');
     
-    // Load configuration with fallback defaults
-    const defaultConfig = { defaultHttpPort: 8080 }; // fallback default
-    const configFilePath = pathResolver.getConfigFilePath();
-    const config = loadConfig(configFilePath, defaultConfig);
-    
-    // Use the path resolver to get the served UI directory
-    const staticDir = pathResolver.servedUIDir;
+    // Build unified configuration
+    const config = buildConfig(projectRoot);
     
     const server = new HTTPServer({
       port: port,
-      staticDir: staticDir,
+      staticDir: config.paths.servedUIDir, // Use path from unified config
       apiEndpoint: '/api'
     });
     
-    // Prepare standardized config object with paths
-    const fullConfig = {
-      paths: {
-        configFilePath: configFilePath,
-        servedUIDir: pathResolver.servedUIDir,
-        contextFilePath: pathResolver.getContextFilePath('state.json'),
-        contractDir: pathResolver.getContractDir()
-      },
-      ...config
-    };
-    
-    return server.start(fullConfig, manifest);
+    return server.start(config, manifest);
   } else {
     // For other kernel commands or to show help
     console.log('Kernel command-line interface');

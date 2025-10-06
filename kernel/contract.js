@@ -39,19 +39,68 @@ function initializeContractSync() {
       const manifestPath = path.join(contractDir, dir, 'manifest.json');
       let manifestSlice = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
       
+      // Load runtime slice if it exists
+      const runtimePath = path.join(contractDir, dir, 'runtime.json');
+      let runtimeSlice = {};
+      if (fs.existsSync(runtimePath)) {
+        runtimeSlice = JSON.parse(fs.readFileSync(runtimePath, 'utf8'));
+      }
+      
+      // Load help slice if it exists
+      const helpPath = path.join(contractDir, dir, 'help.json');
+      let helpSlice = {};
+      if (fs.existsSync(helpPath)) {
+        helpSlice = JSON.parse(fs.readFileSync(helpPath, 'utf8'));
+      }
+      
+      // Deep merge parameters objects, preserving all properties from all three
+      const mergedParameters = {};
+      // First, add all parameters from the base manifest
+      for (const paramName in manifestSlice.parameters || {}) {
+        mergedParameters[paramName] = { ...manifestSlice.parameters[paramName] };
+      }
+      // Then, add/extend with parameters from runtime.json
+      for (const paramName in runtimeSlice.parameters || {}) {
+        if (mergedParameters[paramName]) {
+          // Merge parameter properties
+          mergedParameters[paramName] = { ...mergedParameters[paramName], ...runtimeSlice.parameters[paramName] };
+        } else {
+          // Add new parameter from runtime
+          mergedParameters[paramName] = { ...runtimeSlice.parameters[paramName] };
+        }
+      }
+      // Finally, add/extend with parameters from help.json
+      for (const paramName in helpSlice.parameters || {}) {
+        if (mergedParameters[paramName]) {
+          // Merge parameter properties
+          mergedParameters[paramName] = { ...mergedParameters[paramName], ...helpSlice.parameters[paramName] };
+        } else {
+          // Add new parameter from help
+          mergedParameters[paramName] = { ...helpSlice.parameters[paramName] };
+        }
+      }
+      
+      // Create the merged manifest slice by combining all three
+      let mergedManifestSlice = {
+        ...manifestSlice,
+        ...runtimeSlice,
+        ...helpSlice,
+        parameters: mergedParameters
+      };
+      
       // If this is an external-method command, resolve the module path ahead of time
-      if (manifestSlice.commandType === 'external-method' && manifestSlice.modulePath) {
+      if (mergedManifestSlice.commandType === 'external-method' && mergedManifestSlice.modulePath) {
         // Use the project root from the path resolver to resolve the module path
         const projectRoot = pathResolver.getProjectRoot();
-        const absoluteModulePath = path.resolve(projectRoot, manifestSlice.modulePath);
+        const absoluteModulePath = path.resolve(projectRoot, mergedManifestSlice.modulePath);
         // Add the resolvedAbsolutePath to the manifest for use by the command handler
-        manifestSlice = {
-          ...manifestSlice,
+        mergedManifestSlice = {
+          ...mergedManifestSlice,
           resolvedAbsolutePath: absoluteModulePath
         };
       }
       
-      commands.push(manifestSlice);
+      commands.push(mergedManifestSlice);
     } catch (error) {
       console.warn(`Warning: Could not load from ${dir}:`, error.message);
     }

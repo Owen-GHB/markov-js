@@ -6,10 +6,15 @@ import StateManager from './StateManager.js';
  * Consolidates shared command processing logic across all transports
  */
 export class CommandProcessor {
-  constructor(paths, manifest, config = {}) {
-    // Validate paths parameter
-    if (!paths || typeof paths !== 'object' || !paths.contextFilePath) {
-      throw new Error('CommandProcessor requires a paths object with contextFilePath property');
+  constructor(config, manifest) {
+    // Validate config parameter
+    if (!config || typeof config !== 'object') {
+      throw new Error('CommandProcessor requires a config object');
+    }
+    
+    // Validate paths within config
+    if (!config.paths || typeof config.paths !== 'object' || !config.paths.contextFilePath) {
+      throw new Error('CommandProcessor config requires paths object with contextFilePath property');
     }
     
     // Validate manifest parameter
@@ -17,21 +22,15 @@ export class CommandProcessor {
       throw new Error('CommandProcessor requires a manifest object');
     }
     
-    // Validate config parameter
-    if (typeof config !== 'object' || config === null) {
-      throw new Error('CommandProcessor requires a config object');
-    }
-    
-    // Validate contractDir in config (should be in paths)
-    const contractDir = config.paths && config.paths.contractDir;
-    if (!contractDir) {
+    // Validate contractDir in config paths
+    if (!config.paths.contractDir) {
       throw new Error('CommandProcessor config requires paths.contractDir property');
     }
     
     this.manifest = manifest;
-    this.stateManager = new StateManager(paths, manifest);
+    this.stateManager = new StateManager(config.paths, manifest);
     this.parser = new CommandParser(manifest);
-    // Pass the full config with contractDir in paths to CommandHandler
+    // Pass the full config to CommandHandler
     this.handler = new CommandHandler(manifest, config); // Pass manifest and full config to CommandHandler
     this.state = this.stateManager.getStateMap();
   }
@@ -174,8 +173,8 @@ export class CommandProcessor {
     let helpText = `🔗 ${cmd.name}${this.formatParamsSignature(cmd)}\n`;
     helpText += '   ' + cmd.description + '\n\n';
     
-    const requiredParams = cmd.parameters ? cmd.parameters.filter(p => p.required) : [];
-    const optionalParams = cmd.parameters ? cmd.parameters.filter(p => !p.required) : [];
+    const requiredParams = cmd.parameters ? Object.entries(cmd.parameters).filter(([_, p]) => p.required).map(([name, param]) => ({name, ...param})) : [];
+    const optionalParams = cmd.parameters ? Object.entries(cmd.parameters).filter(([_, p]) => !p.required).map(([name, param]) => ({name, ...param})) : [];
     
     if (requiredParams.length > 0) {
       helpText += '   Required:\n';
@@ -212,12 +211,12 @@ export class CommandProcessor {
    * @returns {string} Formatted parameter signature
    */
   formatParamsSignature(cmd) {
-    if (!cmd.parameters || cmd.parameters.length === 0) {
+    if (!cmd.parameters || Object.keys(cmd.parameters).length === 0) {
       return '()';
     }
     
-    const required = cmd.parameters.filter(p => p.required);
-    const optional = cmd.parameters.filter(p => !p.required);
+    const required = Object.entries(cmd.parameters).filter(([_, p]) => p.required).map(([name, param]) => ({name, ...param}));
+    const optional = Object.entries(cmd.parameters).filter(([_, p]) => !p.required).map(([name, param]) => ({name, ...param}));
     
     const requiredStr = required.map(p => p.name).join(', ');
     const optionalStr = optional.map(p => `[${p.name}]`).join(', ');

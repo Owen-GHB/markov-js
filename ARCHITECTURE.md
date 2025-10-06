@@ -1,6 +1,6 @@
 # Architecture Overview
 
-## Core Architecture: Message-Passing Kernel Framework
+## Core Architecture: Modular Kernel Framework
 
 The Markov-js project implements a generic, domain-agnostic command processing engine known as the "kernel". This architecture separates concerns between:
 
@@ -15,8 +15,8 @@ The Markov-js project implements a generic, domain-agnostic command processing e
 
 - `kernel/app.js` - Entry point for application launch
 - `kernel/kernel.js` - Kernel infrastructure launcher with support for different modes (--generate, --serve, --http, --electron)
-- `kernel/contract.js` - Contract loading and command discovery system
-- `kernel/CommandHandler.js` - Core command processing logic
+- `kernel/contract.js` - Contract loading and command discovery system (manifest loading only)
+- `kernel/CommandHandler.js` - Core command processing logic with custom handler loading
 - `kernel/CommandProcessor.js` - Command processing pipeline with state management
 - `kernel/CommandParser.js` - Command parsing from user input
 
@@ -41,7 +41,8 @@ The kernel supports three distinct command types:
 
 1. **External-Method Commands** (`commandType: "external-method"`)
    - Automatically handled by calling domain methods specified in manifest
-   - No handler file needed - kernel calls `modulePath.methodName()` automatically
+   - No handler file needed - kernel calls `resolvedAbsolutePath.methodName()` automatically
+   - Module paths are resolved ahead-of-time during contract loading
 
 2. **Internal Commands** (`commandType: "internal"`)
    - Pure state manipulation defined declaratively in manifest
@@ -50,6 +51,7 @@ The kernel supports three distinct command types:
 3. **Custom Commands** (`commandType: "custom"`)
    - Require custom handler implementation in `handler.js`
    - Complete control over command logic
+   - Handlers are loaded on-demand by CommandHandler with local caching
 
 ## Domain Implementation: Text Generation (`/textgen`)
 
@@ -76,6 +78,8 @@ Each command manifest defines:
 - Parameters with type validation and defaults
 - Side effects (state management)
 - Examples and documentation
+
+The contract loader now focuses solely on manifest loading and caching, with module path resolution performed ahead-of-time to simplify command execution.
 
 ## State Management
 

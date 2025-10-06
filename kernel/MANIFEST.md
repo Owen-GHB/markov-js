@@ -55,7 +55,7 @@ Example:
 ### Conditionally Required Properties
 
 #### For "external-method" commands:
-- `modulePath` (string): Path to the external module that contains the method to execute
+- `modulePath` (string): Path to the external module that contains the method to execute (resolved to absolute path at load time)
 - `methodName` (string): Name of the method in the external module to execute
 
 #### For "internal" commands:
@@ -130,6 +130,8 @@ Commands can define side effects that modify the application state after success
 }
 ```
 
+Note: The `modulePath` is resolved to an absolute path at contract loading time, eliminating the need for runtime path resolution during command execution.
+
 ### Internal Command
 ```json
 {
@@ -192,4 +194,4 @@ To create a new command:
 5. If `commandType` is `"external-method"`, include `modulePath` and `methodName`
 6. If `commandType` is `"custom"`, make sure to also create a `handler.js` file in the same directory
 
-The kernel will automatically discover and integrate your command based on the manifest definition.
+The kernel will automatically discover and integrate your command based on the manifest definition. Custom handlers are loaded on-demand by the CommandHandler component.

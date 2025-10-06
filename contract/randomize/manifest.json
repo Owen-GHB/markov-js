@@ -1,15 +1,10 @@
 {
   "name": "randomize",
   "commandType": "custom",
-  "description": "Randomize the characters in a word",
-  "syntax": "randomize(word)",
-  "parameters": [
-    {
-      "name": "word",
+  "parameters": {
+    "word": {
       "type": "string",
-      "required": true,
-      "description": "Word to randomize the characters of"
+      "required": true
     }
-  ],
-  "examples": ["randomize(\"hello\")", "randomize(\"world\")"]
+  }
 }

@@ -6,7 +6,7 @@ A versatile text generation tool implementing Markov chains, Variable-Length Mar
 
 ## 🧠 Architecture Overview
 
-This application is built on a **message-passing kernel framework** that automatically discovers and executes commands defined in domain-specific contracts. The architecture cleanly separates:
+This application follows a **modular kernel architecture** with clean separation of concerns. The architecture cleanly separates:
 
 - **Application Domain** (`textgen/`) - Core text generation logic
 - **Interface Domain** (`kernel/transports/`) - Multiple access methods (CLI, HTTP, Electron)
@@ -33,9 +33,9 @@ Commands work seamlessly across multiple interfaces:
 
 ## 🧱 Kernel Architecture
 
-### Message-Passing Kernel Framework
+### Kernel Architecture
 
-This application is built on a **message-passing kernel framework** that provides:
+The kernel provides a robust foundation that includes:
 
 1. **Universal Command Processing** - Works with any domain by defining commands in contracts
 2. **Multiple Transport Mechanisms** - CLI, REPL, HTTP API, HTTP Serve, Electron, Native

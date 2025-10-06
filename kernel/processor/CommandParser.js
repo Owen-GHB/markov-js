@@ -60,7 +60,7 @@ export class CommandParser {
 			const spec = this.manifest.commands.find(
 				(c) => c.name.toLowerCase() === cliMatch[1].toLowerCase(),
 			);
-			if (!(spec && spec.parameters.every((p) => !p.required))) {
+			if (!(spec && Object.entries(spec.parameters || {}).every(([_, p]) => !p.required))) {
 				return this.parseCliStyle(cliMatch[1], cliMatch[2], context);
 			}
 		}
@@ -97,7 +97,7 @@ export class CommandParser {
 		);
 		if (!spec) return { error: `Unknown command: ${command}`, command: null };
 
-		const required = (spec.parameters || []).filter((p) => p.required);
+		const required = Object.entries(spec.parameters || {}).filter(([_, p]) => p.required).map(([name, param]) => ({name, ...param}));
 		const parts = argsString.split(/\s+/).filter(Boolean);
 
 		// Split into positional vs named pieces

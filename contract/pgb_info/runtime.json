@@ -1,0 +1,12 @@
+{
+  "parameters": {
+    "id_or_title": {
+      "description": "Book ID or title to get information about",
+      "transform": {
+        "if": "integer",
+        "then": { "id": "value" },
+        "else": { "title": "value" }
+      }
+    }
+  }
+}

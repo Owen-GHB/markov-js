@@ -3,15 +3,10 @@
   "commandType": "external-method",
   "modulePath": "textgen/index.js",
   "methodName": "searchGutenberg",
-  "description": "Search Project Gutenberg by title/author",
-  "syntax": "pgb_search(query)",
-  "parameters": [
-    {
-      "name": "query",
+  "parameters": {
+    "query": {
       "type": "string",
-      "required": true,
-      "description": "Search query for Project Gutenberg"
+      "required": true
     }
-  ],
-  "examples": ["pgb_search(\"Sherlock Holmes\")"]
+  }
 }

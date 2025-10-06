@@ -1,0 +1,8 @@
+{
+  "description": "Train a model from a text corpus file",
+  "syntax": "train(file, modelType, [options])",
+  "examples": [
+    "train(\"sample.txt\", \"markov\", order=2)",
+    "train({file: \"corpus.txt\", modelType: \"vlmm\", order: 3})"
+  ]
+}

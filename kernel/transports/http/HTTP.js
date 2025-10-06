@@ -31,8 +31,8 @@ export class HTTPServer {
       throw new Error('config.paths must include contextFilePath for state management');
     }
     
-    // Initialize command processor with required paths, manifest and config
-    this.commandProcessor = new CommandProcessor(paths, manifest, config);
+    // Initialize command processor with unified config and manifest
+    this.commandProcessor = new CommandProcessor(config, manifest);
     
     // Use provided config with fallback defaults
     const effectiveConfig = { defaultHttpPort: 8080, ...config };

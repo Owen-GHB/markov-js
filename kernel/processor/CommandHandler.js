@@ -109,10 +109,11 @@ export class CommandHandler {
 		
 		// Validate required parameters
 		if (commandSpec.parameters) {
-			for (const param of commandSpec.parameters) {
-				if (param.required && (args[param.name] === undefined || args[param.name] === null)) {
+			for (const paramName in commandSpec.parameters) {
+				const param = commandSpec.parameters[paramName];
+				if (param.required && (args[paramName] === undefined || args[paramName] === null)) {
 					return {
-						error: `Parameter '${param.name}' is required for command '${commandSpec.name}'`,
+						error: `Parameter '${paramName}' is required for command '${commandSpec.name}'`,
 						output: null
 					};
 				}

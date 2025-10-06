@@ -1,0 +1,7 @@
+{
+  "parameters": {
+    "word": {
+      "description": "Word to randomize the characters of"
+    }
+  }
+}

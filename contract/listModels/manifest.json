@@ -3,8 +3,5 @@
   "commandType": "external-method",
   "modulePath": "textgen/index.js",
   "methodName": "listAvailableModels",
-  "description": "List all available saved models",
-  "syntax": "listModels()",
-  "parameters": [],
-  "examples": ["listModels()"]
+  "parameters": {}
 }
