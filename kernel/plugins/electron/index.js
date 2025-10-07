@@ -25,9 +25,9 @@ function getElectronInstance() {
  * @param {Object} manifest - Manifest object
  * @returns {Promise<void>}
  */
-export async function start(config, manifest) {
+export async function start(config, manifest, commandProcessor) {
   const electronApp = getElectronInstance();
-  return await electronApp.start(config, manifest);
+  return await electronApp.start(config, manifest, commandProcessor);
 }
 
 /**

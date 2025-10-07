@@ -27,9 +27,9 @@ function getReplInstance() {
  * @param {Object} manifest - Manifest object
  * @returns {CLI} CLI plugin instance
  */
-function getCliInstance(config, manifest) {
+function getCliInstance(config, manifest, commandProcessor) {
   if (!cliInstance) {
-    cliInstance = new CLI(config, manifest);
+    cliInstance = new CLI(config, manifest, commandProcessor);
   }
   return cliInstance;
 }
@@ -40,9 +40,9 @@ function getCliInstance(config, manifest) {
  * @param {Object} manifest - Manifest object
  * @returns {Promise<void>}
  */
-export async function start(config, manifest) {
+export async function start(config, manifest, commandProcessor) {
   const repl = getReplInstance();
-  return await repl.start(config, manifest);
+  return await repl.start(config, manifest, commandProcessor);
 }
 
 /**
@@ -52,8 +52,8 @@ export async function start(config, manifest) {
  * @param {string[]} args - Command line arguments
  * @returns {Promise<void>}
  */
-export async function run(config, manifest, args) {
-  const cli = getCliInstance(config, manifest);
+export async function run(config, manifest, commandProcessor, args) {
+  const cli = getCliInstance(config, manifest, commandProcessor);
   return await cli.run(args);
 }
 

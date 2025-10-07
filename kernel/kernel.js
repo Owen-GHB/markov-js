@@ -1,5 +1,7 @@
 import { buildConfig } from './utils/config-loader.js';
 import { manifest } from './contract.js';
+import { CommandProcessor } from './processor/CommandProcessor.js';
+import path from 'path';
 
 /**
  * Launch the kernel infrastructure with the given arguments and project root
@@ -10,6 +12,7 @@ import { manifest } from './contract.js';
 export async function launch(args, projectRoot) {
   // Build unified configuration once at the beginning
   const config = buildConfig(projectRoot);
+  const commandProcessor = new CommandProcessor(config, manifest);
   
   // Check if we should run in Electron
   if (args.includes('--electron')) {
@@ -44,7 +47,7 @@ export async function launch(args, projectRoot) {
     // Import and run the UI generator with proper paths
     const generator = await import('./plugins/generator/index.js'); // Dynamic import for generator plugin
     
-    return generator.run(config, manifest)
+    return generator.run(config, manifest, commandProcessor)
       .then(() => {
         console.log('✅ UI generation completed successfully!');
         process.exit(0);
@@ -75,7 +78,7 @@ export async function launch(args, projectRoot) {
     // Build unified configuration
     const config = buildConfig(projectRoot);
     
-    return httpPlugin.start(config, manifest, {
+    return httpPlugin.start(config, manifest, commandProcessor, {
       port: port,
       apiEndpoint: '/' // Serve API directly at root (original behavior)
     });
@@ -101,7 +104,7 @@ export async function launch(args, projectRoot) {
     // Build unified configuration at the beginning
     // const config = buildConfig(projectRoot);
     
-    return httpPlugin.start(config, manifest, {
+    return httpPlugin.start(config, manifest, commandProcessor, {
       port: port,
       staticDir: config.paths.servedUIDir, // Use path from unified config
       apiEndpoint: '/api'

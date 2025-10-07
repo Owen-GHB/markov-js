@@ -1,7 +1,5 @@
-import { CommandProcessor } from '../../processor/CommandProcessor.js';
-
 export class CLI {
-	constructor(config, manifest) {
+	constructor(config, manifest, commandProcessor) {
 		if (!config || typeof config !== 'object') {
 			throw new Error('CLI requires a config object');
 		}
@@ -17,7 +15,11 @@ export class CLI {
 		if (!paths.contextFilePath) {
 			throw new Error('CLI config requires paths with contextFilePath property');
 		}
-		this.processor = new CommandProcessor(config, manifest);
+
+		if (!commandProcessor || typeof commandProcessor.processCommand !== 'function') {
+			throw new Error('start method requires a valid commandProcessor with processCommand method');
+		}
+		this.processor = commandProcessor;
 	}
 
 	/**

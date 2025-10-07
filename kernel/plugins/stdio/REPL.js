@@ -1,7 +1,6 @@
 import readline from 'readline';
 import fs from 'fs';
 import path from 'path';
-import { CommandProcessor } from '../../processor/CommandProcessor.js';
 
 export class REPL {
 	constructor() {
@@ -32,7 +31,7 @@ export class REPL {
 		this.loadHistory();
 	}
 
-	async start(config = {}, manifest) {
+	async start(config = {}, manifest, commandProcessor) {
 		// Validate config object
 		if (typeof config !== 'object' || config === null) {
 			throw new Error('config parameter must be an object');
@@ -50,9 +49,13 @@ export class REPL {
 		if (!paths.contextFilePath) {
 			throw new Error('config.paths must include contextFilePath for state management');
 		}
+
+		if (!commandProcessor || typeof commandProcessor.processCommand !== 'function') {
+			throw new Error('start method requires a valid commandProcessor with processCommand method');
+		}
 		
-		// Initialize command processor with unified config and manifest
-		this.processor = new CommandProcessor(config, manifest);
+		// Initialize command processor
+		this.processor = commandProcessor;
 		
 		// Initialize with provided path and config values at the beginning of start
 		await this.initialize(config);

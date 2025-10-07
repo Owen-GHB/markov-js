@@ -1,7 +1,6 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import fs from 'fs';
 import path from 'path';
-import { CommandProcessor } from '../../processor/CommandProcessor.js';
 
 /**
  * Manages the UI for the Electron application, including checking and loading
@@ -35,8 +34,8 @@ class ElectronUIManager {
  * Handles commands for the Electron application via IPC
  */
 class ElectronCommandHandler {
-  constructor(config, manifest) {
-    this.commandProcessor = new CommandProcessor(config, manifest);
+  constructor(config, manifest, commandProcessor) {
+    this.commandProcessor = commandProcessor;
   }
 
   /**
@@ -122,7 +121,7 @@ export class ElectronApp {
     });
   }
 
-  async start(config = {}, manifest) {
+  async start(config = {}, manifest, commandProcessor) {
     // Validate config object
     if (typeof config !== 'object' || config === null) {
       throw new Error('config parameter must be an object');
@@ -131,6 +130,10 @@ export class ElectronApp {
     // Validate manifest parameter
     if (!manifest || typeof manifest !== 'object') {
       throw new Error('start method requires a manifest object');
+    }
+
+    if (!commandProcessor || typeof commandProcessor.processCommand !== 'function') {
+      throw new Error('start method requires a valid commandProcessor with processCommand method');
     }
     
     // Extract paths from nested config object
@@ -145,7 +148,7 @@ export class ElectronApp {
     this.paths = paths;
     
     // Initialize command handler with unified config and manifest
-    this.commandHandler = new ElectronCommandHandler(config, manifest);
+    this.commandHandler = new ElectronCommandHandler(config, manifest, commandProcessor);
     
     // Use provided config with potential defaults
     const effectiveConfig = { ...config };

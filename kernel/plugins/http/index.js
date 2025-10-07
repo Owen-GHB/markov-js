@@ -12,9 +12,9 @@ let httpInstance = null;
  * Initialize and get the HTTP instance
  * @returns {HTTPServer} HTTP plugin instance
  */
-function getHttpInstance() {
+function getHttpInstance(options) {
   if (!httpInstance) {
-    httpInstance = new HTTPServer();
+    httpInstance = new HTTPServer(options);
   }
   return httpInstance;
 }
@@ -26,9 +26,9 @@ function getHttpInstance() {
  * @param {Object} options - HTTP server options
  * @returns {Promise<void>}
  */
-export async function start(config, manifest, options = {}) {
-  const httpServer = getHttpInstance();
-  return await httpServer.start(config, manifest, options);
+export async function start(config, manifest, commandProcessor, options = {}) {
+  const httpServer = getHttpInstance(options);
+  return await httpServer.start(config, manifest, commandProcessor);
 }
 
 /**

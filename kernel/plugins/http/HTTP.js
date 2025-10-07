@@ -2,7 +2,6 @@ import { URL } from 'url';
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
-import { CommandProcessor } from '../../processor/CommandProcessor.js';
 
 export class HTTPServer {
   constructor(options = {}) {
@@ -12,7 +11,7 @@ export class HTTPServer {
     this.commandProcessor = null; // Will be initialized in start method
   }
 
-  start(config = {}, manifest) {
+  start(config = {}, manifest, commandProcessor) {
     // Validate config object
     if (typeof config !== 'object' || config === null) {
       throw new Error('config parameter must be an object');
@@ -21,6 +20,10 @@ export class HTTPServer {
     // Validate manifest parameter
     if (!manifest || typeof manifest !== 'object') {
       throw new Error('start method requires a manifest object');
+    }
+
+    if (!commandProcessor || typeof commandProcessor.processCommand !== 'function') {
+      throw new Error('start method requires a valid commandProcessor with processCommand method');
     }
     
     // Extract paths from nested config object
@@ -32,7 +35,7 @@ export class HTTPServer {
     }
     
     // Initialize command processor with unified config and manifest
-    this.commandProcessor = new CommandProcessor(config, manifest);
+    this.commandProcessor = commandProcessor;
     
     // Use provided config with fallback defaults
     const effectiveConfig = { http: { port: 8080 }, ...config };
