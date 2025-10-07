@@ -11,12 +11,12 @@ This kernel provides a universal command processing system that works with any d
 ```
 your-project/
 ├── kernel/                    # Generic command engine (copy once)
-│   ├── transports/           # Interface-specific implementations
-│   │   ├── stdio/           # CLI and REPL interfaces
-│   │   ├── http/            # HTTP server and API
-│   │   ├── electron/        # Electron desktop application
-│   ├── generator/            # UI generation system
-│   ├── utils/               # Shared utilities
+│   ├── plugins/              # Interface and utility plugins
+│   │   ├── stdio/             # CLI and REPL interfaces
+│   │   ├── http/              # HTTP server and API
+│   │   ├── electron/          # Electron desktop application
+│   │   ├── generator/          # UI generation system
+│   ├── utils/                 # Shared utilities
 │   ├── contract.js          # Contract loading and management (manifest loading only)
 │   ├── CommandHandler.js    # Core command processing (custom handler loading)
 │   ├── CommandProcessor.js # Command processing pipeline with state management

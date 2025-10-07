@@ -27,6 +27,7 @@ The kernel provides multiple interface transports:
 - **stdio** (`/kernel/plugins/stdio/`) - CLI and REPL interfaces
 - **http** (`/kernel/plugins/http/`) - HTTP server and API (not examined directly)
 - **electron** (`/kernel/plugins/electron/`) - Electron desktop application
+- **generator** (`/kernel/plugins/generator/`) - UI generation system (not examined directly)
 
 
 ### Utilities
@@ -95,6 +96,7 @@ Electron integration works through:
 - `electron-main.js` - Electron application entry point
 - `electron-preload.js` - Secure IPC communication setup
 - `kernel/plugins/electron/` - Command handling and UI management
+- `kernel/plugins/generator/` - UI generation system
 - Generated UI from contract manifests served to Electron
 
 ## Key Design Principles

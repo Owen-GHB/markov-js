@@ -9,7 +9,7 @@ A versatile text generation tool implementing Markov chains, Variable-Length Mar
 This application follows a **modular kernel architecture** with clean separation of concerns. The architecture cleanly separates:
 
 - **Application Domain** (`textgen/`) - Core text generation logic
-- **Interface Domain** (`kernel/plugins/`) - Multiple access methods (CLI, HTTP, Electron)
+- **Interface Domain** (`kernel/plugins/`) - Multiple access methods (CLI, HTTP, Electron, Generator)
 - **Contract System** (`contract/`) - Command definitions and manifests
 - **Kernel Core** (`kernel/`) - Command orchestration and processing
 
