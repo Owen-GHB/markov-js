@@ -63,7 +63,7 @@ export async function launch(args, projectRoot) {
         process.exit(1);
       });
   }
-  // Check if we should start HTTP server
+  // Check if we should start HTTP server (now serves both UI and API, like old --serve)
   else if (args.find(arg => arg.startsWith('--http'))) {
     const httpArg = args.find(arg => arg.startsWith('--http'));
     
@@ -78,36 +78,6 @@ export async function launch(args, projectRoot) {
       }
     }
     
-    // Get the HTTP plugin and start it
-    const httpPlugin = await pluginLoader.getPlugin('http');
-    if (!httpPlugin) {
-      console.error('❌ HTTP plugin not found or invalid');
-      process.exit(1);
-    }
-    
-    // Build unified configuration
-    const config = buildConfig(projectRoot);
-    
-    return httpPlugin.start(config, manifest, commandProcessor, {
-      port: port,
-      apiEndpoint: '/' // Serve API directly at root (original behavior)
-    });
-  }
-  // Check if we should start HTTP server serving both UI and API
-  else if (args.find(arg => arg.startsWith('--serve'))) {
-    const serveArg = args.find(arg => arg.startsWith('--serve'));
-    
-    // Extract port if specified (format: --serve=8080)
-    let port = 8080; // default port
-    if (serveArg.includes('=')) {
-      const portStr = serveArg.split('=')[1];
-      port = parseInt(portStr, 10);
-      if (isNaN(port) || port < 1 || port > 65535) {
-        console.error('❌ Invalid port number. Please specify a port between 1 and 65535');
-        process.exit(1);
-      }
-    }
-    
     // Get the HTTP plugin and start server that serves both UI and API
     const httpPlugin = await pluginLoader.getPlugin('http');
     if (!httpPlugin) {
@@ -115,21 +85,17 @@ export async function launch(args, projectRoot) {
       process.exit(1);
     }
     
-    // Build unified configuration at the beginning
-    // const config = buildConfig(projectRoot);
-    
-    return httpPlugin.start(config, manifest, commandProcessor, {
+    return httpPlugin.start(config, commandProcessor, {
       port: port,
-      staticDir: config.paths.servedUIDir, // Use path from unified config
-      apiEndpoint: '/api'
+      staticDir: config.paths.servedUIDir, // Use path from unified config to serve UI
+      apiEndpoint: '/api' // API endpoint at /api
     });
   } else {
     // For other kernel commands or to show help
     console.log('Kernel command-line interface');
     console.log('Available commands:');
     console.log('  --generate             Generate UI from contracts');
-    console.log('  --serve[=port]         Serve UI and API on specified port (default 8080)');
-    console.log('  --http[=port]          Serve API only on specified port (default 8080)');
+    console.log('  --http[=port]          Serve UI and API on specified port (default 8080)');
     console.log('  --electron             Launch Electron application');
     process.exit(0);
   }

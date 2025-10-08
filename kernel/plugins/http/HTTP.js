@@ -6,7 +6,7 @@ import path from 'path';
 export class HTTPServer {
   constructor(options = {}) {
     this.port = options.port || 8080; // Will be overridden in start() if paths are provided
-    this.staticDir = options.staticDir || null;
+    this.staticDir = options.staticDir || null; // Always configured to serve UI files
     this.apiEndpoint = options.apiEndpoint || '/api';
     this.commandProcessor = null; // Will be initialized in start method
   }

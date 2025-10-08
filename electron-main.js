@@ -19,5 +19,5 @@ import { pluginLoader } from './kernel/utils/PluginLoader.js';
     process.exit(1);
   }
   
-  await electronStart(config, manifest, commandProcessor);
+  await electronStart(config, commandProcessor);
 })();

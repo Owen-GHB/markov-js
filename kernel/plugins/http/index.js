@@ -22,11 +22,10 @@ function getHttpInstance(options) {
 /**
  * Start the HTTP server plugin
  * @param {Object} config - Configuration object
- * @param {Object} manifest - Manifest object
  * @param {Object} options - HTTP server options
  * @returns {Promise<void>}
  */
-export async function start(config, manifest, commandProcessor, options = {}) {
+export async function start(config, commandProcessor, options = {}) {
   const httpServer = getHttpInstance(options);
   return await httpServer.start(config, commandProcessor);
 }

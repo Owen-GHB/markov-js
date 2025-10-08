@@ -22,10 +22,9 @@ function getElectronInstance() {
 /**
  * Start the Electron plugin
  * @param {Object} config - Configuration object
- * @param {Object} manifest - Manifest object
  * @returns {Promise<void>}
  */
-export async function start(config, manifest, commandProcessor) {
+export async function start(config, commandProcessor) {
   const electronApp = getElectronInstance();
   return await electronApp.start(config, commandProcessor);
 }

@@ -14,22 +14,22 @@ export async function launch(args, projectRoot) {
   const config = buildConfig(projectRoot);
   const commandProcessor = new CommandProcessor(config, manifest);
   
-  // Get the stdio plugin using the plugin loader
-  const stdioStart = await pluginLoader.getPluginMethod('stdio', 'start');
-  const stdioRun = await pluginLoader.getPluginMethod('stdio', 'run');
+  // Get the repl and cli plugins using the plugin loader
+  const replStart = await pluginLoader.getPluginMethod('repl', 'start');
+  const cliRun = await pluginLoader.getPluginMethod('cli', 'run');
   
-  if (!stdioStart || !stdioRun) {
-    console.error('❌ stdio plugin not found or invalid');
+  if (!replStart || !cliRun) {
+    console.error('❌ repl or cli plugin not found or invalid');
     process.exit(1);
   }
   
   // Default to REPL mode if no args or if args are application-specific
   if (args.length === 0) {
     // Default to REPL mode if no args
-    return stdioStart(config, manifest, commandProcessor);
+    return replStart(config, commandProcessor);
   } else {
     // Check if we're being called directly with command line args
-    return stdioRun(config, manifest, commandProcessor, args);
+    return cliRun(config, commandProcessor, args);
   }
 }
 
