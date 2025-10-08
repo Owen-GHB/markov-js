@@ -11,15 +11,10 @@ export class HTTPServer {
     this.commandProcessor = null; // Will be initialized in start method
   }
 
-  start(config = {}, manifest, commandProcessor) {
+  start(config = {}, commandProcessor) {
     // Validate config object
     if (typeof config !== 'object' || config === null) {
       throw new Error('config parameter must be an object');
-    }
-    
-    // Validate manifest parameter
-    if (!manifest || typeof manifest !== 'object') {
-      throw new Error('start method requires a manifest object');
     }
 
     if (!commandProcessor || typeof commandProcessor.processCommand !== 'function') {
@@ -34,7 +29,7 @@ export class HTTPServer {
       throw new Error('config.paths must include contextFilePath for state management');
     }
     
-    // Initialize command processor with unified config and manifest
+    // Initialize command processor with unified config
     this.commandProcessor = commandProcessor;
     
     // Use provided config with fallback defaults

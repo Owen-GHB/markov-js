@@ -1,6 +1,7 @@
 import { manifest } from './contract.js';
 import { buildConfig } from './utils/config-loader.js';
 import { CommandProcessor } from './processor/CommandProcessor.js';
+import { pluginLoader } from './utils/PluginLoader.js';
 
 /**
  * Launch the hosted application (Markov text generator) with the given arguments and project root
@@ -13,17 +14,22 @@ export async function launch(args, projectRoot) {
   const config = buildConfig(projectRoot);
   const commandProcessor = new CommandProcessor(config, manifest);
   
+  // Get the stdio plugin using the plugin loader
+  const stdioStart = await pluginLoader.getPluginMethod('stdio', 'start');
+  const stdioRun = await pluginLoader.getPluginMethod('stdio', 'run');
+  
+  if (!stdioStart || !stdioRun) {
+    console.error('❌ stdio plugin not found or invalid');
+    process.exit(1);
+  }
+  
   // Default to REPL mode if no args or if args are application-specific
   if (args.length === 0) {
     // Default to REPL mode if no args
-    const stdioPlugin = await import('./plugins/stdio/index.js');
-    
-    return stdioPlugin.start(config, manifest, commandProcessor);
+    return stdioStart(config, manifest, commandProcessor);
   } else {
     // Check if we're being called directly with command line args
-    const stdioPlugin = await import('./plugins/stdio/index.js');
-    
-    return stdioPlugin.run(config, manifest, commandProcessor, args);
+    return stdioRun(config, manifest, commandProcessor, args);
   }
 }
 

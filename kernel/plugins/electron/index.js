@@ -27,7 +27,7 @@ function getElectronInstance() {
  */
 export async function start(config, manifest, commandProcessor) {
   const electronApp = getElectronInstance();
-  return await electronApp.start(config, manifest, commandProcessor);
+  return await electronApp.start(config, commandProcessor);
 }
 
 /**

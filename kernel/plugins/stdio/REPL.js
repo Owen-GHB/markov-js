@@ -16,50 +16,56 @@ export class REPL {
 		if (typeof config !== 'object' || config === null) {
 			throw new Error('config parameter must be an object');
 		}
-		
+
 		// Extract paths from nested config object
 		const paths = config.paths || {};
-		
+
 		// Use provided config with fallback defaults
 		const effectiveConfig = { repl: { maxHistory: 100 }, ...config };
-		
+
 		// Use provided paths for file paths (configPath will be ignored since we now get config directly)
-		const historyFilePath = paths.replHistoryFilePath || paths.contextFilePath || 'context/repl-history.json';
-		
+		const historyFilePath =
+			paths.replHistoryFilePath ||
+			paths.contextFilePath ||
+			'context/repl-history.json';
+
 		this.maxHistory = effectiveConfig.repl?.maxHistory || 100;
 		this.historyFilePath = historyFilePath;
 		this.loadHistory();
 	}
 
-	async start(config = {}, manifest, commandProcessor) {
+	async start(config = {}, commandProcessor) {
 		// Validate config object
 		if (typeof config !== 'object' || config === null) {
 			throw new Error('config parameter must be an object');
 		}
-		
-		// Validate manifest parameter
-		if (!manifest || typeof manifest !== 'object') {
-			throw new Error('start method requires a manifest object');
-		}
-		
+
 		// Extract paths from nested config object
 		const paths = config.paths || {};
-		
+
 		// Check if required paths are provided
 		if (!paths.contextFilePath) {
-			throw new Error('config.paths must include contextFilePath for state management');
+			throw new Error(
+				'config.paths must include contextFilePath for state management',
+			);
 		}
 
-		if (!commandProcessor || typeof commandProcessor.processCommand !== 'function') {
-			throw new Error('start method requires a valid commandProcessor with processCommand method');
+		if (
+			!commandProcessor ||
+			typeof commandProcessor.processCommand !== 'function'
+		) {
+			throw new Error(
+				'start method requires a valid commandProcessor with processCommand method',
+			);
 		}
-		
+
 		// Initialize command processor
 		this.processor = commandProcessor;
-		
+		this.contextFilePath = paths.contextFilePath;
+
 		// Initialize with provided path and config values at the beginning of start
 		await this.initialize(config);
-		
+
 		// Initialize REPL instance
 		this.rl = readline.createInterface({
 			input: process.stdin,
@@ -72,9 +78,15 @@ export class REPL {
 		this.rl.history = [...this.history].reverse(); // Reverse to match readline's order (newest first)
 
 		// Display welcome message and prompt
-		console.log(`🔗 ${this.processor.getManifest().name} - ${this.processor.getManifest().description}`);
-		console.log('='.repeat(Math.max(this.processor.getManifest().name.length + 2, 40)));
-		console.log('Type \"help()\" for available commands or \"exit()\" to quit.');
+		console.log(
+			`🔗 ${this.processor.getManifest().name} - ${this.processor.getManifest().description}`,
+		);
+		console.log(
+			'='.repeat(Math.max(this.processor.getManifest().name.length + 2, 40)),
+		);
+		console.log(
+			'Type \\\"help()\\\" for available commands or \\\"exit()\\\" to quit.',
+		);
 		console.log('');
 
 		this.rl.prompt();
@@ -82,7 +94,7 @@ export class REPL {
 		// Handle line input
 		this.rl.on('line', async (input) => {
 			input = input.trim();
-			
+
 			// Handle empty input
 			if (!input) {
 				this.rl.prompt();
@@ -93,7 +105,10 @@ export class REPL {
 			this.addToHistory(input);
 
 			// Process command using the shared processor
-			const result = await this.processor.processCommand(input);
+			const result = await this.processor.processCommand(
+				input,
+				this.contextFilePath,
+			);
 
 			if (result.error) console.error(`❌ ${result.error}`);
 			if (result.output) console.log(result.output);
@@ -112,7 +127,7 @@ export class REPL {
 		});
 
 		process.on('SIGINT', () => {
-			console.log('\nUse \"exit\" or Ctrl+D to quit.');
+			console.log('\nUse \\\"exit\\\" or Ctrl+D to quit.');
 			this.rl.prompt();
 		});
 	}
@@ -120,15 +135,22 @@ export class REPL {
 	/* ---------- unchanged helpers ---------- */
 	commandCompleter(line) {
 		// Include built-in commands in completion
-		const commands = [...this.processor.getManifest().commands.map((c) => c.name), 'help', 'exit'];
+		const commands = [
+			...this.processor.getManifest().commands.map((c) => c.name),
+			'help',
+			'exit',
+		];
 		const hits = commands.filter((c) => c.startsWith(line));
 		return [hits.length ? hits : commands, line];
 	}
-	
+
 	addToHistory(input) {
 		if (input.trim()) {
 			// Add to history if it's not a duplicate of the last entry
-			if (this.history.length === 0 || this.history[this.history.length - 1] !== input.trim()) {
+			if (
+				this.history.length === 0 ||
+				this.history[this.history.length - 1] !== input.trim()
+			) {
 				this.history.push(input.trim());
 				// Keep only the most recent maxHistory entries
 				if (this.history.length > this.maxHistory) {
@@ -150,7 +172,10 @@ export class REPL {
 				}
 			}
 		} catch (error) {
-			console.warn('⚠️ Could not load REPL history, starting fresh:', error.message);
+			console.warn(
+				'⚠️ Could not load REPL history, starting fresh:',
+				error.message,
+			);
 			this.history = [];
 		}
 	}
@@ -162,8 +187,11 @@ export class REPL {
 			if (!fs.existsSync(contextDir)) {
 				fs.mkdirSync(contextDir, { recursive: true });
 			}
-			
-			fs.writeFileSync(this.historyFilePath, JSON.stringify(this.history, null, 2));
+
+			fs.writeFileSync(
+				this.historyFilePath,
+				JSON.stringify(this.history, null, 2),
+			);
 		} catch (error) {
 			console.warn('⚠️ Could not save REPL history:', error.message);
 		}

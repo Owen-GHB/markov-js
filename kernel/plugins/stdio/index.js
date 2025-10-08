@@ -15,10 +15,10 @@ let cliInstance = null;
  * @returns {REPL} REPL plugin instance
  */
 function getReplInstance() {
-  if (!replInstance) {
-    replInstance = new REPL();
-  }
-  return replInstance;
+	if (!replInstance) {
+		replInstance = new REPL();
+	}
+	return replInstance;
 }
 
 /**
@@ -28,10 +28,10 @@ function getReplInstance() {
  * @returns {CLI} CLI plugin instance
  */
 function getCliInstance(config, manifest, commandProcessor) {
-  if (!cliInstance) {
-    cliInstance = new CLI(config, manifest, commandProcessor);
-  }
-  return cliInstance;
+	if (!cliInstance) {
+		cliInstance = new CLI(config, commandProcessor);
+	}
+	return cliInstance;
 }
 
 /**
@@ -41,8 +41,8 @@ function getCliInstance(config, manifest, commandProcessor) {
  * @returns {Promise<void>}
  */
 export async function start(config, manifest, commandProcessor) {
-  const repl = getReplInstance();
-  return await repl.start(config, manifest, commandProcessor);
+	const repl = getReplInstance();
+	return await repl.start(config, commandProcessor);
 }
 
 /**
@@ -53,14 +53,14 @@ export async function start(config, manifest, commandProcessor) {
  * @returns {Promise<void>}
  */
 export async function run(config, manifest, commandProcessor, args) {
-  const cli = getCliInstance(config, manifest, commandProcessor);
-  return await cli.run(args);
+	const cli = getCliInstance(config, manifest, commandProcessor);
+	return await cli.run(args);
 }
 
 /**
  * Expose the plugin's start and run methods for direct usage
  */
 export default {
-  start,
-  run
+	start,
+	run,
 };

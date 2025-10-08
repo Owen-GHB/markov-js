@@ -1,25 +1,28 @@
 export class CLI {
-	constructor(config, manifest, commandProcessor) {
+	constructor(config, commandProcessor) {
 		if (!config || typeof config !== 'object') {
 			throw new Error('CLI requires a config object');
 		}
-		
-		// Validate manifest parameter
-		if (!manifest || typeof manifest !== 'object') {
-			throw new Error('CLI requires a manifest object');
-		}
-		
+
 		// Extract paths from nested config object
 		const paths = config.paths || {};
-		
+
 		if (!paths.contextFilePath) {
-			throw new Error('CLI config requires paths with contextFilePath property');
+			throw new Error(
+				'CLI config requires paths with contextFilePath property',
+			);
 		}
 
-		if (!commandProcessor || typeof commandProcessor.processCommand !== 'function') {
-			throw new Error('start method requires a valid commandProcessor with processCommand method');
+		if (
+			!commandProcessor ||
+			typeof commandProcessor.processCommand !== 'function'
+		) {
+			throw new Error(
+				'start method requires a valid commandProcessor with processCommand method',
+			);
 		}
 		this.processor = commandProcessor;
+		this.contextFilePath = paths.contextFilePath;
 	}
 
 	/**
@@ -29,13 +32,16 @@ export class CLI {
 	async run(args) {
 		if (args.length === 0) {
 			// Show help when no arguments provided by processing the help command
-			const result = await this.processor.processCommand('help()');
+			const result = await this.processor.processCommand(
+				'help()',
+				this.contextFilePath,
+			);
 
 			if (result.error) {
 				console.error(`❌ ${result.error}`);
 				process.exit(1);
 			}
-			
+
 			if (result.output) {
 				console.log(result.output);
 			}
@@ -46,12 +52,18 @@ export class CLI {
 		const input = args.join(' ');
 
 		// Process the command using the shared processor
-		const result = await this.processor.processCommand(input);
+		const result = await this.processor.processCommand(
+			input,
+			this.contextFilePath,
+		);
 
 		if (result.error) {
 			console.error(`❌ ${result.error}`);
 			// Show help on error
-			const helpResult = await this.processor.processCommand('help()');
+			const helpResult = await this.processor.processCommand(
+				'help()',
+				this.contextFilePath,
+			);
 			if (helpResult.output) {
 				console.log(helpResult.output);
 			}
@@ -72,7 +84,10 @@ export class CLI {
 	 * Show help information
 	 */
 	async showHelp() {
-		const result = await this.processor.processCommand('help()');
+		const result = await this.processor.processCommand(
+			'help()',
+			this.contextFilePath,
+		);
 		if (result.output) {
 			console.log(result.output);
 		}

@@ -28,7 +28,7 @@ function getHttpInstance(options) {
  */
 export async function start(config, manifest, commandProcessor, options = {}) {
   const httpServer = getHttpInstance(options);
-  return await httpServer.start(config, manifest, commandProcessor);
+  return await httpServer.start(config, commandProcessor);
 }
 
 /**

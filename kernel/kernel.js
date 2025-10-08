@@ -1,6 +1,7 @@
 import { buildConfig } from './utils/config-loader.js';
 import { manifest } from './contract.js';
 import { CommandProcessor } from './processor/CommandProcessor.js';
+import { pluginLoader } from './utils/PluginLoader.js';
 import path from 'path';
 
 /**
@@ -44,10 +45,15 @@ export async function launch(args, projectRoot) {
   }
   // Check if we should regenerate UI
   else if (args.includes('--generate')) {
-    // Import and run the UI generator with proper paths
-    const generator = await import('./plugins/generator/index.js'); // Dynamic import for generator plugin
+    // Use the plugin loader to dynamically load the generator plugin
+    const generatorMethod = await pluginLoader.getPluginMethod('generator', 'run');
     
-    return generator.run(config, manifest, commandProcessor)
+    if (!generatorMethod) {
+      console.error('❌ Generator plugin not found or invalid');
+      process.exit(1);
+    }
+    
+    return generatorMethod(config, manifest, commandProcessor)
       .then(() => {
         console.log('✅ UI generation completed successfully!');
         process.exit(0);
@@ -72,8 +78,12 @@ export async function launch(args, projectRoot) {
       }
     }
     
-    // Start HTTP server (API only) - use plugin wrapper
-    const httpPlugin = await import('./plugins/http/index.js'); // Dynamic import for HTTP plugin
+    // Get the HTTP plugin and start it
+    const httpPlugin = await pluginLoader.getPlugin('http');
+    if (!httpPlugin) {
+      console.error('❌ HTTP plugin not found or invalid');
+      process.exit(1);
+    }
     
     // Build unified configuration
     const config = buildConfig(projectRoot);
@@ -98,8 +108,12 @@ export async function launch(args, projectRoot) {
       }
     }
     
-    // Start server that serves both UI and API - use plugin wrapper
-    const httpPlugin = await import('./plugins/http/index.js'); // Dynamic import for HTTP plugin
+    // Get the HTTP plugin and start server that serves both UI and API
+    const httpPlugin = await pluginLoader.getPlugin('http');
+    if (!httpPlugin) {
+      console.error('❌ HTTP plugin not found or invalid');
+      process.exit(1);
+    }
     
     // Build unified configuration at the beginning
     // const config = buildConfig(projectRoot);
