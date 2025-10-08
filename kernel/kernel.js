@@ -17,43 +17,25 @@ export async function launch(args, projectRoot) {
   
   // Check if we should run in Electron
   if (args.includes('--electron')) {
-    // Launch Electron using npx, which will run electron-main.js
-    // The electron-main.js handles UI generation and window creation
-    return import('child_process')
-      .then(({ spawn }) => {
-        const npxProcess = spawn('npx', ['electron', path.join(projectRoot, 'electron-main.js')], {
-          stdio: 'inherit',
-          cwd: projectRoot,  // Crucial: run from project root
-          shell: true
-        });
-
-        npxProcess.on('error', (err) => {
-          console.error('❌ Failed to start Electron:', err.message);
-          console.log('Make sure you have installed Electron as a dev dependency: npm install --save-dev electron');
-          process.exit(1);
-        });
-
-        npxProcess.on('close', (code) => {
-          console.log(`Electron process exited with code ${code}`);
-          process.exit(code);
-        });
-      })
-      .catch((err) => {
-        console.error('❌ Failed to launch Electron:', err.message);
-        process.exit(1);
-      });
+    // Get the electron plugin and start it using the plugin loader
+    const electronPlugin = await pluginLoader.getPlugin('electron');
+    if (!electronPlugin) {
+      console.error('❌ Electron plugin not found or invalid');
+      process.exit(1);
+    }
+    
+    return electronPlugin.start(config, commandProcessor);
   }
   // Check if we should regenerate UI
   else if (args.includes('--generate')) {
-    // Use the plugin loader to dynamically load the generator plugin
-    const generatorMethod = await pluginLoader.getPluginMethod('generator', 'run');
-    
-    if (!generatorMethod) {
+    // Get the generator plugin and run it using the plugin loader
+    const generatorPlugin = await pluginLoader.getPlugin('generator');
+    if (!generatorPlugin) {
       console.error('❌ Generator plugin not found or invalid');
       process.exit(1);
     }
     
-    return generatorMethod(config, manifest, commandProcessor)
+    return generatorPlugin.run(config, manifest, commandProcessor)
       .then(() => {
         console.log('✅ UI generation completed successfully!');
         process.exit(0);
