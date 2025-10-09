@@ -15,15 +15,12 @@ export class GutenbergService {
 	 * Search for books on Project Gutenberg
 	 * @param {Object} params - Search parameters
 	 * @param {string} params.query - Search query
-	 * @returns {Promise<Object>} - Search results
+	 * @returns {Promise<string>} - Formatted search results
 	 */
 	async searchBooks(params) {
 		const { query } = params;
 		if (!query) {
-			return {
-				error: 'Please specify a search term',
-				output: null,
-			};
+			throw new Error('Please specify a search term');
 		}
 
 		try {
@@ -31,10 +28,7 @@ export class GutenbergService {
 			const data = await getJSON(url);
 
 			if (!data.results || data.results.length === 0) {
-				return {
-					error: 'No books found matching your search',
-					output: null,
-				};
+				throw new Error('No books found matching your search');
 			}
 
 			const output = [
@@ -51,15 +45,9 @@ export class GutenbergService {
 				data.next ? '(More results available)' : '',
 			];
 
-			return {
-				error: null,
-				output: output.join('\n'),
-			};
+			return output.join('\n');
 		} catch (error) {
-			return {
-				error: `Search failed: ${error.message}`,
-				output: null,
-			};
+			throw new Error(`Search failed: ${error.message}`);
 		}
 	}
 
@@ -67,7 +55,7 @@ export class GutenbergService {
 	 * Get detailed information about a book
 	 * @param {Object} params - Book parameters
 	 * @param {number|string} params.id_or_title - Book ID or title
-	 * @returns {Promise<Object>} - Book details
+	 * @returns {Promise<string>} - Formatted book information
 	 */
 	async getBookInfo(params) {
 		const { id_or_title } = params;
@@ -81,10 +69,7 @@ export class GutenbergService {
 		}
 
 		if (!id && !title) {
-			return {
-				error: 'Please specify either an ID or title',
-				output: null,
-			};
+			throw new Error('Please specify either an ID or title');
 		}
 
 		try {
@@ -93,10 +78,7 @@ export class GutenbergService {
 				// Direct ID lookup
 				const bookData = await getJSON(`${this.API_BASE}/books/${id}`);
 				if (!bookData || bookData.detail === 'Not found') {
-					return {
-						error: `No book found with ID "${id}"`,
-						output: null,
-					};
+					throw new Error(`No book found with ID "${id}"`);
 				}
 				book = bookData;
 			} else {
@@ -105,10 +87,7 @@ export class GutenbergService {
 					`${this.API_BASE}/books/?search=${encodeURIComponent(title)}`,
 				);
 				if (!searchResults.results || searchResults.results.length === 0) {
-					return {
-						error: `No book found with title "${title}"`,
-						output: null,
-					};
+					throw new Error(`No book found with title "${title}"`);
 				}
 				book = searchResults.results[0];
 			}
@@ -127,15 +106,9 @@ export class GutenbergService {
 				`Formats Available: ${Object.keys(book.formats).join(', ')}`,
 			];
 
-			return {
-				error: null,
-				output: output.join('\n'),
-			};
+			return output.join('\n');
 		} catch (error) {
-			return {
-				error: `Failed to get book info: ${error.message}`,
-				output: null,
-			};
+			throw new Error(`Failed to get book info: ${error.message}`);
 		}
 	}
 
@@ -144,7 +117,7 @@ export class GutenbergService {
 	 * @param {Object} params - Download parameters
 	 * @param {number|string} params.id_or_title - Book ID or title
 	 * @param {string} params.file - Target filename (optional)
-	 * @returns {Promise<Object>} - Download result
+	 * @returns {Promise<string>} - Download confirmation message
 	 */
 	async downloadBook(params) {
 		const { id_or_title, file } = params;
@@ -158,10 +131,7 @@ export class GutenbergService {
 		}
 
 		if (!id && !title) {
-			return {
-				error: 'Please specify either an ID or title',
-				output: null,
-			};
+			throw new Error('Please specify either an ID or title');
 		}
 
 		try {
@@ -210,15 +180,9 @@ export class GutenbergService {
 			await downloadFile(txtUrl, corpusPath);
 			await this.cleanGutenbergText(corpusPath);
 
-			return {
-				error: null,
-				output: `✅ Successfully downloaded "${book.title}" to ${filename}`,
-			};
+			return `✅ Successfully downloaded "${book.title}" to ${filename}`;
 		} catch (error) {
-			return {
-				error: `Download failed: ${error.message}`,
-				output: null,
-			};
+			throw new Error(`Download failed: ${error.message}`);
 		}
 	}
 

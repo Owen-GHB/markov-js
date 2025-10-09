@@ -1,3 +1,5 @@
+import { formatResult } from '../shared/format.js';
+
 export class CLI {
 	constructor(config, commandProcessor) {
 		if (!config || typeof config !== 'object') {
@@ -43,7 +45,7 @@ export class CLI {
 			}
 
 			if (result.output) {
-				console.log(result.output);
+				console.log(formatResult(result.output));
 			}
 			process.exit(0);
 		}
@@ -65,13 +67,13 @@ export class CLI {
 				this.contextFilePath,
 			);
 			if (helpResult.output) {
-				console.log(helpResult.output);
+				console.log(formatResult(helpResult.output));
 			}
 			process.exit(1);
 		}
 
 		if (result.output) {
-			console.log(result.output);
+			console.log(formatResult(result.output));
 		}
 
 		// Check if the command requested exit
@@ -89,7 +91,7 @@ export class CLI {
 			this.contextFilePath,
 		);
 		if (result.output) {
-			console.log(result.output);
+			console.log(formatResult(result.output));
 		}
 	}
 }

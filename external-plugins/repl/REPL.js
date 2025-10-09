@@ -1,6 +1,7 @@
 import readline from 'readline';
 import fs from 'fs';
 import path from 'path';
+import { formatResult } from '../shared/format.js';
 
 export class REPL {
 	constructor() {
@@ -111,7 +112,7 @@ export class REPL {
 			);
 
 			if (result.error) console.error(`❌ ${result.error}`);
-			if (result.output) console.log(result.output);
+			if (result.output) console.log(formatResult(result.output));
 
 			// Check if the command requested exit
 			if (result.exit) {
