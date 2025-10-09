@@ -153,7 +153,7 @@ export class CommandProcessor {
 		}
 	}
 
-	/** 
+	/**
 	 * Format general help text
 	 * @param {Object} manifest - The application manifest
 	 * @returns {string} Formatted help text
@@ -303,7 +303,11 @@ export class CommandProcessor {
 	 * @param {boolean} formatToString - Whether to format the result to a string (default: true)
 	 * @returns {Promise<Object>} - The result of command processing
 	 */
-	async processParsedCommand(command, contextFilePath = null, formatToString = true) {
+	async processParsedCommand(
+		command,
+		contextFilePath = null,
+		formatToString = true,
+	) {
 		try {
 			// Execute the command through the handler
 			const result = await this.handler.handleCommand(command);
