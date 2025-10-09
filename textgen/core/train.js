@@ -14,9 +14,10 @@ import { HMModel } from '../models/HMM/Model.js';
  * @param {string} params.modelName - Filename to save the trained model
  * @param {boolean} params.caseSensitive - Whether to preserve case during tokenization
  * @param {boolean} params.trackStartStates - Whether to track sentence start states
- * @returns {Promise<Object>} - Training result object
+ * @returns {Promise<Object>} - The result of the training
  */
 export async function trainModel(params) {
+	const output = [];
 	const { file, modelType, order = 2 } = params || {};
 	const modelName =
 		params?.modelName || `${file.replace(/\.[^/.]+$/, '')}.json`;
@@ -54,18 +55,10 @@ export async function trainModel(params) {
 	await serializer.saveModel(model, modelName);
 
 	const stats = model.getStats();
+	output.push(
+		`📚 Trained from "${file}" → "${modelName}"`,
+		`📊 Vocabulary: ${stats.vocabularySize.toLocaleString()}`,
+	);
 
-	return {
-		type: 'training_result',
-		success: true,
-		action: 'train',
-		modelType,
-		sourceFile: file,
-		modelName,
-		order,
-		stats: {
-			vocabularySize: stats.vocabularySize,
-			totalTokens: stats.totalTokens
-		}
-	};
+	return output.join('\n');
 }

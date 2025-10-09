@@ -2,19 +2,22 @@ import { FileHandler } from '../io/FileHandler.js';
 
 /**
  * List available corpus files
- * @returns {Promise<Object>} - Corpus list object
+ * @returns {Promise<Object>} - The list of corpus files
  */
 export async function listCorpusFiles() {
 	const fileHandler = new FileHandler();
 	const files = await fileHandler.listCorpusFiles();
 
 	if (files.length === 0) {
-		return { type: 'message', content: 'No corpus files found in corpus directory', count: 0 };
+		return 'No corpus files found in corpus directory';
 	}
 
-	return {
-		type: 'corpus_list',
-		count: files.length,
-		files: files
-	};
+	const output = [
+		'📚 Available Corpus Files:',
+		'--------------------------',
+		...files.map((file) => `• ${file}`),
+		`\nTotal: ${files.length} file(s)`,
+	];
+
+	return output.join('\n');
 }

@@ -4,7 +4,7 @@ import { ModelSerializer } from '../io/ModelSerializer.js';
  * Delete a saved model file
  * @param {Object} params - The parameters for deletion
  * @param {string} params.modelName - Model filename to delete
- * @returns {Promise<string>} - Success message
+ * @returns {Promise<Object>} - The result of the deletion
  */
 export async function deleteModelFile(params) {
 	const { modelName } = params || {};
@@ -20,24 +20,24 @@ export async function deleteModelFile(params) {
 
 /**
  * List available saved models
- * @returns {Promise<Object>} - Model list object with filename, size, order, totalStates, and vocabularySize
+ * @returns {Promise<Object>} - The list of models
  */
 export async function listAvailableModels() {
 	const serializer = new ModelSerializer();
 	const models = await serializer.listModels();
 	if (models.length === 0) {
-		return { type: 'message', content: 'No models found in models directory', count: 0 };
+		return 'No models found in models directory';
 	}
 
-	return {
-		type: 'model_list',
-		count: models.length,
-		models: models.map(model => ({
-			filename: model.filename,
-			size: model.size,
-			order: model.order,
-			totalStates: model.states,
-			vocabularySize: model.vocabulary
-		}))
-	};
+	const output = [
+		'📁 Saved Models:',
+		'----------------',
+		...models.map(
+			(model) =>
+				`• ${model.filename} (${model.sizeFormatted}, order ${model.order})`,
+		),
+		`\nTotal: ${models.length} model(s)`,
+	];
+
+	return output.join('\n');
 }

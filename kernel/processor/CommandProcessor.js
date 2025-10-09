@@ -1,7 +1,6 @@
 import { CommandParser } from './CommandParser.js';
 import { CommandHandler } from './CommandHandler.js';
 import StateManager from './StateManager.js';
-import { formatResult } from './format.js';
 
 /**
  * Consolidates shared command processing logic across all transports
@@ -121,12 +120,6 @@ export class CommandProcessor {
 					this.stateManager.saveState();
 				}
 			}
-
-			// Optionally format the result to a string if requested
-			if (formatToString && !result.error && result.output !== undefined && result.output !== null) {
-				result.output = formatResult(result.output);
-			}
-
 			return result;
 		} catch (error) {
 			return {
@@ -327,9 +320,6 @@ export class CommandProcessor {
 			}
 
 			// Optionally format the result to a string if requested
-			if (formatToString && !result.error && result.output !== undefined && result.output !== null) {
-				result.output = formatResult(result.output);
-			}
 
 			return result;
 		} catch (error) {

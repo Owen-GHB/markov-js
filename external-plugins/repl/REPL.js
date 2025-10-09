@@ -85,7 +85,7 @@ export class REPL {
 			'='.repeat(Math.max(this.processor.getManifest().name.length + 2, 40)),
 		);
 		console.log(
-			'Type \\\\\"help()\\\\" for available commands or \\\\\"exit()\\\\" to quit.',
+			'Type \"help()\" for available commands or \"exit()\" to quit.',
 		);
 		console.log('');
 
