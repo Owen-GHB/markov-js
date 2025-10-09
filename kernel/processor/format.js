@@ -1,143 +1,115 @@
+// File: processor\format.js
+
 /**
- * Generic formatter to convert objects to formatted strings
- * Provides reasonable default formatting for various data types
+ * Format command output results into human-readable strings
+ * Used by transports that want basic text formatting (CLI, REPL, etc.)
+ * Transports can opt-out by setting formatToString=false and handle their own formatting
  */
 
 /**
- * Format a result (object, array, primitive, etc.) into a human-readable string
- * @param {*} result - The result to format
- * @returns {string} - The formatted string
+ * Format a command output result into a human-readable string
+ * @param {*} output - The output to format (any type)
+ * @returns {string} - Formatted string representation
  */
-export function formatResult(result) {
-  if (result === null) {
-    return 'null';
-  }
-  
-  if (result === undefined) {
-    return 'undefined';
-  }
-  
-  if (typeof result === 'string') {
-    return result;
-  }
-  
-  if (typeof result === 'number' || typeof result === 'boolean') {
-    return String(result);
-  }
-  
-  if (Array.isArray(result)) {
-    return formatArray(result);
-  }
-  
-  if (typeof result === 'object') {
-    return formatObject(result);
-  }
-  
-  // For any other type, convert to string
-  return String(result);
+export function formatResult(output) {
+    // Handle primitive types and null/undefined
+    if (output === null) {
+        return 'null';
+    }
+    
+    if (output === undefined) {
+        return 'undefined';
+    }
+    
+    if (typeof output === 'string') {
+        return output;
+    }
+    
+    if (typeof output === 'number' || typeof output === 'boolean') {
+        return String(output);
+    }
+    
+    // Handle arrays and objects with clean, human-friendly formatting
+    if (typeof output === 'object') {
+        return formatObject(output);
+    }
+    
+    // Catch-all for any other types
+    return String(output);
 }
 
 /**
- * Format an array into a human-readable string
- * @param {Array} arr - The array to format
- * @returns {string} - The formatted string
+ * Format objects and arrays with clean, human-readable indentation
+ * @param {Object|Array} obj - The object or array to format
+ * @param {number} indentLevel - Current indentation level (internal use)
+ * @returns {string} - Formatted string
  */
-function formatArray(arr) {
-  if (arr.length === 0) {
-    return '(empty array)';
-  }
-  
-  return arr.map((item, index) => {
-    const formattedItem = formatResult(item);
-    return `${index + 1}. ${formattedItem}`;
-  }).join('\n\n'); // Double newline to separate complex array items
-}
-
-/**
- * Format an object into a human-readable string
- * @param {Object} obj - The object to format
- * @returns {string} - The formatted string
- */
-function formatObject(obj) {
-  // Special handling for objects that have common patterns
-  if (obj.success !== undefined) {
-    return formatSuccessObject(obj);
-  }
-  
-  if (obj.error) {
-    return formatErrorObject(obj);
-  }
-  
-  // For generic objects, use formatted key-value pairs
-  const entries = Object.entries(obj);
-  
-  if (entries.length === 0) {
-    return '{}';
-  }
-  
-  // Format key-value pairs
-  const formattedEntries = entries.map(([key, value]) => {
-    const formattedValue = formatResult(value);
-    // Capitalize the key for readability
-    const capitalizedKey = key.charAt(0).toUpperCase() + key.slice(1);
-    return `${capitalizedKey}: ${formattedValue}`;
-  });
-  
-  return formattedEntries.join('\n');
-}
-
-/**
- * Format a success object (with success, action, type, etc.)
- * @param {Object} obj - The success object to format 
- * @returns {string} - The formatted string
- */
-function formatSuccessObject(obj) {
-  const { success, action, type, name, message, ...rest } = obj;
-  
-  if (!success) {
-    // This is actually an error disguised as a success object
-    return obj.message || 'Operation failed';
-  }
-  
-  const parts = [];
-  
-  if (action && type && name) {
-    parts.push(`Operation: ${action} ${type} '${name}'`);
-  } else if (action && type) {
-    parts.push(`Operation: ${action} ${type}`);
-  } else if (action) {
-    parts.push(`Operation: ${action}`);
-  }
-  
-  if (message) {
-    parts.push(message);
-  } else {
-    parts.push('Operation completed successfully');
-  }
-  
-  // Add any remaining properties
-  const remainingEntries = Object.entries(rest);
-  if (remainingEntries.length > 0) {
-    const remainingFormatted = remainingEntries.map(([key, value]) => {
-      const formattedValue = formatResult(value);
-      const capitalizedKey = key.charAt(0).toUpperCase() + key.slice(1);
-      return `${capitalizedKey}: ${formattedValue}`;
+function formatObject(obj, indentLevel = 0) {
+    const indent = '  '.repeat(indentLevel);
+    
+    if (Array.isArray(obj)) {
+        return formatArray(obj, indentLevel);
+    }
+    
+    // Handle plain objects
+    const entries = Object.entries(obj);
+    
+    if (entries.length === 0) {
+        return '';
+    }
+    
+    const formattedEntries = entries.map(([key, value]) => {
+        return `${indent}${key}: ${formatValue(value, indentLevel + 1)}`;
     });
-    parts.push(...remainingFormatted);
-  }
-  
-  return parts.join('\n');
+    
+    return formattedEntries.join('\n');
 }
 
 /**
- * Format an error object
- * @param {Object} obj - The error object to format
- * @returns {string} - The formatted string
+ * Format arrays with clean, human-readable indentation
+ * @param {Array} array - The array to format
+ * @param {number} indentLevel - Current indentation level
+ * @returns {string} - Formatted string
  */
-function formatErrorObject(obj) {
-  if (obj.error) {
-    return `Error: ${obj.error}`;
-  }
-  
-  return 'Error occurred';
+function formatArray(array, indentLevel = 0) {
+    const indent = '  '.repeat(indentLevel);
+    
+    if (array.length === 0) {
+        return '';
+    }
+    
+    const formattedItems = array.map(item => {
+        return `${indent}  ${formatValue(item, indentLevel + 1)}`;
+    });
+    
+    return formattedItems.join('\n');
+}
+
+/**
+ * Format a single value with appropriate indentation
+ * @param {*} value - The value to format
+ * @param {number} indentLevel - Current indentation level
+ * @returns {string} - Formatted value
+ */
+function formatValue(value, indentLevel) {
+    if (value === null) return 'null';
+    if (value === undefined) return 'undefined';
+    
+    if (typeof value === 'string') {
+        return value;
+    }
+    
+    if (typeof value === 'number' || typeof value === 'boolean') {
+        return String(value);
+    }
+    
+    if (typeof value === 'object') {
+        // For nested objects/arrays, format with proper indentation
+        if (Array.isArray(value)) {
+            return `\n${formatArray(value, indentLevel)}`;
+        }
+        return `\n${formatObject(value, indentLevel)}`;
+    }
+    
+    return String(value);
 }
