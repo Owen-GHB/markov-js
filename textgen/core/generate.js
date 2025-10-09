@@ -12,7 +12,7 @@ import { GenerationContext } from '../models/Interfaces.js';
  * @param {Array} params.stop - Stop tokens that end generation
  * @param {number} params.samples - Number of samples to generate
  * @param {boolean} params.allowRepetition - Allow immediate token repetition
- * @returns {Promise<Object>} - The result of the generation
+ * @returns {Promise<Object>} - Generation result object
  */
 export async function generateText(params) {
 	const {
@@ -24,46 +24,44 @@ export async function generateText(params) {
 	} = params || {};
 
 	if (!modelName) {
-		return {
-			error: 'Generation failed: modelName is required',
-			output: null,
-		};
+		throw new Error('Generation failed: modelName is required');
 	}
 
-	try {
-		const serializer = new ModelSerializer();
-		const model = await serializer.loadModel(modelName);
+	const serializer = new ModelSerializer();
+	const model = await serializer.loadModel(modelName);
 
-		const context = new GenerationContext({
-			max_tokens: length,
-			temperature: temperature,
-			...rest,
-		});
+	const context = new GenerationContext({
+		max_tokens: length,
+		temperature: temperature,
+		...rest,
+	});
 
-		const results =
-			samples === 1
-				? [model.generate(context)]
-				: model.generateSamples(samples, context);
+	const results =
+		samples === 1
+			? [model.generate(context)]
+			: model.generateSamples(samples, context);
 
-		const output = ['🎲 Generated text:', '─'.repeat(50)];
-		results.forEach((result, i) => {
-			if (result.error) {
-				output.push(`❌ Sample ${i + 1}: ${result.error}`);
-			} else {
-				output.push(
-					result.text,
-					`(Length: ${result.length} tokens)`,
-					'─'.repeat(50),
-				);
-				output.push(`(Finish reason: ${result.finish_reason})`);
-			}
-		});
+	// Process results to extract relevant information
+	const processedResults = results.map(result => {
+		if (result.error) {
+			return {
+				success: false,
+				error: result.error
+			};
+		} else {
+			return {
+				success: true,
+				text: result.text,
+				length: result.length,
+				finishReason: result.finish_reason
+			};
+		}
+	});
 
-		return { error: null, output: output.join('\n') };
-	} catch (err) {
-		return {
-			error: `Generation failed: ${err.message}`,
-			output: null,
-		};
-	}
+	return {
+		type: 'generation_result',
+		model: modelName,
+		sampleCount: samples,
+		results: processedResults
+	};
 }

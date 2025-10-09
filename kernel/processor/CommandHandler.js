@@ -169,9 +169,23 @@ export class CommandHandler {
 				};
 			}
 
-			// Call the method with the command arguments
-			const result = await method(args);
-			return result;
+			// Call the method with the command arguments, wrap in try-catch to handle
+			// plain return values and thrown errors - all domain functions should now
+			// return plain values or throw errors directly
+			try {
+				const result = await method(args);
+				// Treat the result as success output
+				return {
+					error: null,
+					output: result,
+				};
+			} catch (methodError) {
+				// If the method throws an error, convert it to the expected format
+				return {
+					error: methodError.message,
+					output: null,
+				};
+			}
 		} catch (error) {
 			return {
 				error: `Failed to execute external method '${commandSpec.methodName}' from '${resolvedModulePath}': ${error.message}`,

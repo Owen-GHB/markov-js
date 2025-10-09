@@ -7,7 +7,7 @@ const gutenbergService = new GutenbergService();
  * Search Project Gutenberg by title/author
  * @param {Object} params - The search parameters
  * @param {string} params.query - Search query
- * @returns {Promise<Object>} - Search results
+ * @returns {Promise<Object>} - Search results or error
  */
 export async function searchGutenberg(params) {
 	return await gutenbergService.searchBooks(params);
