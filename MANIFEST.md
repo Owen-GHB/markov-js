@@ -1,6 +1,6 @@
 # Contract Manifest System
 
-The Markov-js contract system uses a three-file separation to organize command definitions with clear separation of concerns:
+The Vertex kernel uses a three-file separation to organize command definitions with clear separation of concerns:
 
 ## Three-File Contract Structure
 
@@ -28,24 +28,25 @@ Contains only the essential information the kernel needs to register and route t
 
 ```json
 {
-  "name": "train",
-  "commandType": "external-method",
-  "modulePath": "textgen/index.js",
-  "methodName": "trainModel",
-  "parameters": {
-    "file": {
-      "type": "string",
-      "required": true
-    },
-    "modelType": {
-      "type": "string",
-      "required": true
-    }
-  }
+	"name": "train",
+	"commandType": "external-method",
+	"modulePath": "textgen/index.js",
+	"methodName": "trainModel",
+	"parameters": {
+		"file": {
+			"type": "string",
+			"required": true
+		},
+		"modelType": {
+			"type": "string",
+			"required": true
+		}
+	}
 }
 ```
 
 **Purpose**: Define the minimal requirements for kernel operation:
+
 - Command identity (`name`, `commandType`)
 - Execution details (`modulePath`, `methodName`)
 - Parameter structure (`type`, `required`)
@@ -56,40 +57,41 @@ Contains features that affect command execution at runtime:
 
 ```json
 {
-  "sideEffects": {
-    "setState": {
-      "currentModel": {
-        "fromParam": "modelName",
-        "template": "{{file | basename}}.json"
-      }
-    }
-  },
-  "parameters": {
-    "file": {
-      "runtimeFallback": "defaultCorpus"
-    },
-    "modelType": {
-      "enum": ["markov", "vlmm", "hmm"]
-    },
-    "order": {
-      "default": 2,
-      "min": 1,
-      "max": 10
-    },
-    "modelName": {
-      "kind": "implicit"
-    },
-    "caseSensitive": {
-      "default": false
-    },
-    "trackStartStates": {
-      "default": true
-    }
-  }
+	"sideEffects": {
+		"setState": {
+			"currentModel": {
+				"fromParam": "modelName",
+				"template": "{{file | basename}}.json"
+			}
+		}
+	},
+	"parameters": {
+		"file": {
+			"runtimeFallback": "defaultCorpus"
+		},
+		"modelType": {
+			"enum": ["markov", "vlmm", "hmm"]
+		},
+		"order": {
+			"default": 2,
+			"min": 1,
+			"max": 10
+		},
+		"modelName": {
+			"kind": "implicit"
+		},
+		"caseSensitive": {
+			"default": false
+		},
+		"trackStartStates": {
+			"default": true
+		}
+	}
 }
 ```
 
 **Purpose**: Define runtime behavior and application logic:
+
 - Side effects (`sideEffects`, `setState`, `clearStateIf`)
 - Parameter defaults and constraints (`default`, `min`, `max`, `enum`)
 - Runtime features (`runtimeFallback`, `kind`, `transform`)
@@ -101,36 +103,37 @@ Contains all user-facing documentation:
 
 ```json
 {
-  "description": "Train a model from a text corpus file",
-  "syntax": "train(file, modelType, [options])",
-  "examples": [
-    "train(\"sample.txt\", \"markov\", order=2)",
-    "train({file: \"corpus.txt\", modelType: \"vlmm\", order: 3})"
-  ],
-  "parameters": {
-    "file": {
-      "description": "Corpus file to train from"
-    },
-    "modelType": {
-      "description": "Type of model to train"
-    },
-    "order": {
-      "description": "Markov order (n-gram size)"
-    },
-    "modelName": {
-      "description": "Filename to save the trained model"
-    },
-    "caseSensitive": {
-      "description": "Whether to preserve case during tokenization"
-    },
-    "trackStartStates": {
-      "description": "Whether to track sentence start states"
-    }
-  }
+	"description": "Train a model from a text corpus file",
+	"syntax": "train(file, modelType, [options])",
+	"examples": [
+		"train(\"sample.txt\", \"markov\", order=2)",
+		"train({file: \"corpus.txt\", modelType: \"vlmm\", order: 3})"
+	],
+	"parameters": {
+		"file": {
+			"description": "Corpus file to train from"
+		},
+		"modelType": {
+			"description": "Type of model to train"
+		},
+		"order": {
+			"description": "Markov order (n-gram size)"
+		},
+		"modelName": {
+			"description": "Filename to save the trained model"
+		},
+		"caseSensitive": {
+			"description": "Whether to preserve case during tokenization"
+		},
+		"trackStartStates": {
+			"description": "Whether to track sentence start states"
+		}
+	}
 }
 ```
 
 **Purpose**: Provide user-facing documentation:
+
 - Command descriptions (`description`, `syntax`)
 - Usage examples (`examples`)
 - Parameter documentation (`description`)
@@ -141,19 +144,12 @@ Contains all user-facing documentation:
 All three files use the same parameter object structure where each parameter is keyed by its name:
 
 ```json
-// Instead of arrays:
-{
-  "parameters": [
-    {"name": "file", "type": "string", "required": true}
-  ]
-}
-
 // Use objects keyed by parameter name:
 {
-  "parameters": {
-    "file": {"type": "string", "required": true},
-    "modelType": {"type": "string", "required": true}
-  }
+	"parameters": {
+		"file": { "type": "string", "required": true },
+		"modelType": { "type": "string", "required": true }
+	}
 }
 ```
 
@@ -172,23 +168,27 @@ All parameter objects are deep-merged, so properties from all three files are co
 ## Best Practices
 
 ### manifest.json Guidelines
+
 - Keep minimal and kernel-focused
 - Only include what's required for basic command registration
 - Focus on structural information (`type`, `required`)
 
 ### runtime.json Guidelines
+
 - Include all execution-time features
 - Add defaults, constraints, and validation rules
 - Define side effects and state management
 - Keep parameter structure aligned with manifest.json
 
 ### help.json Guidelines
+
 - Focus exclusively on user documentation
 - Provide clear, descriptive text
 - Include comprehensive examples
 - Keep parameter structure aligned with other files
 
 ### Consistency Across Files
+
 - Use identical parameter names across all three files
 - Maintain consistent parameter ordering
 - Document the same parameters in all relevant files

@@ -1,14 +1,14 @@
 {
-  "sideEffects": {
-    "setState": {
-      "currentModel": { "fromParam": "modelName" }
-    }
-  },
-  "successOutput": "✅ Using model: {{modelName}}",
-  "parameters": {
-    "modelName": {
-      "description": "Name of the model to set as current",
-      "runtimeFallback": "currentModel"
-    }
-  }
+	"sideEffects": {
+		"setState": {
+			"currentModel": { "fromParam": "modelName" }
+		}
+	},
+	"successOutput": "✅ Using model: {{modelName}}",
+	"parameters": {
+		"modelName": {
+			"description": "Name of the model to set as current",
+			"runtimeFallback": "currentModel"
+		}
+	}
 }

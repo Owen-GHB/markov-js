@@ -8,154 +8,161 @@ import pathResolver from './path-resolver.js';
  * Similar to handler loading but for transport plugins like stdio, http, electron
  */
 export class PluginLoader {
-  constructor() {
-    this.pluginCache = new Map(); // Cache plugins after loading
-    this.pluginDir = pathResolver.getKernelDir(); // Use path resolver to get plugins directory
-    this.pluginsBaseDir = path.join(this.pluginDir, 'plugins');
-  }
+	constructor() {
+		this.pluginCache = new Map(); // Cache plugins after loading
+		this.pluginsBaseDir = pathResolver.getPluginsDir(); // Use path resolver to get plugins directory
+	}
 
-  /**
-   * Get or load a plugin by name
-   * @param {string} pluginName - Name of the plugin to load (e.g., 'stdio', 'http', 'electron')
-   * @returns {Object|null} - The loaded plugin module or null if not found
-   */
-  async getPlugin(pluginName) {
-    // Check if plugin is already cached
-    if (this.pluginCache.has(pluginName)) {
-      return this.pluginCache.get(pluginName);
-    }
+	/**
+	 * Get or load a plugin by name
+	 * @param {string} pluginName - Name of the plugin to load (e.g., 'stdio', 'http', 'electron')
+	 * @returns {Object|null} - The loaded plugin module or null if not found
+	 */
+	async getPlugin(pluginName) {
+		// Check if plugin is already cached
+		if (this.pluginCache.has(pluginName)) {
+			return this.pluginCache.get(pluginName);
+		}
 
-    try {
-      // Build the plugin file path
-      const pluginPath = path.join(this.pluginsBaseDir, pluginName, 'index.js');
-      
-      // Check if the plugin file exists
-      if (!fs.existsSync(pluginPath)) {
-        console.warn(`Warning: Plugin not found at: ${pluginPath}`);
-        return null;
-      }
+		try {
+			// Build the plugin file path
+			const pluginPath = path.join(this.pluginsBaseDir, pluginName, 'index.js');
 
-      // Convert to file URL for proper ES module loading
-      const moduleUrl = pathToFileURL(pluginPath).href;
+			// Check if the plugin file exists
+			if (!fs.existsSync(pluginPath)) {
+				console.warn(`Warning: Plugin not found at: ${pluginPath}`);
+				return null;
+			}
 
-      // Dynamically import the plugin module
-      const pluginModule = await import(moduleUrl);
+			// Convert to file URL for proper ES module loading
+			const moduleUrl = pathToFileURL(pluginPath).href;
 
-      // Cache the plugin for future use
-      this.pluginCache.set(pluginName, pluginModule);
-      return pluginModule;
-    } catch (error) {
-      console.warn(`Warning: Could not load plugin ${pluginName}:`, error.message);
-      return null;
-    }
-  }
+			// Dynamically import the plugin module
+			const pluginModule = await import(moduleUrl);
 
-  /**
-   * Load and return a specific plugin method (start, run, etc.)
-   * @param {string} pluginName - Name of the plugin 
-   * @param {string} methodName - Name of the method to extract (e.g., 'start', 'run')
-   * @returns {Function|null} - The requested method or null if not found
-   */
-  async getPluginMethod(pluginName, methodName) {
-    const plugin = await this.getPlugin(pluginName);
-    
-    if (!plugin) {
-      return null;
-    }
+			// Cache the plugin for future use
+			this.pluginCache.set(pluginName, pluginModule);
+			return pluginModule;
+		} catch (error) {
+			console.warn(
+				`Warning: Could not load plugin ${pluginName}:`,
+				error.message,
+			);
+			return null;
+		}
+	}
 
-    const method = plugin[methodName];
-    
-    if (typeof method !== 'function') {
-      console.warn(`Warning: Method '${methodName}' not found or is not a function in plugin '${pluginName}'`);
-      return null;
-    }
+	/**
+	 * Load and return a specific plugin method (start, run, etc.)
+	 * @param {string} pluginName - Name of the plugin
+	 * @param {string} methodName - Name of the method to extract (e.g., 'start', 'run')
+	 * @returns {Function|null} - The requested method or null if not found
+	 */
+	async getPluginMethod(pluginName, methodName) {
+		const plugin = await this.getPlugin(pluginName);
 
-    return method;
-  }
+		if (!plugin) {
+			return null;
+		}
 
-  /**
-   * Discover all available plugins in the plugins directory
-   * @returns {string[]} - Array of plugin names
-   */
-  discoverPlugins() {
-    if (!fs.existsSync(this.pluginsBaseDir)) {
-      console.warn(`Warning: Plugins directory does not exist: ${this.pluginsBaseDir}`);
-      return [];
-    }
+		const method = plugin[methodName];
 
-    const items = fs.readdirSync(this.pluginsBaseDir, { withFileTypes: true });
-    const pluginNames = items
-      .filter(dirent => dirent.isDirectory())
-      .map(dirent => dirent.name);
+		if (typeof method !== 'function') {
+			console.warn(
+				`Warning: Method '${methodName}' not found or is not a function in plugin '${pluginName}'`,
+			);
+			return null;
+		}
 
-    return pluginNames;
-  }
+		return method;
+	}
 
-  /**
-   * Get all discovered plugins with their metadata
-   * @returns {Object} - Object with plugin names as keys and metadata as values
-   */
-  getAllPluginMetadata() {
-    const pluginNames = this.discoverPlugins();
-    const metadata = {};
+	/**
+	 * Discover all available plugins in the plugins directory
+	 * @returns {string[]} - Array of plugin names
+	 */
+	discoverPlugins() {
+		if (!fs.existsSync(this.pluginsBaseDir)) {
+			console.warn(
+				`Warning: Plugins directory does not exist: ${this.pluginsBaseDir}`,
+			);
+			return [];
+		}
 
-    for (const pluginName of pluginNames) {
-      const pluginDir = path.join(this.pluginsBaseDir, pluginName);
-      const manifestPath = path.join(pluginDir, 'manifest.json');
+		const items = fs.readdirSync(this.pluginsBaseDir, { withFileTypes: true });
+		const pluginNames = items
+			.filter((dirent) => dirent.isDirectory())
+			.map((dirent) => dirent.name);
 
-      // Load plugin manifest if it exists
-      if (fs.existsSync(manifestPath)) {
-        try {
-          const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-          metadata[pluginName] = {
-            name: pluginName,
-            manifest: manifest,
-            hasConfig: fs.existsSync(path.join(pluginDir, 'config.json'))
-          };
-        } catch (error) {
-          console.warn(`Warning: Could not load manifest for plugin ${pluginName}:`, error.message);
-          metadata[pluginName] = {
-            name: pluginName,
-            manifest: null,
-            hasConfig: fs.existsSync(path.join(pluginDir, 'config.json'))
-          };
-        }
-      } else {
-        metadata[pluginName] = {
-          name: pluginName,
-          manifest: null,
-          hasConfig: fs.existsSync(path.join(pluginDir, 'config.json'))
-        };
-      }
-    }
+		return pluginNames;
+	}
 
-    return metadata;
-  }
+	/**
+	 * Get all discovered plugins with their metadata
+	 * @returns {Object} - Object with plugin names as keys and metadata as values
+	 */
+	getAllPluginMetadata() {
+		const pluginNames = this.discoverPlugins();
+		const metadata = {};
 
+		for (const pluginName of pluginNames) {
+			const pluginDir = path.join(this.pluginsBaseDir, pluginName);
+			const manifestPath = path.join(pluginDir, 'manifest.json');
 
+			// Load plugin manifest if it exists
+			if (fs.existsSync(manifestPath)) {
+				try {
+					const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+					metadata[pluginName] = {
+						name: pluginName,
+						manifest: manifest,
+						hasConfig: fs.existsSync(path.join(pluginDir, 'config.json')),
+					};
+				} catch (error) {
+					console.warn(
+						`Warning: Could not load manifest for plugin ${pluginName}:`,
+						error.message,
+					);
+					metadata[pluginName] = {
+						name: pluginName,
+						manifest: null,
+						hasConfig: fs.existsSync(path.join(pluginDir, 'config.json')),
+					};
+				}
+			} else {
+				metadata[pluginName] = {
+					name: pluginName,
+					manifest: null,
+					hasConfig: fs.existsSync(path.join(pluginDir, 'config.json')),
+				};
+			}
+		}
 
-  /**
-   * Reset the plugin cache (useful for development or reloading)
-   */
-  clearCache() {
-    this.pluginCache.clear();
-  }
+		return metadata;
+	}
 
-  /**
-   * Get cached plugin count
-   * @returns {number} - Number of cached plugins
-   */
-  getCachedPluginCount() {
-    return this.pluginCache.size;
-  }
+	/**
+	 * Reset the plugin cache (useful for development or reloading)
+	 */
+	clearCache() {
+		this.pluginCache.clear();
+	}
 
-  /**
-   * Get list of cached plugin names
-   * @returns {string[]} - Array of cached plugin names
-   */
-  getCachedPlugins() {
-    return Array.from(this.pluginCache.keys());
-  }
+	/**
+	 * Get cached plugin count
+	 * @returns {number} - Number of cached plugins
+	 */
+	getCachedPluginCount() {
+		return this.pluginCache.size;
+	}
+
+	/**
+	 * Get list of cached plugin names
+	 * @returns {string[]} - Array of cached plugin names
+	 */
+	getCachedPlugins() {
+		return Array.from(this.pluginCache.keys());
+	}
 }
 
 // Export singleton instance

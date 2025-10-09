@@ -1,44 +1,48 @@
 # Manifest Definition and Guide
 
 ## Overview
+
 Manifests are the core of the Markov-js kernel architecture, defining how commands are processed, validated, and executed. Each command is defined through a JSON manifest file that declares its parameters, behavior, and side effects.
 
 ## Global Manifest vs Command Manifests
 
 There are two types of manifest files in the system:
+
 1. **Global manifest** (`contract/global.json`) - Defines application-wide configuration
 2. **Command manifests** (`contract/[command-name]/manifest.json`) - Defines individual command behavior
 
 ## Global Manifest Properties
 
 ### Required Properties
+
 - `name` (string): The application name
 - `version` (string): The application version
 - `description` (string): Human-readable description of the application
 
 ### Optional Properties
+
 - `prompt` (string): The REPL prompt string
 - `stateDefaults` (object): Default values for application state
 
 Example:
+
 ```json
 {
-  "name": "your-app-name",
-  "version": "1.0.0",
-  "description": "A description of your application",
-  "prompt": "app> ",
-  "stateDefaults": {
-    "currentUser": null,
-    "defaultFile": "default.txt"
-  },
-
-
+	"name": "your-app-name",
+	"version": "1.0.0",
+	"description": "A description of your application",
+	"prompt": "app> ",
+	"stateDefaults": {
+		"currentUser": null,
+		"defaultFile": "default.txt"
+	}
 }
 ```
 
 ## Command Manifest Properties
 
 ### Required Properties
+
 - `name` (string): The unique command identifier
 - `commandType` (string): How the command is processed; one of:
   - `"external-method"`: Delegates to an external domain method
@@ -48,6 +52,7 @@ Example:
 - `parameters` (array): Array of parameter definitions (can be empty)
 
 ### Optional Properties
+
 - `syntax` (string): Command usage syntax (e.g., `"myCommand(param1, [options])"`)
 - `examples` (array): Usage examples for documentation
 - `sideEffects` (object): State changes that occur after command execution
@@ -55,15 +60,18 @@ Example:
 ### Conditionally Required Properties
 
 #### For "external-method" commands:
+
 - `modulePath` (string): Path to the external module that contains the method to execute (resolved to absolute path at load time)
 - `methodName` (string): Name of the method in the external module to execute
 
 #### For "internal" commands:
+
 - `successOutput` (string): Output template for user feedback (recommended)
 
 ## Parameter Properties
 
 ### Required Properties
+
 - `name` (string): Parameter identifier
 - `type` (string): Data type; one of:
   - `"string"`, `"integer"`, `"number"`, `"boolean"`, `"array"`
@@ -71,6 +79,7 @@ Example:
 - `required` (boolean): Whether the parameter is mandatory
 
 ### Optional Properties
+
 - `default` (any): Default value when parameter is not provided
 - `description` (string): Human-readable parameter description
 - `runtimeFallback` (string): Name of a state key to use as fallback if parameter not provided
@@ -91,95 +100,98 @@ Commands can define side effects that modify the application state after success
 ## Example Command Manifest
 
 ### External Method Command
+
 ```json
 {
-  "name": "process",
-  "commandType": "external-method",
-  "modulePath": "yourDomain/index.js",
-  "methodName": "yourMethod",
-  "description": "Process data using your method",
-  "syntax": "process(input, type, [options])",
-  "parameters": [
-    {
-      "name": "input",
-      "type": "string",
-      "required": true,
-      "description": "Input data to process",
-      "runtimeFallback": "defaultFile"
-    },
-    {
-      "name": "type",
-      "type": "string",
-      "required": true,
-      "enum": ["typeA", "typeB", "typeC"],
-      "description": "Processing type to use"
-    }
-  ],
-  "sideEffects": {
-    "setState": {
-      "lastProcessed": {
-        "fromParam": "input",
-        "template": "{{input | basename}}"
-      }
-    }
-  },
-  "examples": [
-    "process(\"data.txt\", \"typeA\", option1=value1)",
-    "process({input: \"input.txt\", type: \"typeB\", option1: \"value\"})"
-  ]
+	"name": "process",
+	"commandType": "external-method",
+	"modulePath": "yourDomain/index.js",
+	"methodName": "yourMethod",
+	"description": "Process data using your method",
+	"syntax": "process(input, type, [options])",
+	"parameters": [
+		{
+			"name": "input",
+			"type": "string",
+			"required": true,
+			"description": "Input data to process",
+			"runtimeFallback": "defaultFile"
+		},
+		{
+			"name": "type",
+			"type": "string",
+			"required": true,
+			"enum": ["typeA", "typeB", "typeC"],
+			"description": "Processing type to use"
+		}
+	],
+	"sideEffects": {
+		"setState": {
+			"lastProcessed": {
+				"fromParam": "input",
+				"template": "{{input | basename}}"
+			}
+		}
+	},
+	"examples": [
+		"process(\"data.txt\", \"typeA\", option1=value1)",
+		"process({input: \"input.txt\", type: \"typeB\", option1: \"value\"})"
+	]
 }
 ```
 
 Note: The `modulePath` is resolved to an absolute path at contract loading time, eliminating the need for runtime path resolution during command execution.
 
 ### Internal Command
+
 ```json
 {
-  "name": "set",
-  "commandType": "internal",
-  "description": "Set a configuration value",
-  "syntax": "set(key, value)",
-  "parameters": [
-    {
-      "name": "key",
-      "type": "string",
-      "required": true,
-      "description": "Configuration key to set"
-    },
-    {
-      "name": "value",
-      "type": "string",
-      "required": true,
-      "description": "Value to assign to the key"
-    }
-  ],
-  "sideEffects": {
-    "setState": {
-      "currentConfig": { "fromParam": "value" }
-    }
-  },
-  "successOutput": "✅ Set {{key}} to {{value}}",
-  "examples": ["set(\"theme\", \"dark\")"]
+	"name": "set",
+	"commandType": "internal",
+	"description": "Set a configuration value",
+	"syntax": "set(key, value)",
+	"parameters": [
+		{
+			"name": "key",
+			"type": "string",
+			"required": true,
+			"description": "Configuration key to set"
+		},
+		{
+			"name": "value",
+			"type": "string",
+			"required": true,
+			"description": "Value to assign to the key"
+		}
+	],
+	"sideEffects": {
+		"setState": {
+			"currentConfig": { "fromParam": "value" }
+		}
+	},
+	"successOutput": "✅ Set {{key}} to {{value}}",
+	"examples": ["set(\"theme\", \"dark\")"]
 }
 ```
 
 ### Custom Command
+
 ```json
 {
-  "name": "complex",
-  "commandType": "custom",
-  "description": "A complex operation requiring custom logic",
-  "syntax": "complex([options])",
-  "parameters": [
-    {
-      "name": "verbose",
-      "type": "boolean",
-      "required": false,
-      "default": false,
-      "description": "Enable verbose output"
-    }
-  ],
-  "examples": ["complex()", "complex(verbose=true)"]
+	"name": "complex",
+	"commandType": "custom",
+	"description": "A complex operation requiring custom logic",
+	"syntax": "complex([options])",
+	"parameters": [
+		{
+			"name": "verbose",
+			"type": "boolean",
+			"required": false,
+			"default": false,
+			"description": "Enable verbose output"
+		}
+	],
+	"examples": ["complex()", "complex(verbose=true)"]
 }
 ```
 

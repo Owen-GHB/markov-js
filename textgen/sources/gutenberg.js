@@ -10,7 +10,7 @@ const gutenbergService = new GutenbergService();
  * @returns {Promise<Object>} - Search results
  */
 export async function searchGutenberg(params) {
-  return await gutenbergService.searchBooks(params);
+	return await gutenbergService.searchBooks(params);
 }
 
 /**
@@ -20,7 +20,7 @@ export async function searchGutenberg(params) {
  * @returns {Promise<Object>} - Book details
  */
 export async function getGutenbergInfo(params) {
-  return await gutenbergService.getBookInfo(params);
+	return await gutenbergService.getBookInfo(params);
 }
 
 /**
@@ -31,5 +31,5 @@ export async function getGutenbergInfo(params) {
  * @returns {Promise<Object>} - Download result
  */
 export async function downloadGutenberg(params) {
-  return await gutenbergService.downloadBook(params);
+	return await gutenbergService.downloadBook(params);
 }

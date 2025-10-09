@@ -1,16 +1,16 @@
 {
-  "parameters": {
-    "id_or_title": {
-      "description": "Book ID or title to download",
-      "transform": {
-        "if": "integer",
-        "then": { "id": "value" },
-        "else": { "title": "value" }
-      }
-    },
-    "file": {
-      "description": "Filename to save the downloaded text",
-      "default": null
-    }
-  }
+	"parameters": {
+		"id_or_title": {
+			"description": "Book ID or title to download",
+			"transform": {
+				"if": "integer",
+				"then": { "id": "value" },
+				"else": { "title": "value" }
+			}
+		},
+		"file": {
+			"description": "Filename to save the downloaded text",
+			"default": null
+		}
+	}
 }

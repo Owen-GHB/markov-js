@@ -1,0 +1,7 @@
+{
+	"port": 8080,
+	"paths": {
+		"servedUIDir": "generated-ui",
+		"contextDir": "context"
+	}
+}

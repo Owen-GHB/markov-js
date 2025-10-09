@@ -1,7 +1,7 @@
 {
-  "parameters": {
-    "query": {
-      "description": "Search query for Project Gutenberg"
-    }
-  }
+	"parameters": {
+		"query": {
+			"description": "Search query for Project Gutenberg"
+		}
+	}
 }

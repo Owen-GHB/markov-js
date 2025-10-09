@@ -1,8 +1,8 @@
 {
-  "description": "Download a book from Project Gutenberg",
-  "syntax": "pgb_download(id|title, [options])",
-  "examples": [
-    "pgb_download(1342)",
-    "pgb_download(\"Moby Dick\", file=\"whale.txt\")"
-  ]
+	"description": "Download a book from Project Gutenberg",
+	"syntax": "pgb_download(id|title, [options])",
+	"examples": [
+		"pgb_download(1342)",
+		"pgb_download(\"Moby Dick\", file=\"whale.txt\")"
+	]
 }

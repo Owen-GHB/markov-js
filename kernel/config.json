@@ -1,32 +1,33 @@
 {
-  "http": {
-    "port": 8080
-  },
-  "repl": {
-    "maxHistory": 100
-  },
-  "paths": {
-    "kernelDir": "kernel",
-    "contractDir": "contract", 
-    "generatedUIDir": "generated-ui",
-    "servedUIDir": "generated-ui",
-    "configDir": "config",
-    "contextDir": "context",
-    "templatesDir": "templates",
-    "electronPreloadPath": "electron-preload.js"
-  },
-  "plugins": {
-    "stdio": {
-      "enabled": true
-    },
-    "http": {
-      "enabled": true
-    },
-    "electron": {
-      "enabled": true
-    },
-    "generator": {
-      "enabled": true
-    }
-  }
+	"http": {
+		"port": 8080
+	},
+	"repl": {
+		"maxHistory": 100
+	},
+	"paths": {
+		"kernelDir": "kernel",
+		"contractDir": "contract",
+		"generatedUIDir": "generated-ui",
+		"servedUIDir": "generated-ui",
+		"configDir": "config",
+		"contextDir": "context",
+		"templatesDir": "templates",
+		"pluginsDir": "external-plugins",
+		"electronPreloadPath": "electron-preload.js"
+	},
+	"plugins": {
+		"stdio": {
+			"enabled": true
+		},
+		"http": {
+			"enabled": true
+		},
+		"electron": {
+			"enabled": true
+		},
+		"generator": {
+			"enabled": true
+		}
+	}
 }

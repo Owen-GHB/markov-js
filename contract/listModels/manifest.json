@@ -1,7 +1,7 @@
 {
-  "name": "listModels",
-  "commandType": "external-method",
-  "modulePath": "textgen/index.js",
-  "methodName": "listAvailableModels",
-  "parameters": {}
+	"name": "listModels",
+	"commandType": "external-method",
+	"modulePath": "textgen/index.js",
+	"methodName": "listAvailableModels",
+	"parameters": {}
 }

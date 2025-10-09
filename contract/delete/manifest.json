@@ -1,12 +1,12 @@
 {
-  "name": "delete",
-  "commandType": "external-method",
-  "modulePath": "textgen/index.js",
-  "methodName": "deleteModelFile",
-  "parameters": {
-    "modelName": {
-      "type": "string",
-      "required": true
-    }
-  }
+	"name": "delete",
+	"commandType": "external-method",
+	"modulePath": "textgen/index.js",
+	"methodName": "deleteModelFile",
+	"parameters": {
+		"modelName": {
+			"type": "string",
+			"required": true
+		}
+	}
 }

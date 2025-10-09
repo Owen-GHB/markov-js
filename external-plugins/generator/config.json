@@ -1,0 +1,6 @@
+{
+	"paths": {
+		"templatesDir": "templates",
+		"generatedUIDir": "generated-ui"
+	}
+}

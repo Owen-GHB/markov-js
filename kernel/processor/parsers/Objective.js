@@ -22,8 +22,12 @@ export function parseObjectStyle([, name, argsString], context = {}, manifest) {
 	}
 
 	const parameters = command.parameters || {};
-	const requiredParams = Object.entries(parameters).filter(([_, p]) => p.required).map(([name, param]) => ({name, ...param}));
-	const optionalParams = Object.entries(parameters).filter(([_, p]) => !p.required).map(([name, param]) => ({name, ...param}));
+	const requiredParams = Object.entries(parameters)
+		.filter(([_, p]) => p.required)
+		.map(([name, param]) => ({ name, ...param }));
+	const optionalParams = Object.entries(parameters)
+		.filter(([_, p]) => !p.required)
+		.map(([name, param]) => ({ name, ...param }));
 
 	let args;
 	try {
@@ -48,7 +52,9 @@ export function parseObjectStyle([, name, argsString], context = {}, manifest) {
 	// Handle non-object inputs for parameters with transform rules
 	if (typeof args !== 'object' || args === null) {
 		const paramEntries = Object.entries(parameters);
-		const singleParamEntry = paramEntries.find(([_, p]) => p.required && p.transform);
+		const singleParamEntry = paramEntries.find(
+			([_, p]) => p.required && p.transform,
+		);
 		if (singleParamEntry) {
 			const [paramName, singleParam] = singleParamEntry;
 			const types = singleParam.type.split('|').map((t) => t.trim());
@@ -95,7 +101,9 @@ export function parseObjectStyle([, name, argsString], context = {}, manifest) {
 
 	// Check for unknown parameters
 	for (const key of Object.keys(args)) {
-		const paramName = Object.keys(parameters).find(p => p.toLowerCase() === key.toLowerCase());
+		const paramName = Object.keys(parameters).find(
+			(p) => p.toLowerCase() === key.toLowerCase(),
+		);
 		if (!paramName) {
 			return {
 				error: `Unknown parameter: ${key}`,
@@ -107,10 +115,16 @@ export function parseObjectStyle([, name, argsString], context = {}, manifest) {
 	// Validate and process each parameter
 	for (const paramName in parameters) {
 		const param = parameters[paramName];
-		
+
 		// Get current value, applying fallback if needed
 		let value = args[paramName];
-		if (value === undefined && param.runtimeFallback && context && context.state && context.state.has(param.runtimeFallback)) {
+		if (
+			value === undefined &&
+			param.runtimeFallback &&
+			context &&
+			context.state &&
+			context.state.has(param.runtimeFallback)
+		) {
 			value = context.state.get(param.runtimeFallback);
 			args[paramName] = value; // Update args with fallback value
 		}
@@ -138,12 +152,18 @@ export function parseObjectStyle([, name, argsString], context = {}, manifest) {
 		if (types.includes('integer')) {
 			parsedValue = parseInt(value, 10);
 			if (isNaN(parsedValue)) {
-				return { error: `Parameter ${paramName} must be an integer`, command: null };
+				return {
+					error: `Parameter ${paramName} must be an integer`,
+					command: null,
+				};
 			}
 		} else if (types.includes('number')) {
 			parsedValue = parseFloat(value);
 			if (isNaN(parsedValue)) {
-				return { error: `Parameter ${paramName} must be a number`, command: null };
+				return {
+					error: `Parameter ${paramName} must be a number`,
+					command: null,
+				};
 			}
 		} else if (types.includes('boolean')) {
 			if (typeof value !== 'boolean') {
@@ -162,7 +182,10 @@ export function parseObjectStyle([, name, argsString], context = {}, manifest) {
 					parsedValue = JSON.parse(value);
 					if (!Array.isArray(parsedValue)) throw new Error();
 				} catch {
-					return { error: `Parameter ${paramName} must be an array`, command: null };
+					return {
+						error: `Parameter ${paramName} must be an array`,
+						command: null,
+					};
 				}
 			}
 		} else if (types.includes('string')) {

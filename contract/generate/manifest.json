@@ -1,40 +1,40 @@
 {
-  "name": "generate",
-  "commandType": "external-method",
-  "modulePath": "textgen/index.js",
-  "methodName": "generateText",
-  "parameters": {
-    "modelName": {
-      "type": "string",
-      "required": true
-    },
-    "length": {
-      "type": "integer",
-      "required": false
-    },
-    "min_tokens": {
-      "type": "integer",
-      "required": false
-    },
-    "temperature": {
-      "type": "number",
-      "required": false
-    },
-    "prompt": {
-      "type": "string",
-      "required": false
-    },
-    "stop": {
-      "type": "array",
-      "required": false
-    },
-    "samples": {
-      "type": "integer",
-      "required": false
-    },
-    "allowRepetition": {
-      "type": "boolean",
-      "required": false
-    }
-  }
+	"name": "generate",
+	"commandType": "external-method",
+	"modulePath": "textgen/index.js",
+	"methodName": "generateText",
+	"parameters": {
+		"modelName": {
+			"type": "string",
+			"required": true
+		},
+		"length": {
+			"type": "integer",
+			"required": false
+		},
+		"min_tokens": {
+			"type": "integer",
+			"required": false
+		},
+		"temperature": {
+			"type": "number",
+			"required": false
+		},
+		"prompt": {
+			"type": "string",
+			"required": false
+		},
+		"stop": {
+			"type": "array",
+			"required": false
+		},
+		"samples": {
+			"type": "integer",
+			"required": false
+		},
+		"allowRepetition": {
+			"type": "boolean",
+			"required": false
+		}
+	}
 }

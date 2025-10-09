@@ -7,7 +7,11 @@ import { ParserUtils } from './Utils.js';
  * @param {Object} manifest - The application manifest
  * @returns {{error: string|null, command: Object|null}}
  */
-export function parseFunctionStyle([, name, argsString], context = {}, manifest) {
+export function parseFunctionStyle(
+	[, name, argsString],
+	context = {},
+	manifest,
+) {
 	const commandName = name.toLowerCase();
 
 	// Find the command in manifest
@@ -22,8 +26,12 @@ export function parseFunctionStyle([, name, argsString], context = {}, manifest)
 	}
 
 	const parameters = command.parameters || {};
-	const requiredParams = Object.entries(parameters).filter(([_, p]) => p.required).map(([name, param]) => ({name, ...param}));
-	const optionalParams = Object.entries(parameters).filter(([_, p]) => !p.required).map(([name, param]) => ({name, ...param}));
+	const requiredParams = Object.entries(parameters)
+		.filter(([_, p]) => p.required)
+		.map(([name, param]) => ({ name, ...param }));
+	const optionalParams = Object.entries(parameters)
+		.filter(([_, p]) => !p.required)
+		.map(([name, param]) => ({ name, ...param }));
 
 	let args = {};
 	const argPairs = argsString
@@ -46,14 +54,16 @@ export function parseFunctionStyle([, name, argsString], context = {}, manifest)
 			}
 
 			// Validate parameter exists
-			const paramName = Object.keys(parameters).find(p => p.toLowerCase() === key.toLowerCase());
+			const paramName = Object.keys(parameters).find(
+				(p) => p.toLowerCase() === key.toLowerCase(),
+			);
 			if (!paramName) {
 				return {
 					error: `Unknown parameter: ${key}`,
 					command: null,
 				};
 			}
-			
+
 			const param = parameters[paramName];
 			args[paramName] = ParserUtils.normalizeValue(valueStr);
 		} else {
@@ -76,7 +86,12 @@ export function parseFunctionStyle([, name, argsString], context = {}, manifest)
 	for (const param of requiredParams) {
 		if (!(param.name in args)) {
 			// Try to apply runtime fallback
-			if (param.runtimeFallback && context && context.state && context.state.has(param.runtimeFallback)) {
+			if (
+				param.runtimeFallback &&
+				context &&
+				context.state &&
+				context.state.has(param.runtimeFallback)
+			) {
 				args[param.name] = context.state.get(param.runtimeFallback);
 			} else {
 				missingParams.push(param.name);

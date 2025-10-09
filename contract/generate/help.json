@@ -1,8 +1,8 @@
 {
-  "description": "Generate text from a trained model",
-  "syntax": "generate(modelName, [options])",
-  "examples": [
-    "generate(\"model.json\", length=50, temperature=0.8)",
-    "generate({modelName: \"story_model.json\", prompt: \"Once upon a time\"})"
-  ]
+	"description": "Generate text from a trained model",
+	"syntax": "generate(modelName, [options])",
+	"examples": [
+		"generate(\"model.json\", length=50, temperature=0.8)",
+		"generate({modelName: \"story_model.json\", prompt: \"Once upon a time\"})"
+	]
 }

@@ -1,5 +1,5 @@
 {
-  "description": "Search Project Gutenberg by title/author",
-  "syntax": "pgb_search(query)",
-  "examples": ["pgb_search(\"Sherlock Holmes\")"]
+	"description": "Search Project Gutenberg by title/author",
+	"syntax": "pgb_search(query)",
+	"examples": ["pgb_search(\"Sherlock Holmes\")"]
 }

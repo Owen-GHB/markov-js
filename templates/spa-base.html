@@ -1,46 +1,50 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{HTML_TITLE}}</title>
-    {{CSS_PLACEHOLDER}}
-</head>
-<body>
-    <div class="container">
-        <header>
-            <h1>{{PAGE_HEADER}}</h1>
-            <p>Execute commands through a web interface</p>
-        </header>
-        
-        <div class="main-content">
-            <div class="sidebar">
-                <div>
-                    <label for="commandSelector">{{COMMAND_SELECTOR_LABEL}}</label>
-                    <select id="commandSelector" class="command-selector">
-                        <option value="">Select a command...</option>
-                        <!-- Command options will be populated by JavaScript -->
-                    </select>
-                </div>
-            </div>
-            
-            <div class="content">
-                <!-- Command forms will be inserted here -->
-                <div id="formsContainer">
-                    <!-- Individual command forms will be populated by JavaScript -->
-                </div>
-                
-                <div id="resultsContainer" class="results hidden">
-                    <h3>Command Results</h3>
-                    <div id="resultsContent"></div>
-                </div>
-            </div>
-        </div>
-    </div>
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>{{HTML_TITLE}}</title>
+		{{CSS_PLACEHOLDER}}
+	</head>
+	<body>
+		<div class="container">
+			<header>
+				<h1>{{PAGE_HEADER}}</h1>
+				<p>Execute commands through a web interface</p>
+			</header>
 
-    <script>
-        // Embedded JavaScript for the UI
-        {{CLIENT_SIDE_JS}}
-    </script>
-</body>
+			<div class="main-content">
+				<div class="sidebar">
+					<div>
+						<label for="commandSelector">{{COMMAND_SELECTOR_LABEL}}</label>
+						<select id="commandSelector" class="command-selector">
+							<option value="">Select a command...</option>
+							<!-- Command options will be populated by JavaScript -->
+						</select>
+					</div>
+				</div>
+
+				<div class="content">
+					<!-- Command forms will be inserted here -->
+					<div id="formsContainer">
+						<!-- Individual command forms will be populated by JavaScript -->
+					</div>
+
+					<div id="resultsContainer" class="results hidden">
+						<h3>Command Results</h3>
+						<div id="resultsContent"></div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<script>
+			// Embedded JavaScript for the UI
+			{
+				{
+					CLIENT_SIDE_JS;
+				}
+			}
+		</script>
+	</body>
 </html>

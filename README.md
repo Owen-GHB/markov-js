@@ -2,81 +2,7 @@
 
 A versatile text generation tool implementing Markov chains, Variable-Length Markov Models (VLMM), and Hidden Markov Models (HMM) with a command-line interface and multiple transport mechanisms.
 
----
-
-## 🧠 Architecture Overview
-
-This application follows a **modular kernel architecture** with clean separation of concerns. The architecture cleanly separates:
-
-- **Application Domain** (`textgen/`) - Core text generation logic
-- **Interface Domain** (`kernel/plugins/`) - Multiple access methods (CLI, HTTP, Electron, Generator)
-- **Contract System** (`contract/`) - Command definitions and manifests
-- **Kernel Core** (`kernel/`) - Command orchestration and processing
-
-### Command Types
-
-The system supports three distinct command handling strategies:
-
-1. **External-Method Commands** (`train`, `generate`, etc.) - Automatically call domain methods
-2. **Internal Commands** (`use`, etc.) - Declarative state manipulation (no handler files needed)
-3. **Custom Commands** (`randomize`) - Special business logic requiring custom handlers
-
-### Transport System
-
-Commands work seamlessly across multiple interfaces:
-- **CLI** - Direct command-line execution
-- **REPL** - Interactive shell with tab completion
-- **HTTP API** - RESTful web API
-- **HTTP Serve** - Web server with UI and API
-- **Electron** - Desktop application
-
-## 🧱 Kernel Architecture
-
-### Kernel Architecture
-
-The kernel provides a robust foundation that includes:
-
-1. **Universal Command Processing** - Works with any domain by defining commands in contracts
-2. **Multiple Transport Mechanisms** - CLI, REPL, HTTP API, HTTP Serve, Electron
-3. **Automatic Command Discovery** - Scans contract directory and discovers all commands
-4. **Declarative Configuration** - Commands defined entirely in JSON manifests
-5. **State Management** - Persistent state that survives across command invocations
-6. **Runtime Fallbacks** - Parameters automatically fall back to state values
-7. **Template Strings** - Dynamic values in side effects using template substitution
-8. **Cross-Platform UI** - Automatically generates web interfaces from contracts
-
-### Command Types
-
-The system supports three distinct command handling strategies:
-
-1. **External-Method Commands** (`train`, `generate`, etc.)
-   - Automatically delegate to domain methods
-   - No handler files needed
-   - Defined with `commandType: "external-method"` in manifests
-
-2. **Internal Commands** (`use`, etc.)
-   - Pure state manipulation
-   - No handler files needed
-   - Behavior defined entirely in manifests
-   - Defined with `commandType: "internal"` in manifests
-
-3. **Custom Commands** (`randomize`, etc.)
-   - Special business logic requiring custom implementation
-   - Require handler files
-   - Defined with `commandType: "custom"` in manifests
-
-### Transport System
-
-Commands work seamlessly across multiple interfaces:
-
-- **CLI** - Direct command-line execution (`node main.js command()`)
-- **REPL** - Interactive shell with tab completion (`node main.js`)
-- **HTTP API** - RESTful web API (`node main.js --http=8080`)
-- **HTTP Serve** - Web server with UI and API (`node main.js --serve=8080`)
-- **Electron** - Desktop application (`node main.js --electron`)
-
-
----
+This application is built using **Vertex**, a domain-agnostic command processing kernel that provides multiple interfaces (CLI, REPL, HTTP API, Web UI, and Electron desktop application) for any domain-specific commands.
 
 ---
 
@@ -167,22 +93,11 @@ node main.js --electron
 
 ### Project Gutenberg Commands
 
-| Command                             | Description                           | Example                                |
-| ----------------------------------- | ------------------------------------- | -------------------------------------- |
+| Command                             | Description                            | Example                                |
+| ----------------------------------- | -------------------------------------- | -------------------------------------- |
 | `pgb_download(id_or_title, [file])` | Download a book from Project Gutenberg | `pgb_download(1342, file="pride.txt")` |
-| `pgb_info(id_or_title)`             | Get book details                      | `pgb_info("Pride and Prejudice")`      |
-| `pgb_search(query)`                 | Search by title/author                | `pgb_search("Sherlock Holmes")`        |
-
-| Command                             | Description                 | Example                                  |
-| ----------------------------------- | --------------------------- | ---------------------------------------- |
-| `train(file, modelType, [options])` | Train a new model           | `train("sample.txt", "markov", order=3)` |
-| `generate(model, [options])`        | Generate text from model    | `generate("model.json", length=50)`      |
-| `listModels()`                      | List available models       | `listModels()`                           |
-| `listCorpus()`                      | List available corpus files | `listCorpus()`                           |
-| `delete("model.json")`              | Delete a model              | `delete("old_model.json")`               |
-| `use("model.json")`                 | Set current model           | `use("model.json")`                      |
-| `help()`                            | Show help                   | `help()`                                 |
-| `exit`                              | Exit the CLI                | `exit`                                   |
+| `pgb_info(id_or_title)`             | Get book details                       | `pgb_info("Pride and Prejudice")`      |
+| `pgb_search(query)`                 | Search by title/author                 | `pgb_search("Sherlock Holmes")`        |
 
 ---
 
@@ -312,21 +227,3 @@ curl -X POST http://localhost:8080/api \
 - Models hidden states that emit observable tokens
 - Supports Baum-Welch (EM) algorithm for unsupervised learning
 - Includes Viterbi algorithm for most likely state sequence
-
----
-
-## File Structure
-
-```
-data/
-  corpus/      # Default location for text files
-  models/      # Default location for saved models
-
-src/
-  entrypoints/ # CLI and API interfaces
-  io/          # File handling and serialization
-  models/      # Model implementations
-  utils/       # Utility functions
-
-examples/      # Example scripts
-```

@@ -14,7 +14,7 @@ export class CommandParser {
 		if (!manifest || typeof manifest !== 'object') {
 			throw new Error('CommandParser requires a manifest object');
 		}
-		
+
 		this.manifest = manifest;
 		this.patterns = {
 			objectCall: /^(\w+)\s*\(\s*(\{.*\})\s*\)\s*$/,
@@ -47,7 +47,7 @@ export class CommandParser {
 				// This is a valid JSON command object
 				return {
 					error: null,
-					command: commandObj
+					command: commandObj,
 				};
 			}
 		} catch (jsonError) {
@@ -60,7 +60,12 @@ export class CommandParser {
 			const spec = this.manifest.commands.find(
 				(c) => c.name.toLowerCase() === cliMatch[1].toLowerCase(),
 			);
-			if (!(spec && Object.entries(spec.parameters || {}).every(([_, p]) => !p.required))) {
+			if (
+				!(
+					spec &&
+					Object.entries(spec.parameters || {}).every(([_, p]) => !p.required)
+				)
+			) {
 				return this.parseCliStyle(cliMatch[1], cliMatch[2], context);
 			}
 		}
@@ -80,9 +85,9 @@ export class CommandParser {
 		// Try simple command
 		const simpleMatch = trimmed.match(this.patterns.simpleCommand);
 		if (simpleMatch) {
-            const funcCall = `${trimmed}()`;
-            const match = funcCall.match(this.patterns.funcCall);
-            if (match) return this.parseFunctionStyle(match, context);
+			const funcCall = `${trimmed}()`;
+			const match = funcCall.match(this.patterns.funcCall);
+			if (match) return this.parseFunctionStyle(match, context);
 		}
 
 		return {
@@ -97,7 +102,9 @@ export class CommandParser {
 		);
 		if (!spec) return { error: `Unknown command: ${command}`, command: null };
 
-		const required = Object.entries(spec.parameters || {}).filter(([_, p]) => p.required).map(([name, param]) => ({name, ...param}));
+		const required = Object.entries(spec.parameters || {})
+			.filter(([_, p]) => p.required)
+			.map(([name, param]) => ({ name, ...param }));
 		const parts = argsString.split(/\s+/).filter(Boolean);
 
 		// Split into positional vs named pieces
@@ -124,10 +131,10 @@ export class CommandParser {
 			.map((p, i) => `${p.name}="${positional[i]}"`);
 
 		// Build final function-style string
-	const funcCall = `${command}(${[...positionalPairs, ...named].join(',')})`; // Remove space after comma
-	const match = funcCall.match(this.patterns.funcCall);
+		const funcCall = `${command}(${[...positionalPairs, ...named].join(',')})`; // Remove space after comma
+		const match = funcCall.match(this.patterns.funcCall);
 
-	return this.parseFunctionStyle(match, context);
+		return this.parseFunctionStyle(match, context);
 	}
 
 	/**

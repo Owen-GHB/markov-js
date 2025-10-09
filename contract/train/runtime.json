@@ -1,38 +1,38 @@
 {
-  "sideEffects": {
-    "setState": {
-      "currentModel": {
-        "fromParam": "modelName",
-        "template": "{{file | basename}}.json"
-      }
-    }
-  },
-  "parameters": {
-    "file": {
-      "description": "Corpus file to train from",
-      "runtimeFallback": "defaultCorpus"
-    },
-    "modelType": {
-      "description": "Type of model to train",
-      "enum": ["markov", "vlmm", "hmm"]
-    },
-    "order": {
-      "default": 2,
-      "min": 1,
-      "max": 10,
-      "description": "Markov order (n-gram size)"
-    },
-    "modelName": {
-      "kind": "implicit",
-      "description": "Filename to save the trained model"
-    },
-    "caseSensitive": {
-      "default": false,
-      "description": "Whether to preserve case during tokenization"
-    },
-    "trackStartStates": {
-      "default": true,
-      "description": "Whether to track sentence start states"
-    }
-  }
+	"sideEffects": {
+		"setState": {
+			"currentModel": {
+				"fromParam": "modelName",
+				"template": "{{file | basename}}.json"
+			}
+		}
+	},
+	"parameters": {
+		"file": {
+			"description": "Corpus file to train from",
+			"runtimeFallback": "defaultCorpus"
+		},
+		"modelType": {
+			"description": "Type of model to train",
+			"enum": ["markov", "vlmm", "hmm"]
+		},
+		"order": {
+			"default": 2,
+			"min": 1,
+			"max": 10,
+			"description": "Markov order (n-gram size)"
+		},
+		"modelName": {
+			"kind": "implicit",
+			"description": "Filename to save the trained model"
+		},
+		"caseSensitive": {
+			"default": false,
+			"description": "Whether to preserve case during tokenization"
+		},
+		"trackStartStates": {
+			"default": true,
+			"description": "Whether to track sentence start states"
+		}
+	}
 }

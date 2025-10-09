@@ -1,7 +1,7 @@
 {
-  "name": "listCorpus",
-  "commandType": "external-method",
-  "modulePath": "textgen/index.js",
-  "methodName": "listCorpusFiles",
-  "parameters": {}
+	"name": "listCorpus",
+	"commandType": "external-method",
+	"modulePath": "textgen/index.js",
+	"methodName": "listCorpusFiles",
+	"parameters": {}
 }

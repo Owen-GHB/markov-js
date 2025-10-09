@@ -1,12 +1,12 @@
 {
-  "name": "pgb_info",
-  "commandType": "external-method",
-  "modulePath": "textgen/index.js",
-  "methodName": "getGutenbergInfo",
-  "parameters": {
-    "id_or_title": {
-      "type": "string|integer",
-      "required": true
-    }
-  }
+	"name": "pgb_info",
+	"commandType": "external-method",
+	"modulePath": "textgen/index.js",
+	"methodName": "getGutenbergInfo",
+	"parameters": {
+		"id_or_title": {
+			"type": "string|integer",
+			"required": true
+		}
+	}
 }

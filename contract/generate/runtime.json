@@ -1,45 +1,45 @@
 {
-  "sideEffects": {
-    "setState": {
-      "currentModel": { "fromParam": "modelName" }
-    }
-  },
-  "parameters": {
-    "modelName": {
-      "description": "Model file to use for generation",
-      "runtimeFallback": "currentModel"
-    },
-    "length": {
-      "default": 100,
-      "min": 1,
-      "description": "Maximum number of tokens to generate"
-    },
-    "min_tokens": {
-      "default": 50,
-      "min": 1,
-      "description": "Minimum number of tokens to generate"
-    },
-    "temperature": {
-      "default": 1.0,
-      "min": 0.0,
-      "max": 2.0,
-      "description": "Randomness factor (lower = more predictable)"
-    },
-    "prompt": {
-      "description": "Starting text for generation"
-    },
-    "stop": {
-      "default": [".", "!", "?"],
-      "description": "Stop tokens that end generation"
-    },
-    "samples": {
-      "default": 1,
-      "min": 1,
-      "description": "Number of samples to generate"
-    },
-    "allowRepetition": {
-      "default": true,
-      "description": "Allow immediate token repetition"
-    }
-  }
+	"sideEffects": {
+		"setState": {
+			"currentModel": { "fromParam": "modelName" }
+		}
+	},
+	"parameters": {
+		"modelName": {
+			"description": "Model file to use for generation",
+			"runtimeFallback": "currentModel"
+		},
+		"length": {
+			"default": 100,
+			"min": 1,
+			"description": "Maximum number of tokens to generate"
+		},
+		"min_tokens": {
+			"default": 50,
+			"min": 1,
+			"description": "Minimum number of tokens to generate"
+		},
+		"temperature": {
+			"default": 1.0,
+			"min": 0.0,
+			"max": 2.0,
+			"description": "Randomness factor (lower = more predictable)"
+		},
+		"prompt": {
+			"description": "Starting text for generation"
+		},
+		"stop": {
+			"default": [".", "!", "?"],
+			"description": "Stop tokens that end generation"
+		},
+		"samples": {
+			"default": 1,
+			"min": 1,
+			"description": "Number of samples to generate"
+		},
+		"allowRepetition": {
+			"default": true,
+			"description": "Allow immediate token repetition"
+		}
+	}
 }

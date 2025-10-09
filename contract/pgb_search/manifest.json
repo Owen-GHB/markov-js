@@ -1,12 +1,12 @@
 {
-  "name": "pgb_search",
-  "commandType": "external-method",
-  "modulePath": "textgen/index.js",
-  "methodName": "searchGutenberg",
-  "parameters": {
-    "query": {
-      "type": "string",
-      "required": true
-    }
-  }
+	"name": "pgb_search",
+	"commandType": "external-method",
+	"modulePath": "textgen/index.js",
+	"methodName": "searchGutenberg",
+	"parameters": {
+		"query": {
+			"type": "string",
+			"required": true
+		}
+	}
 }

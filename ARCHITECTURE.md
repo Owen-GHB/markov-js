@@ -1,15 +1,15 @@
 # Architecture Overview
 
-## Core Architecture: Modular Kernel Framework
+## Core Architecture: Vertex Kernel Framework
 
-The Markov-js project implements a generic, domain-agnostic command processing engine known as the "kernel". This architecture separates concerns between:
+The Markov-js project implements a domain-agnostic command processing engine called **Vertex**. This architecture cleanly separates concerns between:
 
-1. **Kernel** (`/kernel`) - Generic command engine
-2. **Contract** (`/contract`) - Domain-specific command definitions
+1. **Vertex Kernel** (`/kernel`) - Generic command engine
+2. **Contract System** (`/contract`) - Domain-specific command definitions
 3. **Domain Logic** (`/textgen`) - Business logic implementation
 4. **Transports** - Interface layers (CLI, REPL, HTTP, Electron)
 
-## Kernel Structure
+## Vertex Kernel Structure
 
 ### Core Components
 
@@ -20,21 +20,21 @@ The Markov-js project implements a generic, domain-agnostic command processing e
 - `kernel/CommandProcessor.js` - Command processing pipeline with state management
 - `kernel/CommandParser.js` - Command parsing from user input
 
-### Transport System
+### Plugin System
 
-The kernel provides multiple interface transports:
+The kernel provides a configurable plugin system:
 
-- **stdio** (`/kernel/plugins/stdio/`) - CLI and REPL interfaces
-- **http** (`/kernel/plugins/http/`) - HTTP server and API (not examined directly)
-- **electron** (`/kernel/plugins/electron/`) - Electron desktop application
-- **generator** (`/kernel/plugins/generator/`) - UI generation system (not examined directly)
-
+- **Plugins Directory** - Configurable via `"pluginsDir"` in config (defaults to `kernel/plugins`)
+- **Transport Plugins** - CLI/REPL, HTTP, Electron, Generator interfaces
+- **Dynamic Loading** - Plugins discovered and loaded at runtime
+- **External Plugins** - Can be located outside the kernel directory
 
 ### Utilities
 
-- `kernel/utils/path-resolver.js` - Centralized path resolution
+- `kernel/utils/path-resolver.js` - Centralized path resolution with configurable paths
+- `kernel/utils/config-loader.js` - Configuration loading with path overrides
 - `kernel/utils/StateManager.js` - Persistent state management
-- `kernel/generator/` - UI generation system
+- `kernel/utils/PluginLoader.js` - Dynamic plugin loading system
 
 ### Command Types and Processing
 
@@ -74,17 +74,19 @@ The contract system defines domain-specific commands through:
 - `contract/[command-name]/handler.js` - Custom command handlers (for custom command types)
 
 Each command manifest defines:
+
 - Command name and type
 - Module path and method name (for external-method commands)
 - Parameters with type validation and defaults
 - Side effects (state management)
 - Examples and documentation
 
-The contract loader now focuses solely on manifest loading and caching, with module path resolution performed ahead-of-time to simplify command execution.
+The contract loader focuses solely on manifest loading and caching, with module path resolution performed ahead-of-time to simplify command execution.
 
 ## State Management
 
 The system uses persistent state management with:
+
 - Default values defined in `global.json`
 - Automatic state updates through command side effects
 - Persistent storage in `context/state.json`
@@ -92,12 +94,12 @@ The system uses persistent state management with:
 
 ## Electron Integration
 
-Electron integration works through:
-- `electron-main.js` - Electron application entry point
+Electron integration works through advanced dynamic loading:
+
+- `kernel/plugins/electron/electron-main.js` - Electron application entry point with dynamic kernel loading
+- `kernel/plugins/electron/KernelLoader.js` - Dynamic kernel module loading at runtime
 - `electron-preload.js` - Secure IPC communication setup
-- `kernel/plugins/electron/` - Command handling and UI management
-- `kernel/plugins/generator/` - UI generation system
-- Generated UI from contract manifests served to Electron
+- Dynamic path resolution for kernel modules at runtime
 
 ## Key Design Principles
 
@@ -106,6 +108,8 @@ Electron integration works through:
 3. **Transport Independence** - Same commands work across all interfaces
 4. **Automatic Discovery** - Commands discovered automatically from contract directory
 5. **Extensibility** - Easy to add new commands without modifying kernel
-6. **State Management** - Built-in persistent state system
+6. **Configurable Paths** - Plugin and other directories can be configured via config
+7. **Dynamic Loading** - Components loaded at runtime based on configuration
+8. **State Management** - Built-in persistent state system
 
 This architecture allows for domain-agnostic command processing where the kernel handles all the infrastructure concerns (parsing, validation, state management, interface handling) while domain-specific logic is defined through contracts and implemented in separate modules.

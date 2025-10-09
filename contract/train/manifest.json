@@ -1,32 +1,32 @@
 {
-  "name": "train",
-  "commandType": "external-method",
-  "modulePath": "textgen/index.js",
-  "methodName": "trainModel",
-  "parameters": {
-    "file": {
-      "type": "string",
-      "required": true
-    },
-    "modelType": {
-      "type": "string",
-      "required": true
-    },
-    "order": {
-      "type": "integer",
-      "required": false
-    },
-    "modelName": {
-      "type": "string",
-      "required": false
-    },
-    "caseSensitive": {
-      "type": "boolean",
-      "required": false
-    },
-    "trackStartStates": {
-      "type": "boolean",
-      "required": false
-    }
-  }
+	"name": "train",
+	"commandType": "external-method",
+	"modulePath": "textgen/index.js",
+	"methodName": "trainModel",
+	"parameters": {
+		"file": {
+			"type": "string",
+			"required": true
+		},
+		"modelType": {
+			"type": "string",
+			"required": true
+		},
+		"order": {
+			"type": "integer",
+			"required": false
+		},
+		"modelName": {
+			"type": "string",
+			"required": false
+		},
+		"caseSensitive": {
+			"type": "boolean",
+			"required": false
+		},
+		"trackStartStates": {
+			"type": "boolean",
+			"required": false
+		}
+	}
 }

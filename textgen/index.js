@@ -83,24 +83,24 @@ import { downloadGutenberg } from './sources/gutenberg.js';
 
 // Export the explicit API functions
 export default {
-  trainModel,
-  generateText,
-  deleteModelFile,
-  listAvailableModels,
-  listCorpusFiles,
-  searchGutenberg,
-  getGutenbergInfo,
-  downloadGutenberg
+	trainModel,
+	generateText,
+	deleteModelFile,
+	listAvailableModels,
+	listCorpusFiles,
+	searchGutenberg,
+	getGutenbergInfo,
+	downloadGutenberg,
 };
 
 // Also export individually for direct access
 export {
-  trainModel,
-  generateText,
-  deleteModelFile,
-  listAvailableModels,
-  listCorpusFiles,
-  searchGutenberg,
-  getGutenbergInfo,
-  downloadGutenberg
+	trainModel,
+	generateText,
+	deleteModelFile,
+	listAvailableModels,
+	listCorpusFiles,
+	searchGutenberg,
+	getGutenbergInfo,
+	downloadGutenberg,
 };

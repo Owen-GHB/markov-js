@@ -1,10 +1,10 @@
 {
-  "name": "randomize",
-  "commandType": "custom",
-  "parameters": {
-    "word": {
-      "type": "string",
-      "required": true
-    }
-  }
+	"name": "randomize",
+	"commandType": "custom",
+	"parameters": {
+		"word": {
+			"type": "string",
+			"required": true
+		}
+	}
 }

@@ -10,27 +10,27 @@ import { pluginLoader } from './utils/PluginLoader.js';
  * @returns {Promise<void>}
  */
 export async function launch(args, projectRoot) {
-  // Build unified configuration once at the beginning
-  const config = buildConfig(projectRoot);
-  const commandProcessor = new CommandProcessor(config, manifest);
-  
-  // Get the repl and cli plugins using the plugin loader
-  const replStart = await pluginLoader.getPluginMethod('repl', 'start');
-  const cliRun = await pluginLoader.getPluginMethod('cli', 'run');
-  
-  if (!replStart || !cliRun) {
-    console.error('❌ repl or cli plugin not found or invalid');
-    process.exit(1);
-  }
-  
-  // Default to REPL mode if no args or if args are application-specific
-  if (args.length === 0) {
-    // Default to REPL mode if no args
-    return replStart(config, commandProcessor);
-  } else {
-    // Check if we're being called directly with command line args
-    return cliRun(config, commandProcessor, args);
-  }
+	// Build unified configuration once at the beginning
+	const config = buildConfig(projectRoot);
+	const commandProcessor = new CommandProcessor(config, manifest);
+
+	// Get the repl and cli plugins using the plugin loader
+	const replStart = await pluginLoader.getPluginMethod('repl', 'start');
+	const cliRun = await pluginLoader.getPluginMethod('cli', 'run');
+
+	if (!replStart || !cliRun) {
+		console.error('❌ repl or cli plugin not found or invalid');
+		process.exit(1);
+	}
+
+	// Default to REPL mode if no args or if args are application-specific
+	if (args.length === 0) {
+		// Default to REPL mode if no args
+		return replStart(config, commandProcessor);
+	} else {
+		// Check if we're being called directly with command line args
+		return cliRun(config, commandProcessor, args);
+	}
 }
 
 // Note: This file is not meant to be run directly. Use main.js in the project root.
