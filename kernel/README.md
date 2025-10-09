@@ -11,17 +11,17 @@ Vertex provides a universal command processing system that works with any domain
 ```
 your-project/
 ├── kernel/                    # Generic command engine (copy once) - "Vertex"
-│   ├── plugins/              # Configurable plugin directory (configurable via config.json)
-│   │   ├── cli/               # CLI interface
-│   │   ├── repl/              # REPL interface
-│   │   ├── http/              # HTTP server and API
-│   │   ├── electron/          # Electron desktop application
-│   │   └── generator/         # UI generation system
 │   ├── utils/                 # Shared utilities
 │   ├── contract.js            # Contract loading and management
 │   ├── CommandHandler.js      # Core command processing
 │   ├── CommandProcessor.js    # Command pipeline with state management
 │   └── CommandParser.js       # Command parsing from user input
+├── external-plugins/          # Configurable plugin directory (configurable via config.json)
+│   ├── cli/                   # CLI interface
+│   ├── repl/                  # REPL interface
+│   ├── http/                  # HTTP server and API
+│   ├── electron/              # Electron desktop application
+│   └── generator/             # UI generation system
 ├── contract/                  # Your domain-specific commands
 │   ├── global.json            # Domain configuration
 │   └── [command-name]/        # Directory for each command
@@ -88,7 +88,7 @@ You can configure where plugins are loaded from in `kernel/config.json`:
 ```json
 {
 	"paths": {
-		"pluginsDir": "kernel/plugins" // or "external-plugins", "/absolute/path", etc.
+		"pluginsDir": "external-plugins" // or "kernel/plugins", "/absolute/path", etc.
 	}
 }
 ```
@@ -120,8 +120,8 @@ node main.js
 # Generate web UI
 node main.js --generate
 
-# Serve web UI and API
-node main.js --serve=3000
+# Serve web UI and API (uses --http which now serves both UI and API)
+node main.js --http=3000
 
 # Launch Electron app
 node main.js --electron
@@ -197,35 +197,26 @@ node main.js
 
 ### HTTP Transport
 
-RESTful API server with JSON endpoints:
-
-```bash
-# Start API server
-node main.js --http=8080
-
-# Make API calls
-GET http://localhost:8080?json={"name":"yourcommand","args":{"param":"value"}}
-POST http://localhost:8080 with JSON body
-```
-
-### HTTP Serve Transport
-
 HTTP server serving both web UI and API:
 
 ```bash
 # Start server with UI and API
-node main.js --serve=3000
+node main.js --http=8080
 
-# UI available at: http://localhost:3000/
-# API available at: http://localhost:3000/api
+# Make API calls
+GET http://localhost:8080?json={"name":"yourcommand","args":{"param":"value"}}
+POST http://localhost:8080/api with JSON body
+
+# UI available at: http://localhost:8080/
+# API available at: http://localhost:8080/api
 ```
 
 ### Electron Transport
 
 Desktop application with native UI. Uses dynamic kernel loading:
 
-- `kernel/plugins/electron/electron-main.js` - Entry point that dynamically loads kernel modules
-- `kernel/plugins/electron/KernelLoader.js` - Handles dynamic module loading at runtime
+- `external-plugins/electron/electron-main.js` - Entry point that dynamically loads kernel modules
+- `external-plugins/electron/KernelLoader.js` - Handles dynamic module loading at runtime
 
 ```bash
 # Launch Electron app
