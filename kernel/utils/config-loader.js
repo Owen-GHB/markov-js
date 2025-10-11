@@ -1,117 +1,91 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import PathResolver from './path-resolver.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 /**
  * Load configuration from file
- * @param {string} configFilePath - Path to configuration file
- * @returns {Object} Loaded configuration
  */
 function loadConfigFromFile(configFilePath) {
 	if (!fs.existsSync(configFilePath)) {
 		throw new Error(`Configuration file does not exist: ${configFilePath}`);
 	}
-
-	const configFile = fs.readFileSync(configFilePath, 'utf8');
-	return JSON.parse(configFile);
+	return JSON.parse(fs.readFileSync(configFilePath, 'utf8'));
 }
 
 /**
- * Build a complete configuration object with both file config and kernel-calculated paths
- * @param {string} configFilePath - Path to the config file to read
- * @param {string} projectRoot - The project root directory
- * @returns {Object} Complete configuration with resolved paths
+ * Build a complete configuration object with fully resolved paths
  */
 export function buildConfig(configFilePath, projectRoot) {
-	// Load raw kernel configuration from file (without path processing)
+	// Load raw kernel configuration
 	const rawKernelConfig = loadConfigFromFile(configFilePath);
 
-	// Load configuration for each enabled plugin and merge their paths
-	const allPluginPaths = {};
-	if (rawKernelConfig.plugins) {
-		for (const [pluginName, pluginConfig] of Object.entries(
-			rawKernelConfig.plugins,
-		)) {
-			if (pluginConfig.enabled) {
-				// Load plugin-specific config using the pluginsDir from kernel config
-				if (!rawKernelConfig.paths?.pluginsDir) {
-					throw new Error(
-						'pluginsDir must be defined in the kernel configuration',
-					);
-				}
-				const pluginsDir = rawKernelConfig.paths.pluginsDir;
-				const pluginConfigPath = path.join(
-					projectRoot,
-					pluginsDir,
-					pluginName,
-					'config.json',
-				);
-				if (fs.existsSync(pluginConfigPath)) {
-					try {
-						const pluginFileConfig = JSON.parse(
-							fs.readFileSync(pluginConfigPath, 'utf8'),
-						);
-						// If the plugin has specific paths, merge them
-						if (pluginFileConfig.paths) {
-							Object.assign(allPluginPaths, pluginFileConfig.paths);
+	// Calculate kernel directory (fixed relative to this file)
+	const kernelDir = path.join(__dirname, '..');
+
+	// Load plugin paths by scanning the plugins directory
+	const pluginPaths = {};
+	if (rawKernelConfig.paths?.pluginsDir) {
+		const pluginsDir = path.resolve(projectRoot, rawKernelConfig.paths.pluginsDir);
+		
+		// Scan the plugins directory for all plugin folders
+		if (fs.existsSync(pluginsDir)) {
+			try {
+				const pluginDirs = fs.readdirSync(pluginsDir).filter(item => {
+					const itemPath = path.join(pluginsDir, item);
+					return fs.statSync(itemPath).isDirectory();
+				});
+
+				// Load config for each discovered plugin
+				for (const pluginName of pluginDirs) {
+					const pluginConfigPath = path.join(pluginsDir, pluginName, 'config.json');
+					if (fs.existsSync(pluginConfigPath)) {
+						try {
+							const pluginFileConfig = JSON.parse(fs.readFileSync(pluginConfigPath, 'utf8'));
+							Object.assign(pluginPaths, pluginFileConfig.paths || {});
+						} catch (error) {
+							console.warn(`⚠️ Could not load config for plugin ${pluginName}:`, error.message);
 						}
-					} catch (error) {
-						console.warn(
-							`⚠️ Could not load config for plugin ${pluginName}:`,
-							error.message,
-						);
 					}
 				}
+			} catch (error) {
+				console.warn(`⚠️ Could not scan plugins directory ${pluginsDir}:`, error.message);
 			}
 		}
 	}
 
-	// Calculate kernel directory relative to this file's location
-	// This file is at kernel/utils/config-loader.js, so kernel dir is one level up
-	const calculatedKernelDir = path.join(__dirname, '..'); // Go up one level from utils/ to get kernel/
-
-	// Create path resolver with the raw config (combining kernel and plugin paths)
-	const combinedRawPaths = {
-		...allPluginPaths,
-		...rawKernelConfig.paths,
-		kernelDir: calculatedKernelDir, // Override with calculated kernel dir
+	// Merge all path sources
+	const allRawPaths = {
+		...pluginPaths,
+		...(rawKernelConfig.paths || {}),
 	};
 
-	const pathResolver = new PathResolver(projectRoot, {
-		paths: combinedRawPaths,
-	});
+	// Resolve EVERY path in the config against project root
+	const resolvedPaths = {};
+	for (const [key, value] of Object.entries(allRawPaths)) {
+		resolvedPaths[key] = value ? path.resolve(projectRoot, value) : null;
+	}
 
-	// Build complete paths using the path resolver
-	const resolvedPaths = {
-		configFilePath: configFilePath,
-		contextFilePath: pathResolver.getContextFilePath(),
-		replHistoryFilePath: pathResolver.getReplHistoryFilePath(),
-		contractDir: pathResolver.getContractDir(),
-		servedUIDir: pathResolver.getServedUIDir(),
-		electronPreloadPath: pathResolver.getElectronPreloadPath(),
-		kernelDir: calculatedKernelDir,
-		generatedUIDir: pathResolver.getGeneratedUIDir(),
-		templatesDir: pathResolver.getTemplatesDir(),
-		uiFilePath: pathResolver.getUIFilePath(),
-	};
+	// Add kernel-calculated paths (these override any config)
+	resolvedPaths.projectRoot = projectRoot;
+	resolvedPaths.kernelDir = kernelDir;
+	resolvedPaths.configFilePath = configFilePath;
 
-	// Combine all paths in the right order for overrides:
-	// 1. Plugin paths (defaults)
-	// 2. Kernel config paths (overrides plugin defaults)
-	// 3. Resolved paths (kernel-calculated, can be overridden by kernel config)
-	const combinedPaths = {
-		...allPluginPaths, // Plugin defaults first
-		...rawKernelConfig.paths, // Kernel config overrides take precedence
-		...resolvedPaths, // Resolved paths come after kernel config but can be overridden
-	};
+	// Add utility functions for dynamic paths
+	resolvedPaths.getContractManifestPath = (commandName) => 
+		resolvedPaths.contractDir ? path.join(resolvedPaths.contractDir, commandName, 'manifest.json') : null;
+	
+	resolvedPaths.getContractHandlerPath = (commandName) => 
+		resolvedPaths.contractDir ? path.join(resolvedPaths.contractDir, commandName, 'handler.js') : null;
+	
+	resolvedPaths.getUIFilePath = (filename = 'index.html') => 
+		resolvedPaths.generatedUIDir ? path.join(resolvedPaths.generatedUIDir, filename) : null;
 
-	// Build and return complete config object
+	// Return complete config
 	return {
 		...rawKernelConfig,
-		paths: combinedPaths,
+		paths: resolvedPaths,
 	};
 }
