@@ -121,7 +121,7 @@ node main.js
 node main.js --generate
 
 # Serve web UI and API (uses --http which now serves both UI and API)
-node main.js --http=3000
+node main.js --http
 
 # Launch Electron app
 node main.js --electron
@@ -201,7 +201,7 @@ HTTP server serving both web UI and API:
 
 ```bash
 # Start server with UI and API
-node main.js --http=8080
+node main.js --http
 
 # Make API calls
 GET http://localhost:8080?json={"name":"yourcommand","args":{"param":"value"}}

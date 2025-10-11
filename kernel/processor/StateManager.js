@@ -5,13 +5,7 @@ import path from 'path';
  * Manages persistent state for the application
  */
 export class StateManager {
-	constructor(paths, manifest) {
-		if (!paths || typeof paths !== 'object' || !paths.contextFilePath) {
-			throw new Error(
-				'StateManager requires a paths object with contextFilePath property',
-			);
-		}
-
+	constructor(manifest) {
 		// Validate manifest parameter
 		if (!manifest || typeof manifest !== 'object') {
 			throw new Error('StateManager requires a manifest object');
@@ -19,17 +13,16 @@ export class StateManager {
 
 		this.manifest = manifest;
 		this.state = new Map(Object.entries(this.manifest.stateDefaults || {}));
-		this.stateFilePath = paths.contextFilePath;
-		this.loadState();
+		// Don't load state in constructor, only when provided
 	}
 
 	/**
 	 * Load state from persistent storage
 	 */
-	loadState() {
+	loadState(contextFilePath = null) {
 		try {
-			if (fs.existsSync(this.stateFilePath)) {
-				const stateData = fs.readFileSync(this.stateFilePath, 'utf8');
+			if (contextFilePath && fs.existsSync(contextFilePath)) {
+				const stateData = fs.readFileSync(contextFilePath, 'utf8');
 				const savedState = JSON.parse(stateData);
 				if (savedState && typeof savedState === 'object') {
 					// Load only valid state keys from manifest defaults
@@ -60,10 +53,11 @@ export class StateManager {
 	/**
 	 * Save state to persistent storage
 	 */
-	saveState() {
+	saveState(contextFilePath = null) {
+		if (!contextFilePath) return; // Don't save if no file path provided
 		try {
 			// Ensure context directory exists
-			const contextDir = path.dirname(this.stateFilePath);
+			const contextDir = path.dirname(contextFilePath);
 			if (!fs.existsSync(contextDir)) {
 				fs.mkdirSync(contextDir, { recursive: true });
 			}
@@ -79,7 +73,7 @@ export class StateManager {
 			}
 
 			fs.writeFileSync(
-				this.stateFilePath,
+				contextFilePath,
 				JSON.stringify(stateToSave, null, 2),
 			);
 		} catch (error) {

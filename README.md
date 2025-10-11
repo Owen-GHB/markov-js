@@ -69,7 +69,7 @@ node main.js <command> [args...]
 node main.js --generate
 
 # Serve web UI and API (now serves both UI and API like old --serve)
-node main.js --http[=port]
+node main.js --http
 
 # Launch Electron application
 node main.js --electron
@@ -179,7 +179,7 @@ node main.js generate("model.json", prompt="The quick brown fox")
 node main.js --generate
 
 # Serve both UI and API
-node main.js --http=8080
+node main.js --http
 
 # Access at: http://localhost:8080/
 ```
@@ -195,7 +195,7 @@ node main.js --electron
 
 ```bash
 # Start HTTP server (serves both web UI and API)
-node main.js --http=8080
+node main.js --http
 
 # Call API with JSON command
 curl -X POST http://localhost:8080/api \

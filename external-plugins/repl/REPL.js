@@ -21,8 +21,8 @@ export class REPL {
 		// Extract paths from nested config object
 		const paths = config.paths || {};
 
-		// Use provided config with fallback defaults
-		const effectiveConfig = { repl: { maxHistory: 100 }, ...config };
+		// Use provided config with fallback defaults - only unnested format now
+		const effectiveConfig = { ...config };
 
 		// Use provided paths for file paths (configPath will be ignored since we now get config directly)
 		const historyFilePath =
@@ -30,7 +30,8 @@ export class REPL {
 			paths.contextFilePath ||
 			'context/repl-history.json';
 
-		this.maxHistory = effectiveConfig.repl?.maxHistory || 100;
+		// Use unnested maxHistory format only (no longer supports nested config.repl.maxHistory)
+		this.maxHistory = config.maxHistory || 100;
 		this.historyFilePath = historyFilePath;
 		this.loadHistory();
 	}

@@ -4,10 +4,10 @@ import fs from 'fs';
 import path from 'path';
 
 export class HTTPServer {
-	constructor(options = {}) {
-		this.port = options.port || 8080; // Will be overridden in start() if paths are provided
-		this.staticDir = options.staticDir || null; // Always configured to serve UI files
-		this.apiEndpoint = options.apiEndpoint || '/api';
+	constructor(config = {}) {
+		this.port = config.port || 8080;
+		this.staticDir = config.paths?.servedUIDir || null;
+		this.apiEndpoint = config.apiEndpoint || '/api';
 		this.commandProcessor = null; // Will be initialized in start method
 	}
 
@@ -26,25 +26,18 @@ export class HTTPServer {
 			);
 		}
 
-		// Extract paths from nested config object
+		// Extract paths from config object
 		const paths = config.paths || {};
-
-		// Check if required paths are provided
-		if (!paths.contextFilePath) {
-			throw new Error(
-				'config.paths must include contextFilePath for state management',
-			);
-		}
 
 		// Initialize command processor with unified config
 		this.commandProcessor = commandProcessor;
 
-		// Use provided config with fallback defaults
-		const effectiveConfig = { http: { port: 8080 }, ...config };
+		// Use provided config with fallback defaults - only unnested format now
+		const effectiveConfig = { ...config };
 
-		// Override port if provided in config
-		const effectivePort = this.port || effectiveConfig.http?.port || 8080;
-		const effectiveStaticDir = this.staticDir || paths.servedUIDir || null;
+		// Use unnested port format only (no longer supports nested config.http.port)
+		const effectivePort = this.port || config.port || 8080;
+		const effectiveStaticDir = this.staticDir || config.paths?.servedUIDir || null;
 
 		return new Promise((resolve, reject) => {
 			const server = http.createServer(async (req, res) => {

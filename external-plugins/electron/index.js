@@ -1,4 +1,8 @@
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Start the Electron plugin by launching electron-main.js via npx
@@ -17,13 +21,7 @@ export async function start(config, commandProcessor) {
 				config.paths?.kernelDir || path.join(projectRoot, 'kernel');
 
 			// Launch electron with the electron-main.js file and pass the required paths as arguments
-			const electronMainPath = path.join(
-				projectRoot,
-				'kernel',
-				'plugins',
-				'electron',
-				'electron-main.js',
-			);
+			const electronMainPath = path.join(__dirname, 'electron-main.js');
 			const npxProcess = spawn(
 				'npx',
 				[

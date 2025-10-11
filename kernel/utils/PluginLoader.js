@@ -1,16 +1,15 @@
 import fs from 'fs';
 import path from 'path';
 import { pathToFileURL } from 'url';
-import pathResolver from './path-resolver.js';
 
 /**
  * PluginLoader - A dynamic plugin loader with caching capabilities
  * Similar to handler loading but for transport plugins like stdio, http, electron
  */
 export class PluginLoader {
-	constructor() {
+	constructor(pluginsBaseDir) {
 		this.pluginCache = new Map(); // Cache plugins after loading
-		this.pluginsBaseDir = pathResolver.getPluginsDir(); // Use path resolver to get plugins directory
+		this.pluginsBaseDir = pluginsBaseDir;
 	}
 
 	/**
@@ -165,8 +164,5 @@ export class PluginLoader {
 	}
 }
 
-// Export singleton instance
-export const pluginLoader = new PluginLoader();
-
-// Also export the class for cases where multiple instances are needed
+// Export the class only - consumers need to create instances with the pluginsDir
 export default PluginLoader;

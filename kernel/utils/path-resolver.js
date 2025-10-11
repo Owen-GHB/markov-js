@@ -1,49 +1,25 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
-import fs from 'fs';
 
 /**
  * Centralized path resolver for the entire kernel
- * Provides consistent path resolution across all kernel modules
+ * Provides consistent path resolution based on provided base paths
  * Focuses on kernel-specific and project structure paths only
  */
-class KernelPathResolver {
-	constructor() {
-		// Determine the project root dynamically
-		// This file is at kernel/utils/path-resolver.js
-		const currentFileDir = path.dirname(fileURLToPath(import.meta.url)); // kernel/utils/
-		this.projectRoot = path.join(currentFileDir, '..'); // Go up 1 level to kernel/
-		this.projectRoot = path.join(this.projectRoot, '..'); // Go up 1 more level to project root
-
-		// Load configuration for path overrides
-		this.config = this.loadConfig();
-	}
-
+class PathResolver {
 	/**
-	 * Load configuration for path overrides
-	 * @returns {Object} Configuration object with path overrides
+	 * Creates a path resolver with the given project root and config
+	 * @param {string} projectRoot - The project root directory
+	 * @param {Object} rawConfig - The raw configuration object from config file
 	 */
-	loadConfig() {
-		// Use the hardcoded default config path to avoid circular dependency
-		const hardcodedConfigPath = path.join(
-			this.projectRoot,
-			'kernel',
-			'config.json',
-		);
-		try {
-			if (fs.existsSync(hardcodedConfigPath)) {
-				const configFile = fs.readFileSync(hardcodedConfigPath, 'utf8');
-				const loadedConfig = JSON.parse(configFile);
-				return loadedConfig;
-			}
-		} catch (error) {
-			console.warn(
-				'⚠️ Could not load config file for path overrides, using defaults:',
-				error.message,
-			);
-		}
-		// Return empty config if loading fails
-		return {};
+	constructor(projectRoot, rawConfig = {}) {
+		this.projectRoot = projectRoot;
+		this.config = rawConfig;
+
+		// Calculate kernel directory relative to this file's location
+		// This file is at kernel/utils/path-resolver.js, so kernel dir is the parent of utils/
+		const currentFileDir = path.dirname(fileURLToPath(import.meta.url)); // kernel/utils/
+		this.calculatedKernelDir = path.dirname(currentFileDir); // Go up one level from utils/ to get kernel/
 	}
 
 	/**
@@ -59,8 +35,7 @@ class KernelPathResolver {
 	 * @returns {string} Path to kernel directory
 	 */
 	getKernelDir() {
-		const configPath = this.config.paths?.kernelDir || 'kernel';
-		return path.join(this.projectRoot, configPath);
+		return this.calculatedKernelDir;
 	}
 
 	/**
@@ -222,18 +197,8 @@ class KernelPathResolver {
 	}
 }
 
-// Create a singleton instance
-const pathResolver = new KernelPathResolver();
+// Export the class for consumers to create instances with project root and config
+export default PathResolver;
 
-// Export individual path functions for direct import
-export const projectRoot = pathResolver.getProjectRoot();
-export const kernelDir = pathResolver.getKernelDir();
-export const contractDir = pathResolver.getContractDir();
-export const generatedUIDir = pathResolver.getGeneratedUIDir();
-export const servedUIDir = pathResolver.getServedUIDir();
-export const electronPreloadPath = pathResolver.getElectronPreloadPath();
-export const contextDir = pathResolver.getContextDir();
-export const templatesDir = pathResolver.getTemplatesDir();
-
-// Export the resolver instance for when more complex path operations are needed
-export default pathResolver;
+// Also export for direct import
+export { PathResolver };

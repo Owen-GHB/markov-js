@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import pathResolver from './path-resolver.js';
+import PathResolver from './path-resolver.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -37,24 +37,20 @@ function loadConfigFromFile(configFilePath, defaultConfig = {}) {
 export function buildConfig(projectRoot) {
 	const configFilePath = path.join(projectRoot, 'kernel', 'config.json');
 
-	// Load kernel configuration from file
-	const kernelConfig = loadConfigFromFile(configFilePath, {
-		http: { port: 8080 },
-		repl: { maxHistory: 100 },
+	// Load raw kernel configuration from file (without path processing)
+	const rawKernelConfig = loadConfigFromFile(configFilePath, {
 		paths: {
-			kernelDir: 'kernel',
 			contractDir: 'contract',
 			configDir: 'config',
 			contextDir: 'context',
 		},
-		plugins: {},
 	});
 
 	// Load configuration for each enabled plugin and merge their paths
 	const allPluginPaths = {};
-	if (kernelConfig.plugins) {
+	if (rawKernelConfig.plugins) {
 		for (const [pluginName, pluginConfig] of Object.entries(
-			kernelConfig.plugins,
+			rawKernelConfig.plugins,
 		)) {
 			if (pluginConfig.enabled) {
 				// Load plugin-specific config
@@ -85,7 +81,22 @@ export function buildConfig(projectRoot) {
 		}
 	}
 
-	// Build complete paths using path resolver and kernel config
+	// Calculate kernel directory relative to this file's location
+	// This file is at kernel/utils/config-loader.js, so kernel dir is one level up
+	const calculatedKernelDir = path.join(__dirname, '..'); // Go up one level from utils/ to get kernel/
+
+	// Create path resolver with the raw config (combining kernel and plugin paths)
+	const combinedRawPaths = {
+		...allPluginPaths,
+		...rawKernelConfig.paths,
+		kernelDir: calculatedKernelDir, // Override with calculated kernel dir
+	};
+
+	const pathResolver = new PathResolver(projectRoot, {
+		paths: combinedRawPaths,
+	});
+
+	// Build complete paths using the path resolver
 	const resolvedPaths = {
 		// Core paths that must be calculated by kernel
 		configFilePath: configFilePath,
@@ -96,7 +107,7 @@ export function buildConfig(projectRoot) {
 		electronPreloadPath: pathResolver.getElectronPreloadPath(),
 
 		// Use kernel config paths with kernel fallbacks
-		kernelDir: pathResolver.getKernelDir(),
+		kernelDir: calculatedKernelDir, // Use calculated kernel dir
 		generatedUIDir: pathResolver.getGeneratedUIDir(),
 		contextDir: pathResolver.getContextDir(),
 		templatesDir: pathResolver.getTemplatesDir(),
@@ -109,13 +120,13 @@ export function buildConfig(projectRoot) {
 	// 3. Resolved paths (kernel-calculated, can be overridden by kernel config)
 	const combinedPaths = {
 		...allPluginPaths, // Plugin defaults first
-		...kernelConfig.paths, // Kernel config overrides take precedence
+		...rawKernelConfig.paths, // Kernel config overrides take precedence
 		...resolvedPaths, // Resolved paths come after kernel config but can be overridden
 	};
 
 	// Build and return complete config object
 	return {
-		...kernelConfig,
+		...rawKernelConfig,
 		paths: combinedPaths,
 	};
 }

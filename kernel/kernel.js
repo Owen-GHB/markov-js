@@ -1,7 +1,7 @@
 import { buildConfig } from './utils/config-loader.js';
-import { manifest } from './contract.js';
+import { manifestReader } from './contract.js';
 import { CommandProcessor } from './processor/CommandProcessor.js';
-import { pluginLoader } from './utils/PluginLoader.js';
+import { PluginLoader } from './utils/PluginLoader.js';
 import path from 'path';
 
 /**
@@ -13,7 +13,11 @@ import path from 'path';
 export async function launch(args, projectRoot) {
 	// Build unified configuration once at the beginning
 	const config = buildConfig(projectRoot);
+	const manifest = manifestReader(config.paths.contractDir, projectRoot);
 	const commandProcessor = new CommandProcessor(config, manifest);
+
+	// Create plugin loader once for all plugin operations
+	const pluginLoader = new PluginLoader(config.paths.pluginsDir);
 
 	// Check if we should run in Electron
 	if (args.includes('--electron')) {
@@ -47,22 +51,7 @@ export async function launch(args, projectRoot) {
 			});
 	}
 	// Check if we should start HTTP server (now serves both UI and API, like old --serve)
-	else if (args.find((arg) => arg.startsWith('--http'))) {
-		const httpArg = args.find((arg) => arg.startsWith('--http'));
-
-		// Extract port if specified (format: --http=8080)
-		let port = 8080; // default port
-		if (httpArg.includes('=')) {
-			const portStr = httpArg.split('=')[1];
-			port = parseInt(portStr, 10);
-			if (isNaN(port) || port < 1 || port > 65535) {
-				console.error(
-					'❌ Invalid port number. Please specify a port between 1 and 65535',
-				);
-				process.exit(1);
-			}
-		}
-
+	else if (args.includes('--http')) {
 		// Get the HTTP plugin and start server that serves both UI and API
 		const httpPlugin = await pluginLoader.getPlugin('http');
 		if (!httpPlugin) {
@@ -70,11 +59,7 @@ export async function launch(args, projectRoot) {
 			process.exit(1);
 		}
 
-		return httpPlugin.start(config, commandProcessor, {
-			port: port,
-			staticDir: config.paths.servedUIDir, // Use path from unified config to serve UI
-			apiEndpoint: '/api', // API endpoint at /api
-		});
+		return httpPlugin.start(config, commandProcessor);
 	} else {
 		// For other kernel commands or to show help
 		console.log('Kernel command-line interface');

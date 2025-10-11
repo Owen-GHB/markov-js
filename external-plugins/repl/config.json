@@ -1,0 +1,7 @@
+{
+	"maxHistory": 100,
+	"paths": {
+		"contextFilePath": "context/state.json",
+		"replHistoryFilePath": "context/repl-history.json"
+	}
+}

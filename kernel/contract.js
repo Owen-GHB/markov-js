@@ -1,7 +1,6 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import pathResolver from './utils/path-resolver.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -9,21 +8,17 @@ const __dirname = path.dirname(__filename);
 // Synchronously load and cache all manifests at module initialization
 let contractCache = null;
 
-function initializeContractSync() {
+function initializeContractSync(contractDir, projectRoot) {
 	if (contractCache) {
 		return contractCache;
 	}
 
-	// Load global manifest from contract directory using path resolver
+	// Load global manifest from contract directory
 	const globalManifest = JSON.parse(
-		fs.readFileSync(
-			path.join(pathResolver.getContractDir(), 'global.json'),
-			'utf8',
-		),
+		fs.readFileSync(path.join(contractDir, 'global.json'), 'utf8'),
 	);
 
-	// Get all command directories from the contract folder using path resolver
-	const contractDir = pathResolver.getContractDir();
+	// Get all command directories from the contract folder
 	const items = fs.readdirSync(contractDir, { withFileTypes: true });
 	const commandDirs = items
 		.filter(
@@ -109,8 +104,7 @@ function initializeContractSync() {
 				mergedManifestSlice.commandType === 'external-method' &&
 				mergedManifestSlice.modulePath
 			) {
-				// Use the project root from the path resolver to resolve the module path
-				const projectRoot = pathResolver.getProjectRoot();
+				// Use the provided project root to resolve the module path
 				const absoluteModulePath = path.resolve(
 					projectRoot,
 					mergedManifestSlice.modulePath,
@@ -140,8 +134,8 @@ function initializeContractSync() {
 	return contractCache;
 }
 
-// Initialize the contract synchronously at module load time for manifest
-const { manifest } = initializeContractSync();
-
-// Export only the manifest (this is what the processors need)
-export { manifest };
+// Export manifestReader function that can be called with parameters
+export function manifestReader(contractDir, projectRoot) {
+	const { manifest } = initializeContractSync(contractDir, projectRoot);
+	return manifest;
+}

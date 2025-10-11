@@ -1,7 +1,7 @@
-import { manifest } from './contract.js';
+import { manifestReader } from './contract.js';
 import { buildConfig } from './utils/config-loader.js';
 import { CommandProcessor } from './processor/CommandProcessor.js';
-import { pluginLoader } from './utils/PluginLoader.js';
+import { PluginLoader } from './utils/PluginLoader.js';
 
 /**
  * Launch the hosted application (Markov text generator) with the given arguments and project root
@@ -12,9 +12,11 @@ import { pluginLoader } from './utils/PluginLoader.js';
 export async function launch(args, projectRoot) {
 	// Build unified configuration once at the beginning
 	const config = buildConfig(projectRoot);
+	const manifest = manifestReader(config.paths.contractDir, projectRoot);
 	const commandProcessor = new CommandProcessor(config, manifest);
 
-	// Get the repl and cli plugins using the plugin loader
+	// Create plugin loader once and get the repl and cli plugins
+	const pluginLoader = new PluginLoader(config.paths.pluginsDir);
 	const replStart = await pluginLoader.getPluginMethod('repl', 'start');
 	const cliRun = await pluginLoader.getPluginMethod('cli', 'run');
 

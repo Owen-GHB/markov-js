@@ -32,7 +32,10 @@ if (!projectRoot || !kernelPath) {
 		const config = await kernelLoader.buildConfig();
 
 		// Get manifest dynamically
-		const manifest = await kernelLoader.getManifest();
+		const manifest = await kernelLoader.getManifest(
+			config.paths.contractDir,
+			projectRoot,
+		);
 
 		// Create CommandProcessor dynamically
 		const commandProcessor = await kernelLoader.createCommandProcessor(

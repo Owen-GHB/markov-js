@@ -12,16 +12,7 @@ export class CommandProcessor {
 			throw new Error('CommandProcessor requires a config object');
 		}
 
-		// Validate paths within config
-		if (
-			!config.paths ||
-			typeof config.paths !== 'object' ||
-			!config.paths.contextFilePath
-		) {
-			throw new Error(
-				'CommandProcessor config requires paths object with contextFilePath property',
-			);
-		}
+
 
 		// Validate manifest parameter
 		if (!manifest || typeof manifest !== 'object') {
@@ -36,7 +27,7 @@ export class CommandProcessor {
 		}
 
 		this.manifest = manifest;
-		this.stateManager = new StateManager(config.paths, manifest);
+		this.stateManager = new StateManager(manifest);
 		this.parser = new CommandParser(manifest);
 		// Pass the full config to CommandHandler
 		this.handler = new CommandHandler(manifest, config); // Pass manifest and full config to CommandHandler

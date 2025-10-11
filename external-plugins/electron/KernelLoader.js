@@ -34,11 +34,13 @@ export class KernelLoader {
 
 	/**
 	 * Gets the manifest using the dynamic contract loader
+	 * @param {string} contractDir - The contract directory path
+	 * @param {string} projectRoot - The project root path
 	 * @returns {Promise<Object>} - The manifest
 	 */
-	async getManifest() {
-		const { manifest } = await this.importKernelModule('contract.js');
-		return manifest;
+	async getManifest(contractDir, projectRoot) {
+		const { manifestReader } = await this.importKernelModule('contract.js');
+		return manifestReader(contractDir, projectRoot);
 	}
 
 	/**
