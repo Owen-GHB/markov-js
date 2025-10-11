@@ -1,0 +1,25 @@
+<div
+	id="<%= command.name %>-form"
+	class="form-container"
+	data-command-form="<%= command.name %>"
+>
+	<h2><%= command.name %></h2>
+	<p><%= command.description || '' %></p>
+
+	<form class="command-form" data-command="<%= command.name %>">
+		<%- parameterFields %>
+
+		<button type="submit" class="btn btn-block"><%= formSubmitButton || 'Execute Command' %></button>
+	</form>
+
+	<% if (command.examples && command.examples.length > 0) { %>
+		<div class="command-examples">
+			<h4>Examples:</h4>
+			<ul>
+				<% command.examples.forEach(function(example) { %>
+					<li><pre><code><%- example %></code></pre></li>
+				<% }); %>
+			</ul>
+		</div>
+	<% } %>
+</div>

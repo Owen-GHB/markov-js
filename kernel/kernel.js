@@ -36,23 +36,23 @@ export async function launch(args, projectRoot) {
 
 		return electronPlugin.start(config, commandProcessor);
 	}
-	// Check if we should regenerate UI
-	else if (args.includes('--generate')) {
-		// Get the generator plugin and run it using the plugin loader
-		const generatorPlugin = await pluginLoader.getPlugin('generator');
-		if (!generatorPlugin) {
-			console.error('❌ Generator plugin not found or invalid');
+	// Check if we should regenerate UI with EJS templates
+	else if (args.includes('--generate-html')) {
+		// Get the generate-html plugin and run it using the plugin loader
+		const generateHtmlPlugin = await pluginLoader.getPlugin('generate-html');
+		if (!generateHtmlPlugin) {
+			console.error('❌ Generate-HTML plugin not found or invalid');
 			process.exit(1);
 		}
 
-		return generatorPlugin
+		return generateHtmlPlugin
 			.run(config, manifest, commandProcessor)
 			.then(() => {
-				console.log('✅ UI generation completed successfully!');
+				console.log('✅ EJS-based UI generation completed successfully!');
 				process.exit(0);
 			})
 			.catch((err) => {
-				console.error('❌ Failed to generate UI:', err.message);
+				console.error('❌ Failed to generate EJS-based UI:', err.message);
 				process.exit(1);
 			});
 	}
@@ -70,10 +70,8 @@ export async function launch(args, projectRoot) {
 		// For other kernel commands or to show help
 		console.log('Kernel command-line interface');
 		console.log('Available commands:');
-		console.log('  --generate             Generate UI from contracts');
-		console.log(
-			'  --http[=port]          Serve UI and API on specified port (default 8080)',
-		);
+		console.log('  --generate-html        Generate UI from contracts using EJS templates');
+		console.log('  --http          Serve UI and API on specified port (default 8080)');
 		console.log('  --electron             Launch Electron application');
 		process.exit(0);
 	}

@@ -1,0 +1,264 @@
+// File: templates/app.js.ejs
+
+// Client-side JavaScript for EJS-generated UI
+(function() {
+    'use strict';
+    
+    // Initialize state from global defaults
+    let state = <%- JSON.stringify(initialState, null, 2) %>;
+    
+    // Available commands
+    const commands = <%- JSON.stringify(commands, null, 2) %>;
+    
+    // Map of command manifests by name for quick lookup
+    const commandManifests = {};
+    commands.forEach(cmd => {
+        commandManifests[cmd.name] = cmd;
+    });
+    
+    // DOM elements
+    const commandSelector = document.getElementById('commandSelector');
+    const formsContainer = document.getElementById('formsContainer');
+    const resultsContainer = document.getElementById('resultsContainer');
+    const resultsContent = document.getElementById('resultsContent');
+    
+    // Show a specific form and hide others
+    function showForm(commandName) {
+        // Hide all forms
+        document.querySelectorAll('.form-container').forEach(form => {
+            form.classList.remove('active-form');
+        });
+        
+        // Show the selected form if it exists
+        if (commandName) {
+            const form = document.getElementById(commandName + '-form');
+            if (form) {
+                form.classList.add('active-form');
+            }
+        }
+    }
+    
+    // Handle command selection change
+    commandSelector.addEventListener('change', function(e) {
+        const commandName = e.target.value;
+        showForm(commandName);
+        
+        // Scroll to the form
+        if (commandName) {
+            const form = document.getElementById(commandName + '-form');
+            if (form) {
+                form.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+    });
+    
+    // Handle form submissions
+    document.addEventListener('submit', function(e) {
+        if (e.target.classList.contains('command-form')) {
+            e.preventDefault();
+            handleCommandSubmit(e.target);
+        }
+    });
+    
+    // Process a command form submission
+    async function handleCommandSubmit(form) {
+        const commandName = form.getAttribute('data-command');
+        if (!commandName) return;
+        
+        const cmdManifest = commandManifests[commandName];
+        if (!cmdManifest) {
+            showResults({ error: 'Command not found: ' + commandName }, 'error');
+            return;
+        }
+        
+        // Extract form data
+        const args = {};
+        const paramManifests = cmdManifest.parameters || {};
+        
+        for (const paramName in paramManifests) {
+            const param = paramManifests[paramName];
+            param.name = paramName;
+            
+            // Find the field within the current form
+            const field = form.querySelector('[data-param-name="' + param.name + '"]');
+            let value;
+            
+            if (field) {
+                // Extract value from the form field
+                if (field.type === 'checkbox') {
+                    value = field.checked;
+                } else if (field.type === 'number') {
+                    value = field.value ? Number(field.value) : (param.required ? 0 : undefined);
+                } else if (field.type === 'select-multiple') {
+                    // Handle multi-select
+                    const selectedOptions = Array.from(field.selectedOptions);
+                    value = selectedOptions.map(option => option.value);
+                } else {
+                    value = field.value !== undefined ? field.value : (field.textContent || field.innerText);
+                    
+                    // Handle array inputs (comma-separated values)
+                    if (param.type === 'array' && value) {
+                        value = value.split(',').map(v => v.trim()).filter(v => v);
+                    }
+                }
+            }
+            
+            // Apply runtime fallback only if the field value is empty/undefined and a fallback exists
+            if ((value === undefined || value === '' || value === null) && param.runtimeFallback && state[param.runtimeFallback] !== undefined) {
+                value = state[param.runtimeFallback];
+            }
+            
+            // For checkboxes, we should always include the value (true/false), otherwise only add to args if value exists and is not empty
+            if (field && field.type === 'checkbox') {
+                args[param.name] = value || false;
+            } else if (value !== undefined && value !== '' && value !== null) {
+                args[param.name] = value;
+            }
+        }
+        
+        // Prepare command object
+        const command = {
+            name: commandName,
+            args: args
+        };
+        
+        console.log('Executing command:', command);
+        
+        try {
+            // Execute the command
+            const result = await executeCommand(command);
+            
+            // Update state based on side effects
+            state = updateState(state, command, result, cmdManifest);
+            
+            // Show results
+            showResults(result, result.error ? 'error' : 'success');
+        } catch (error) {
+            showResults({ error: 'Execution Error: ' + error.message }, 'error');
+        }
+    }
+    
+    // Validate a command (simplified - would use actual validation in real implementation)
+    function validateCommand(command, cmdManifest) {
+        return {
+            isValid: true,
+            errors: []
+        };
+    }
+    
+    // Update state based on command side effects (simplified)
+    function updateState(state, command, result, cmdManifest) {
+        // This is a simplified version - in a real implementation, 
+        // you would use proper state management
+        return Object.assign({}, state);
+    }
+    
+    // API execution function that makes HTTP requests or uses Electron IPC
+    async function executeCommand(command) {
+        // More thorough check for Electron environment
+        const isElectron = window && window.electronAPI && typeof window.electronAPI.executeCommand === 'function';
+        
+        if (isElectron) {
+            // Use IPC to send command to main process
+            try {
+                const result = await window.electronAPI.executeCommand(command);
+                return result;
+            } catch (error) {
+                // Fallback to HTTP if IPC fails
+            }
+        }
+        
+        // Make HTTP API call to the /api endpoint (default behavior if not in Electron or if IPC failed)
+        try {
+            // First, try POST request with JSON body
+            const response = await fetch('/api', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    json: JSON.stringify(command)
+                })
+            });
+            
+            if (!response.ok) {
+                let errorText = 'HTTP Error: ' + response.status;
+                try {
+                    const errorData = await response.json();
+                    if (errorData.error) {
+                        errorText = errorData.error;
+                    }
+                } catch (e) {
+                    errorText = response.statusText || errorText;
+                }
+                throw new Error(errorText);
+            }
+            
+            const result = await response.json();
+            return result;
+        } catch (postError) {
+            // If POST fails, try GET request as fallback
+            try {
+                const urlParams = new URLSearchParams({
+                    json: JSON.stringify(command)
+                });
+                
+                const response = await fetch('/api?' + urlParams.toString());
+                
+                if (!response.ok) {
+                    let errorText = 'HTTP Error: ' + response.status;
+                    try {
+                        const errorData = await response.json();
+                        if (errorData.error) {
+                            errorText = errorData.error;
+                        }
+                    } catch (e) {
+                        errorText = response.statusText || errorText;
+                    }
+                    throw new Error(errorText);
+                }
+                
+                const result = await response.json();
+                return result;
+            } catch (getError) {
+                throw getError;
+            }
+        }
+    }
+    
+    // Show results in the results container
+    function showResults(result, type = 'success') {
+        resultsContainer.classList.remove('hidden', 'error', 'success');
+        
+        // Determine the appropriate type and content to display
+        if (result.error) {
+            resultsContainer.classList.add('error');
+            resultsContent.innerHTML = '<strong>Error:</strong><br><code>' + escapeHtml(result.error) + '</code>';
+        } else if (result.output) {
+            resultsContainer.classList.add('success');
+            // Format output, handling newlines properly
+            let formattedOutput = escapeHtml(result.output).replace(/\n/g, '<br>');
+            resultsContent.innerHTML = '<strong>Output:</strong><br><code>' + formattedOutput + '</code>';
+        } else {
+            // If no specific error or output, show the full result for debugging
+            resultsContainer.classList.add(type);
+            resultsContent.innerHTML = '<pre>' + JSON.stringify(result, null, 2) + '</pre>';
+        }
+    }
+    
+    // Escape HTML special characters to prevent XSS
+    function escapeHtml(str) {
+        if (typeof str !== 'string') return String(str);
+        return str
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#x27;');
+    }
+    
+    // Initialize - hide all forms initially
+    showForm('');
+    
+    console.log('EJS-generated UI initialized with', commands.length, 'commands');
+})();

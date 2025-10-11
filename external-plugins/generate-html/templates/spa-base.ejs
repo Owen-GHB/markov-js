@@ -3,23 +3,25 @@
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>{{HTML_TITLE}}</title>
-		{{CSS_PLACEHOLDER}}
+		<title><%= htmlTitle || 'Command Interface' %></title>
+		<link rel="stylesheet" href="app.css">
 	</head>
 	<body>
 		<div class="container">
 			<header>
-				<h1>{{PAGE_HEADER}}</h1>
+				<h1><%= pageHeader || 'Command Interface' %></h1>
 				<p>Execute commands through a web interface</p>
 			</header>
 
 			<div class="main-content">
 				<div class="sidebar">
 					<div>
-						<label for="commandSelector">{{COMMAND_SELECTOR_LABEL}}</label>
+						<label for="commandSelector"><%= commandSelectorLabel || 'Select Command:' %></label>
 						<select id="commandSelector" class="command-selector">
 							<option value="">Select a command...</option>
-							<!-- Command options will be populated by JavaScript -->
+							<% commands.forEach(function(cmd) { %>
+								<option value="<%= cmd.name %>"><%= cmd.name %></option>
+							<% }); %>
 						</select>
 					</div>
 				</div>
@@ -27,7 +29,7 @@
 				<div class="content">
 					<!-- Command forms will be inserted here -->
 					<div id="formsContainer">
-						<!-- Individual command forms will be populated by JavaScript -->
+						<%- commandForms %>
 					</div>
 
 					<div id="resultsContainer" class="results hidden">
@@ -38,9 +40,6 @@
 			</div>
 		</div>
 
-		<script>
-			// Embedded JavaScript for the UI
-			{{CLIENT_SIDE_JS}}
-		</script>
+		<script src="app.js"></script>
 	</body>
 </html>

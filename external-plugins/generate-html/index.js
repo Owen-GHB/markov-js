@@ -1,8 +1,8 @@
 import { UI } from './UI.js';
 
 /**
- * Generator plugin wrapper
- * Encapsulates the generator plugin instantiation and exposes functional interface
+ * EJS-based Generator plugin wrapper
+ * Encapsulates the EJS generator plugin instantiation and exposes functional interface
  */
 
 // Plugin instance (singleton)
@@ -20,14 +20,15 @@ function getGeneratorInstance() {
 }
 
 /**
- * Run the generator plugin
+ * Run the EJS-based generator plugin
  * @param {Object} config - Configuration object
  * @param {Object} manifest - Manifest object
+ * @param {Object} commandProcessor - CommandProcessor instance
  * @returns {Promise<void>}
  */
-export async function run(config, manifest) {
+export async function run(config, manifest, commandProcessor) {
 	const generator = getGeneratorInstance();
-	return await generator.run(config, manifest);
+	return await generator.run(config, manifest, commandProcessor);
 }
 
 /**

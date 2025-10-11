@@ -1,0 +1,72 @@
+<!-- File: templates/param-field.ejs -->
+
+<div class="form-group">
+    <label for="<%= param.name %>">
+        <%= param.name %><%= param.required ? ' *' : '' %>
+        <% if (param.description) { %>
+            <span class="param-description"><%= param.description %></span>
+        <% } %>
+    </label>
+    <%
+    // Determine the input type based on parameter configuration
+    if (param.enum) {
+        // Enum parameter - render as select dropdown
+    %>
+        <select name="<%= param.name %>" id="<%= param.name %>" data-param-name="<%= param.name %>" <%= param.required ? 'required' : '' %> <% if (param.description) { %>title="<%- param.description %>"<% } %>>
+            <% param.enum.forEach(function(option) { %>
+                <option value="<%= option %>" <%= (defaultValue !== undefined && option == defaultValue) ? 'selected' : '' %>><%= option %></option>
+            <% }); %>
+        </select>
+    <%
+    } else if (param.type === 'boolean') {
+        // Boolean parameter - render as checkbox
+    %>
+        <input type="checkbox" name="<%= param.name %>" id="<%= param.name %>" data-param-name="<%= param.name %>" <%= (defaultValue !== undefined && defaultValue === true) ? 'checked' : '' %> <% if (param.description) { %>title="<%- param.description %>"<% } %>>
+    <%
+    } else if (param.type === 'integer' || param.type === 'number') {
+        // Number parameter - render as number input
+    %>
+        <input type="number" name="<%= param.name %>" id="<%= param.name %>" data-param-name="<%= param.name %>" 
+            <% if (defaultValue !== undefined) { %>value="<%- defaultValue %>"<% } %> 
+            <%= param.required ? 'required' : '' %> 
+            <% if (param.min !== undefined) { %>min="<%- param.min %>"<% } %> 
+            <% if (param.max !== undefined) { %>max="<%- param.max %>"<% } %> 
+            <% if (param.description) { %>title="<%- param.description %>"<% } %>>
+    <%
+    } else if (param.type === 'array') {
+        // Array parameter - text input with comma-separated values
+        let arrayValue = '';
+        if (defaultValue !== undefined) {
+            if (Array.isArray(defaultValue)) {
+                arrayValue = defaultValue.join(', ');
+            } else {
+                arrayValue = String(defaultValue);
+            }
+        }
+    %>
+        <input type="text" name="<%= param.name %>" id="<%= param.name %>" data-param-name="<%= param.name %>" 
+            <% if (arrayValue) { %>value="<%- arrayValue %>"<% } %> 
+            <%= param.required ? 'required' : '' %> 
+            <% if (param.description) { %>title="<%- param.description %>"<% } %>>
+        <div class="array-format-help">Enter comma-separated values (e.g., value1, value2, value3)</div>
+    <%
+    } else if (param.description && param.description.length > 100) {
+        // Long description - use textarea
+    %>
+        <textarea name="<%= param.name %>" id="<%= param.name %>" data-param-name="<%= param.name %>" 
+            <%= param.required ? 'required' : '' %> 
+            <% if (param.description) { %>title="<%- param.description %>"<% } %>>
+            <% if (defaultValue !== undefined) { %><%- defaultValue %><% } %>
+        </textarea>
+    <%
+    } else {
+        // Default - string input
+    %>
+        <input type="text" name="<%= param.name %>" id="<%= param.name %>" data-param-name="<%= param.name %>" 
+            <% if (defaultValue !== undefined) { %>value="<%- defaultValue %>"<% } %> 
+            <%= param.required ? 'required' : '' %> 
+            <% if (param.description) { %>title="<%- param.description %>"<% } %>>
+    <%
+    }
+    %>
+</div>
