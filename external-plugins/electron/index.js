@@ -21,7 +21,6 @@ export async function start(config, commandProcessor) {
 			if (!kernelDir) {
 			throw new Error('kernelDir must be provided in config.paths by the path resolver');
 			}
-			const kernelPath = path.join(projectRoot, kernelDir);
 
 
 			// Launch electron with the electron-main.js file and pass the required paths as arguments
@@ -34,7 +33,7 @@ export async function start(config, commandProcessor) {
 					'--project-root',
 					projectRoot,
 					'--kernel-path',
-					kernelPath,
+					kernelDir,
 				],
 				{
 					stdio: 'inherit',
