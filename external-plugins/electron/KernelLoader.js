@@ -29,7 +29,8 @@ export class KernelLoader {
 		const { buildConfig } = await this.importKernelModule(
 			'utils/config-loader.js',
 		);
-		return buildConfig(this.projectRoot);
+		const configFilePath = path.join(this.kernelPath, 'config.json');
+		return buildConfig(configFilePath, this.projectRoot);
 	}
 
 	/**

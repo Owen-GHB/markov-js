@@ -1,12 +1,6 @@
 {
 	"paths": {
 		"contractDir": "contract",
-		"generatedUIDir": "generated-ui",
-		"servedUIDir": "generated-ui",
-		"configDir": "config",
-		"contextDir": "context",
-		"templatesDir": "templates",
-		"pluginsDir": "external-plugins",
-		"electronPreloadPath": "electron-preload.js"
+		"pluginsDir": "external-plugins"
 	}
 }

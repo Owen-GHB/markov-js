@@ -43,8 +43,12 @@ class PathResolver {
 	 * @returns {string} Path to contract directory
 	 */
 	getContractDir() {
-		const configPath = this.config.paths?.contractDir || 'contract';
-		return path.join(this.projectRoot, configPath);
+		if (!this.config.paths?.contractDir) {
+			throw new Error(
+				'contractDir must be defined in the kernel configuration',
+			);
+		}
+		return path.join(this.projectRoot, this.config.paths.contractDir);
 	}
 
 	/**
@@ -107,40 +111,22 @@ class PathResolver {
 	}
 
 	/**
-	 * Get the path to the config directory
-	 * @returns {string} Path to config directory
-	 */
-	getConfigDir() {
-		const configPath = this.config.paths?.configDir || 'config';
-		return path.join(this.projectRoot, configPath);
-	}
-
-	/**
-	 * Get the path to a specific config file
-	 * @param {string} filename - The config filename (default: 'config.json' for kernel config)
-	 * @returns {string} Path to the config file
-	 */
-	getConfigFilePath(filename = 'config.json') {
-		// For kernel config, always use the kernel directory
-		return path.join(this.projectRoot, 'kernel', filename);
-	}
-
-	/**
-	 * Get the path to the context directory
-	 * @returns {string} Path to context directory
-	 */
-	getContextDir() {
-		const configPath = this.config.paths?.contextDir || 'context';
-		return path.join(this.projectRoot, configPath);
-	}
-
-	/**
-	 * Get the path to a specific context file
-	 * @param {string} filename - The context filename
+	 * Get the path to the specified context file
 	 * @returns {string} Path to the context file
 	 */
-	getContextFilePath(filename) {
-		return path.join(this.getContextDir(), filename);
+	getContextFilePath() {
+		const configPath = this.config.paths?.contextFilePath || 'context/state.json';
+		return path.join(this.projectRoot, configPath);
+	}
+
+	/**
+	 * Get the path to the REPL history file
+	 * @returns {string} Path to the REPL history file
+	 */
+	getReplHistoryFilePath() {
+		const configPath =
+			this.config.paths?.replHistoryFilePath || 'context/repl-history.json';
+		return path.join(this.projectRoot, configPath);
 	}
 
 	/**
@@ -173,11 +159,7 @@ class PathResolver {
 			generatedUIDir: this.getGeneratedUIDir(),
 			servedUIDir: this.getServedUIDir(),
 			electronPreloadPath: this.getElectronPreloadPath(),
-			configDir: this.getConfigDir(),
-			contextDir: this.getContextDir(),
 			templatesDir: this.getTemplatesDir(),
-			// Include some example paths with common filenames
-			configFilePath: this.getConfigFilePath(),
 			uiFilePath: this.getUIFilePath(),
 			templatesDirPath: this.getTemplatesDir(),
 		};
@@ -188,7 +170,10 @@ class PathResolver {
 	 * @returns {string} Path to plugins directory
 	 */
 	getPluginsDir() {
-		const configPath = this.config.paths?.pluginsDir || 'kernel/plugins';
+		if (!this.config.paths?.pluginsDir) {
+			throw new Error('pluginsDir must be defined in the kernel configuration');
+		}
+		const configPath = this.config.paths.pluginsDir;
 		// If it's an absolute path, return as-is; otherwise resolve relative to project root
 		if (path.isAbsolute(configPath)) {
 			return configPath;

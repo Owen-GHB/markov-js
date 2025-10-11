@@ -2,7 +2,6 @@
 	"port": 8080,
 	"apiEndpoint": "/api",
 	"paths": {
-		"servedUIDir": "generated-ui",
-		"contextDir": "context"
+		"servedUIDir": "generated-ui"
 	}
 }

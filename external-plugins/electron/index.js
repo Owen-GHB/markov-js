@@ -17,8 +17,12 @@ export async function start(config, commandProcessor) {
 		.then(({ spawn }) => {
 			// Get the project root and kernel path from the config
 			const projectRoot = process.cwd(); // Use current working directory as project root
-			const kernelPath =
-				config.paths?.kernelDir || path.join(projectRoot, 'kernel');
+			const kernelDir = config.paths?.kernelDir;
+			if (!kernelDir) {
+			throw new Error('kernelDir must be provided in config.paths by the path resolver');
+			}
+			const kernelPath = path.join(projectRoot, kernelDir);
+
 
 			// Launch electron with the electron-main.js file and pass the required paths as arguments
 			const electronMainPath = path.join(__dirname, 'electron-main.js');

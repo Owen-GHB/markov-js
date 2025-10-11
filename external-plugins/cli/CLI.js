@@ -25,6 +25,7 @@ export class CLI {
 		}
 		this.processor = commandProcessor;
 		this.contextFilePath = paths.contextFilePath;
+		if (this.contextFilePath) this.processor.stateManager.loadState(this.contextFilePath);
 	}
 
 	/**

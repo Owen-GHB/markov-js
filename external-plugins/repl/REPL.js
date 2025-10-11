@@ -21,9 +21,6 @@ export class REPL {
 		// Extract paths from nested config object
 		const paths = config.paths || {};
 
-		// Use provided config with fallback defaults - only unnested format now
-		const effectiveConfig = { ...config };
-
 		// Use provided paths for file paths (configPath will be ignored since we now get config directly)
 		const historyFilePath =
 			paths.replHistoryFilePath ||
@@ -64,6 +61,7 @@ export class REPL {
 		// Initialize command processor
 		this.processor = commandProcessor;
 		this.contextFilePath = paths.contextFilePath;
+		if (this.contextFilePath) this.processor.stateManager.loadState(this.contextFilePath);
 
 		// Initialize with provided path and config values at the beginning of start
 		await this.initialize(config);

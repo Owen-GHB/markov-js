@@ -108,7 +108,7 @@ export class CommandProcessor {
 				);
 				if (commandSpec) {
 					this.stateManager.applySideEffects(command, commandSpec);
-					this.stateManager.saveState();
+					this.stateManager.saveState(contextFilePath);
 				}
 			}
 			return result;
@@ -310,7 +310,7 @@ export class CommandProcessor {
 				);
 				if (commandSpec) {
 					this.stateManager.applySideEffects(command, commandSpec);
-					this.stateManager.saveState();
+					this.stateManager.saveState(contextFilePath);
 				}
 			}
 

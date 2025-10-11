@@ -7,44 +7,28 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 /**
- * Load configuration from file with fallback to defaults
+ * Load configuration from file
  * @param {string} configFilePath - Path to configuration file
- * @param {Object} defaultConfig - Default configuration values
- * @returns {Object} Loaded configuration merged with defaults
+ * @returns {Object} Loaded configuration
  */
-function loadConfigFromFile(configFilePath, defaultConfig = {}) {
-	let config = { ...defaultConfig };
-	try {
-		if (fs.existsSync(configFilePath)) {
-			const configFile = fs.readFileSync(configFilePath, 'utf8');
-			const loadedConfig = JSON.parse(configFile);
-			config = { ...config, ...loadedConfig };
-		}
-	} catch (error) {
-		console.warn(
-			'⚠️ Could not load config file, using defaults:',
-			error.message,
-		);
+function loadConfigFromFile(configFilePath) {
+	if (!fs.existsSync(configFilePath)) {
+		throw new Error(`Configuration file does not exist: ${configFilePath}`);
 	}
-	return config;
+
+	const configFile = fs.readFileSync(configFilePath, 'utf8');
+	return JSON.parse(configFile);
 }
 
 /**
  * Build a complete configuration object with both file config and kernel-calculated paths
+ * @param {string} configFilePath - Path to the config file to read
  * @param {string} projectRoot - The project root directory
  * @returns {Object} Complete configuration with resolved paths
  */
-export function buildConfig(projectRoot) {
-	const configFilePath = path.join(projectRoot, 'kernel', 'config.json');
-
+export function buildConfig(configFilePath, projectRoot) {
 	// Load raw kernel configuration from file (without path processing)
-	const rawKernelConfig = loadConfigFromFile(configFilePath, {
-		paths: {
-			contractDir: 'contract',
-			configDir: 'config',
-			contextDir: 'context',
-		},
-	});
+	const rawKernelConfig = loadConfigFromFile(configFilePath);
 
 	// Load configuration for each enabled plugin and merge their paths
 	const allPluginPaths = {};
@@ -53,11 +37,16 @@ export function buildConfig(projectRoot) {
 			rawKernelConfig.plugins,
 		)) {
 			if (pluginConfig.enabled) {
-				// Load plugin-specific config
+				// Load plugin-specific config using the pluginsDir from kernel config
+				if (!rawKernelConfig.paths?.pluginsDir) {
+					throw new Error(
+						'pluginsDir must be defined in the kernel configuration',
+					);
+				}
+				const pluginsDir = rawKernelConfig.paths.pluginsDir;
 				const pluginConfigPath = path.join(
 					projectRoot,
-					'kernel',
-					'plugins',
+					pluginsDir,
 					pluginName,
 					'config.json',
 				);
@@ -98,18 +87,14 @@ export function buildConfig(projectRoot) {
 
 	// Build complete paths using the path resolver
 	const resolvedPaths = {
-		// Core paths that must be calculated by kernel
 		configFilePath: configFilePath,
-		contextFilePath: pathResolver.getContextFilePath('state.json'),
-		replHistoryFilePath: pathResolver.getContextFilePath('repl-history.json'),
+		contextFilePath: pathResolver.getContextFilePath(),
+		replHistoryFilePath: pathResolver.getReplHistoryFilePath(),
 		contractDir: pathResolver.getContractDir(),
 		servedUIDir: pathResolver.getServedUIDir(),
 		electronPreloadPath: pathResolver.getElectronPreloadPath(),
-
-		// Use kernel config paths with kernel fallbacks
-		kernelDir: calculatedKernelDir, // Use calculated kernel dir
+		kernelDir: calculatedKernelDir,
 		generatedUIDir: pathResolver.getGeneratedUIDir(),
-		contextDir: pathResolver.getContextDir(),
 		templatesDir: pathResolver.getTemplatesDir(),
 		uiFilePath: pathResolver.getUIFilePath(),
 	};

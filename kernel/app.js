@@ -1,7 +1,12 @@
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { manifestReader } from './contract.js';
 import { buildConfig } from './utils/config-loader.js';
 import { CommandProcessor } from './processor/CommandProcessor.js';
 import { PluginLoader } from './utils/PluginLoader.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Launch the hosted application (Markov text generator) with the given arguments and project root
@@ -11,7 +16,9 @@ import { PluginLoader } from './utils/PluginLoader.js';
  */
 export async function launch(args, projectRoot) {
 	// Build unified configuration once at the beginning
-	const config = buildConfig(projectRoot);
+	// Calculate config path relative to this file's location (app.js is in kernel/ dir)
+	const configFilePath = path.join(__dirname, 'config.json');
+	const config = buildConfig(configFilePath, projectRoot);
 	const manifest = manifestReader(config.paths.contractDir, projectRoot);
 	const commandProcessor = new CommandProcessor(config, manifest);
 
