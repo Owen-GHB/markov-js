@@ -1,7 +1,7 @@
 {
 	"name": "pgb_info",
 	"commandType": "external-method",
-	"modulePath": "textgen/index.js",
+	"source": "textgen",
 	"methodName": "getGutenbergInfo",
 	"parameters": {
 		"id_or_title": {

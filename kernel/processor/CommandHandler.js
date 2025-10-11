@@ -26,9 +26,11 @@ export class CommandHandler {
 		}
 
 		this.manifest = manifest;
+		this.config = config;
 		this.contractDir = config.paths.contractDir;
-		// Initialize handler cache for custom command handlers
-		this.handlerCache = new Map();
+		
+		// Initialize dependency cache for shared module instances
+		this.dependencyCache = new Map();
 	}
 
 	/**
@@ -38,7 +40,7 @@ export class CommandHandler {
 	 */
 	async handleCommand(command) {
 		if (!command) return;
-		let result;
+		
 		try {
 			// Get the command specification from the manifest
 			const commandSpec = this.manifest.commands.find(
@@ -52,53 +54,26 @@ export class CommandHandler {
 				};
 			}
 
-			// Handle internal commands declaratively when possible
+			// Handle internal commands declaratively
 			if (commandSpec.commandType === 'internal') {
-				// Check if this is a fully declarative internal command
-				if (commandSpec.successOutput) {
-					// Handle declaratively without calling custom handler
-					return this.handleInternalCommand(command, commandSpec);
-				}
-				// Fall back to custom handler for internal commands that need special logic
+				return this.handleInternalCommand(command, commandSpec);
 			}
 
-			// Handle external-method commands - auto-handle directly without custom handler lookup
+			// Handle external-method commands using dependency system
 			if (commandSpec.commandType === 'external-method') {
-				// Auto-handle external-method command if it has modulePath and methodName
-				if (commandSpec.modulePath && commandSpec.methodName) {
-					return await this.handleExternalMethod(command, commandSpec);
-				} else {
-					return {
-						error: `External-method command '${command.name}' missing modulePath or methodName in manifest`,
-						output: null,
-					};
-				}
+				return await this.handleExternalMethod(command, commandSpec);
 			}
 
-			// Handle custom commands - look for custom handler files
-			const handlerFunction = await this.getHandler(command.name);
-
-			if (handlerFunction && typeof handlerFunction === 'function') {
-				// Call the handler function directly with the command arguments
-				result = await handlerFunction(command.args);
-			} else if (handlerFunction) {
-				result = {
-					error: `Handler for command '${command.name}' is not a function`,
-					output: null,
-				};
-			} else {
-				result = {
-					error: `Unknown command: ${command.name}`,
-					output: null,
-				};
-			}
-			return result;
+			// If we get here, it's an unknown command type
+			return {
+				error: `Unknown command type '${commandSpec.commandType}' for command '${command.name}'`,
+				output: null,
+			};
 		} catch (error) {
-			result = {
+			return {
 				error: `Error processing command: ${error.message}`,
 				output: null,
 			};
-			return result;
 		}
 	}
 
@@ -140,7 +115,51 @@ export class CommandHandler {
 	}
 
 	/**
-	 * Handle an external-method command automatically
+	 * Get or load a dependency module
+	 * @param {string} dependencySpec - The dependency name from global.json
+	 * @returns {Promise<Object>} - The loaded module
+	 */
+	async getDependency(dependencySpec) {
+		// Check if dependency is already cached
+		if (this.dependencyCache.has(dependencySpec)) {
+			return this.dependencyCache.get(dependencySpec);
+		}
+
+		// Look up the dependency path in global manifest
+		const dependencyPath = this.manifest.dependencies?.[dependencySpec];
+		
+		if (!dependencyPath) {
+			throw new Error(`Dependency '${dependencySpec}' not found in global.json`);
+		}
+
+		// Resolve the dependency path relative to project root if it's a local path
+		let resolvedPath;
+		if (dependencyPath.startsWith('./') || dependencyPath.startsWith('../')) {
+			// Local path - resolve relative to project root
+			const projectRoot = this.config.paths?.projectRoot;
+			if (!projectRoot) {
+				throw new Error(`Cannot resolve local dependency '${dependencySpec}': projectRoot not available`);
+			}
+			resolvedPath = path.resolve(projectRoot, dependencyPath);
+		} else {
+			// npm package - use as-is (Node.js will resolve it)
+			resolvedPath = dependencyPath;
+		}
+
+		// Convert to file URL for proper ES module loading
+		const moduleUrl = pathToFileURL(resolvedPath).href;
+
+		// Dynamically import the module using Node.js native resolution
+		const module = await import(moduleUrl);
+
+		// Cache the module for future use
+		this.dependencyCache.set(dependencySpec, module);
+
+		return module;
+	}
+
+	/**
+	 * Handle an external-method command using dependency resolution with caching
 	 * @param {Object} command - The parsed command object
 	 * @param {Object} commandSpec - The command manifest specification
 	 * @returns {Promise<Object>} - The result of the command
@@ -149,29 +168,32 @@ export class CommandHandler {
 		const { args = {} } = command;
 
 		try {
-			// Use the pre-resolved absolute path from the manifest
-			const resolvedModulePath =
-				commandSpec.resolvedAbsolutePath || commandSpec.modulePath;
-
-			// Convert to file URL for proper ES module loading
-			const moduleUrl = pathToFileURL(resolvedModulePath).href;
-
-			// Dynamically import the module
-			const module = await import(moduleUrl);
-
-			// Get the method from the module
-			const method = module[commandSpec.methodName];
-
-			if (typeof method !== 'function') {
+			// Get the dependency spec from the command manifest
+			const dependencySpec = commandSpec.source;
+			
+			if (!dependencySpec) {
 				return {
-					error: `Method '${commandSpec.methodName}' not found or is not a function in module '${resolvedModulePath}'`,
+					error: `External-method command '${commandSpec.name}' missing 'source' property in manifest`,
 					output: null,
 				};
 			}
 
-			// Call the method with the command arguments, wrap in try-catch to handle
-			// plain return values and thrown errors - all domain functions should now
-			// return plain values or throw errors directly
+			// Get the module from cache or load it
+			const module = await this.getDependency(dependencySpec);
+
+			// Get the method from the module
+			const method = module[commandSpec.methodName];
+
+			// Check if method exists with better error reporting
+			if (typeof method !== 'function') {
+				const availableMethods = Object.keys(module).filter(key => typeof module[key] === 'function');
+				return {
+					error: `Method '${commandSpec.methodName}' not found in dependency '${dependencySpec}'. Available methods: ${availableMethods.join(', ') || 'none'}`,
+					output: null,
+				};
+			}
+
+			// Call the method with the command arguments
 			try {
 				const result = await method(args);
 				// Treat the result as success output
@@ -188,7 +210,7 @@ export class CommandHandler {
 			}
 		} catch (error) {
 			return {
-				error: `Failed to execute external method '${commandSpec.methodName}' from '${resolvedModulePath}': ${error.message}`,
+				error: `Failed to execute external method '${commandSpec.methodName}' from dependency '${commandSpec.source}': ${error.message}`,
 				output: null,
 			};
 		}
@@ -215,105 +237,25 @@ export class CommandHandler {
 	}
 
 	/**
-	 * Get or load a handler for a specific command
-	 * @param {string} commandName - The command name to get handler for
-	 * @returns {Function|null} - The handler function or null if not found
+	 * Get cached dependency count (for debugging/monitoring)
+	 * @returns {number} - Number of cached dependencies
 	 */
-	async getHandler(commandName) {
-		// Check if handler is already cached
-		if (this.handlerCache.has(commandName)) {
-			return this.handlerCache.get(commandName);
-		}
+	getCachedDependencyCount() {
+		return this.dependencyCache.size;
+	}
 
-		// Find the command in the manifest to locate its directory
-		const commandSpec = this.manifest.commands.find(
-			(c) => c.name === commandName,
-		);
-		if (!commandSpec) {
-			console.warn(
-				`Warning: Could not find command ${commandName} in manifest`,
-			);
-			return null;
-		}
+	/**
+	 * Get list of cached dependencies (for debugging/monitoring)
+	 * @returns {string[]} - Array of cached dependency names
+	 */
+	getCachedDependencies() {
+		return Array.from(this.dependencyCache.keys());
+	}
 
-		try {
-			// Build the handler file path using the stored contractDir
-			const handlerPath = path.join(
-				this.contractDir,
-				commandName,
-				'handler.js',
-			);
-
-			// Check if the handler file exists
-			if (!fs.existsSync(handlerPath)) {
-				console.warn(`Warning: Handler file not found at: ${handlerPath}`);
-				return null;
-			}
-
-			// Convert to file URL for proper ES module loading
-			const moduleUrl = pathToFileURL(handlerPath).href;
-
-			// Dynamically import the handler module
-			const handlerModule = await import(moduleUrl);
-
-			let handlerFunction = null;
-
-			// Check if it exports a default function (modern approach)
-			if (
-				handlerModule.default &&
-				typeof handlerModule.default === 'function'
-			) {
-				handlerFunction = handlerModule.default;
-			}
-			// Check if it exports a class with a method (legacy approach for backward compatibility)
-			else {
-				for (const key of Object.keys(handlerModule)) {
-					const HandlerClass = handlerModule[key];
-					if (
-						HandlerClass &&
-						typeof HandlerClass === 'function' &&
-						HandlerClass.name &&
-						HandlerClass.name.endsWith('Handler')
-					) {
-						const handlerInstance = new HandlerClass();
-						// Try to find the appropriate method name based on command name
-						const methodName =
-							'handle' +
-							commandName.charAt(0).toUpperCase() +
-							commandName
-								.slice(1)
-								.replace(/_([a-z])/g, (match, letter) => letter.toUpperCase())
-								.replace(/([A-Z])/g, (match, letter, index) =>
-									index === 0 ? letter.toLowerCase() : letter,
-								);
-
-						if (typeof handlerInstance[methodName] === 'function') {
-							// Create a wrapper function that calls the method
-							handlerFunction = async (args) => {
-								return await handlerInstance[methodName](args);
-							};
-							break;
-						}
-					}
-				}
-			}
-
-			if (!handlerFunction) {
-				console.warn(
-					`Warning: Handler for ${commandName} does not export a default function or compatible class method`,
-				);
-				return null;
-			}
-
-			// Cache the handler for future use
-			this.handlerCache.set(commandName, handlerFunction);
-			return handlerFunction;
-		} catch (error) {
-			console.warn(
-				`Warning: Could not load handler from ${commandName}/handler.js:`,
-				error.message,
-			);
-			return null;
-		}
+	/**
+	 * Clear the dependency cache (useful for development/reloading)
+	 */
+	clearCache() {
+		this.dependencyCache.clear();
 	}
 }

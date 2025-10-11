@@ -37,3 +37,4 @@ generated-ui/
 context/
 concat.py
 kernel/stuff.py
+external-plugins/stuff.py

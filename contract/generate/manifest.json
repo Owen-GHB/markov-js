@@ -1,7 +1,7 @@
 {
 	"name": "generate",
 	"commandType": "external-method",
-	"modulePath": "textgen/index.js",
+	"source": "textgen",
 	"methodName": "generateText",
 	"parameters": {
 		"modelName": {

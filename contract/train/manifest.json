@@ -1,7 +1,7 @@
 {
 	"name": "train",
 	"commandType": "external-method",
-	"modulePath": "textgen/index.js",
+	"source": "textgen",
 	"methodName": "trainModel",
 	"parameters": {
 		"file": {

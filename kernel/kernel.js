@@ -34,19 +34,19 @@ export async function launch(args, projectRoot) {
 			process.exit(1);
 		}
 
-		return electronPlugin.start(config, commandProcessor);
+		return electronPlugin.start(config.electron, commandProcessor);
 	}
 	// Check if we should regenerate UI with EJS templates
-	else if (args.includes('--generate-html')) {
+	else if (args.includes('--generate')) {
 		// Get the generate-html plugin and run it using the plugin loader
-		const generateHtmlPlugin = await pluginLoader.getPlugin('generate-html');
+		const generateHtmlPlugin = await pluginLoader.getPlugin('generate');
 		if (!generateHtmlPlugin) {
 			console.error('❌ Generate-HTML plugin not found or invalid');
 			process.exit(1);
 		}
 
 		return generateHtmlPlugin
-			.run(config, manifest, commandProcessor)
+			.run(config.generate, manifest, commandProcessor)
 			.then(() => {
 				console.log('✅ EJS-based UI generation completed successfully!');
 				process.exit(0);

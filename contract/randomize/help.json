@@ -1,5 +1,0 @@
-{
-	"description": "Randomize the characters in a word",
-	"syntax": "randomize(word)",
-	"examples": ["randomize(\"hello\")", "randomize(\"world\")"]
-}

@@ -35,10 +35,10 @@ export async function launch(args, projectRoot) {
 	// Default to REPL mode if no args or if args are application-specific
 	if (args.length === 0) {
 		// Default to REPL mode if no args
-		return replStart(config, commandProcessor);
+		return replStart(config.repl, commandProcessor);
 	} else {
 		// Check if we're being called directly with command line args
-		return cliRun(config, commandProcessor, args);
+		return cliRun(config.cli, commandProcessor, args);
 	}
 }
 

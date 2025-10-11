@@ -6,5 +6,8 @@
 	"stateDefaults": {
 		"currentModel": null,
 		"defaultCorpus": "sample.txt"
+	},
+	"dependencies": {
+		"textgen": "./textgen/index.js"
 	}
 }
