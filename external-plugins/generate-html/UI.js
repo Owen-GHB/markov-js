@@ -18,75 +18,80 @@ export class UI {
      * @param {Object} config - Configuration object containing paths and settings
      * @param {Object} manifest - The contract manifest with global and command information
      */
-    async run(config, manifest) {
-        try {
-            const outputDir = config.paths.generatedUIDir;
-            const templateDir = path.resolve(this.__dirname,'templates');
-            
-            if (!templateDir) {
-                throw new Error('config.paths.userTemplateDir is required for EJS-based generator');
-            }
+	async run(config, manifest) {
+		try {
+			const outputDir = config.paths.generatedUIDir;
+			
+			// First try user templates, fall back to built-in templates
+			let templateDir;
+			if (config.paths.userTemplateDir && fs.existsSync(config.paths.userTemplateDir)) {
+				templateDir = config.paths.userTemplateDir;
+				console.log(`Using user templates from: ${templateDir}`);
+			} else {
+				// Fall back to built-in templates
+				templateDir = path.resolve(this.__dirname, 'templates');
+				console.log(`Using built-in templates from: ${templateDir}`);
+				
+				// Verify built-in templates exist
+				if (!fs.existsSync(templateDir)) {
+					throw new Error(
+						`Built-in templates directory not found: ${templateDir}. Please ensure the templates are included with the generator.`
+					);
+				}
+			}
 
-            // Check if templates directory exists
-            if (!fs.existsSync(templateDir)) {
-                throw new Error(
-                    `Templates directory does not exist: ${templateDir}. EJS-based UI generation requires templates to be present.`
-                );
-            }
+			console.log('Starting EJS-based UI generation...');
 
-            console.log('Starting EJS-based UI generation...');
-            console.log(`Using EJS templates from: ${templateDir}`);
+			// Use the provided manifest directly
+			const globalManifest = manifest;
+			const commandManifests = manifest.commands || [];
+			console.log(
+				`Processing manifest with ${commandManifests.length} command manifests`
+			);
 
-            // Use the provided manifest directly
-            const globalManifest = manifest;
-            const commandManifests = manifest.commands || [];
-            console.log(
-                `Processing manifest with ${commandManifests.length} command manifests`
-            );
+			// Ensure output directory exists and is empty
+			if (fs.existsSync(outputDir)) {
+				console.log(`Emptying output directory: ${outputDir}`);
+				this.emptyDirectory(outputDir);
+			} else {
+				fs.mkdirSync(outputDir, { recursive: true });
+			}
 
-            // Ensure output directory exists and is empty
-            if (fs.existsSync(outputDir)) {
-                console.log(`Emptying output directory: ${outputDir}`);
-                this.emptyDirectory(outputDir);
-            } else {
-                fs.mkdirSync(outputDir, { recursive: true });
-            }
-
-            // Generate all command forms using EJS templates
-            const commandForms = await this.generateCommandForms(
-                commandManifests, 
-                globalManifest, 
-                templateDir
-            );
-
-            // Generate the main SPA using EJS template
-            await this.generateSPA(
-                globalManifest,
-                commandManifests,
-                commandForms,
-                outputDir,
-                templateDir
-            );
-
-            // Generate client-side JavaScript
-            await this.generateClientSideJavaScript(
-                globalManifest,
-                commandManifests,
-                outputDir,
+			// Generate all command forms using EJS templates
+			const commandForms = await this.generateCommandForms(
+				commandManifests, 
+				globalManifest, 
 				templateDir
-            );
+			);
 
-            // Copy CSS file
-            await this.copyCSSFile(templateDir, outputDir);
+			// Generate the main SPA using EJS template
+			await this.generateSPA(
+				globalManifest,
+				commandManifests,
+				commandForms,
+				outputDir,
+				templateDir
+			);
 
-            console.log(`EJS-based UI generated successfully at: ${outputDir}`);
-            console.log('UI generation completed!');
+			// Generate client-side JavaScript
+			await this.generateClientSideJavaScript(
+				globalManifest,
+				commandManifests,
+				outputDir,
+				templateDir
+			);
 
-        } catch (error) {
-            console.error('Error during EJS-based UI generation:', error);
-            throw error;
-        }
-    }
+			// Copy CSS file
+			await this.copyCSSFile(templateDir, outputDir);
+
+			console.log(`EJS-based UI generated successfully at: ${outputDir}`);
+			console.log('UI generation completed!');
+
+		} catch (error) {
+			console.error('Error during EJS-based UI generation:', error);
+			throw error;
+		}
+	}
 
     /**
      * Generate all command forms using EJS templates
