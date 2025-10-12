@@ -69,9 +69,21 @@ function buildPluginConfig(globalConfig, pluginRawConfig) {
             { ...globalConfig.paths }, // Clone global paths
             pluginRawConfig.paths      // Plugin-specific paths
         );
+        
+        // RESOLVE PLUGIN-SPECIFIC PATHS HERE
+        for (const [key, value] of Object.entries(pluginConfig.paths)) {
+            // Skip if already resolved or is a function
+            if (typeof value === 'string' && !value.startsWith(globalConfig.paths.projectRoot)) {
+                try {
+                    pluginConfig.paths[key] = resolveSecurePath(value, globalConfig.paths.projectRoot);
+                } catch (error) {
+                    console.warn(`⚠️ Could not resolve plugin path ${key}: ${value}`, error.message);
+                }
+            }
+        }
     } else {
         // If plugin has no paths, just use global paths
-        pluginConfig.paths = { ...globalConfig.paths };  // ← FIXED: was globalPaths
+        pluginConfig.paths = { ...globalConfig.paths };
     }
     
     return pluginConfig;

@@ -12,43 +12,24 @@ export class REPL {
 		this.historyFilePath = null;
 	}
 
-	async initialize(config = {}) {
-		// Validate config object
-		if (typeof config !== 'object' || config === null) {
-			throw new Error('config parameter must be an object');
-		}
-
-		// Extract paths from nested config object
-		const paths = config.paths || {};
-
-		// Use provided paths for file paths (configPath will be ignored since we now get config directly)
-		const historyFilePath =
-			paths.replHistoryFilePath ||
-			paths.contextFilePath ||
-			'context/repl-history.json';
-
-		// Use unnested maxHistory format only (no longer supports nested config.repl.maxHistory)
-		this.maxHistory = config.maxHistory || 100;
+	async initialize(contextFilePath, historyFilePath, maxHistory) {
+		this.contextFilePath = contextFilePath;
+		this.maxHistory = maxHistory;
 		this.historyFilePath = historyFilePath;
 		this.loadHistory();
 	}
 
-	async start(config = {}, commandProcessor) {
-		// Validate config object
-		if (typeof config !== 'object' || config === null) {
-			throw new Error('config parameter must be an object');
+	async start(contextFilePath, historyFilePath, maxHistory, commandProcessor) {
+		// Validate parameters
+		if (contextFilePath && typeof contextFilePath !== 'string') {
+			throw new Error('contextFilePath parameter must be a string if provided');
 		}
-
-		// Extract paths from nested config object
-		const paths = config.paths || {};
-
-		// Check if required paths are provided
-		if (!paths.contextFilePath) {
-			throw new Error(
-				'config.paths must include contextFilePath for state management',
-			);
+		if (historyFilePath && typeof historyFilePath !== 'string') {
+			throw new Error('historyFilePath parameter must be a string if provided');
 		}
-
+		if (maxHistory && (typeof maxHistory !== 'number' || maxHistory <= 0)) {
+			throw new Error('maxHistory parameter must be a positive number if provided');
+		}
 		if (
 			!commandProcessor ||
 			typeof commandProcessor.processCommand !== 'function'
@@ -60,11 +41,10 @@ export class REPL {
 
 		// Initialize command processor
 		this.processor = commandProcessor;
-		this.contextFilePath = paths.contextFilePath;
-		if (this.contextFilePath) this.processor.stateManager.loadState(this.contextFilePath);
+		if (contextFilePath) this.processor.stateManager.loadState(contextFilePath);
 
 		// Initialize with provided path and config values at the beginning of start
-		await this.initialize(config);
+		await this.initialize(contextFilePath, historyFilePath, maxHistory);
 
 		// Initialize REPL instance
 		this.rl = readline.createInterface({

@@ -21,13 +21,15 @@ function getReplInstance() {
 
 /**
  * Start the REPL plugin
- * @param {Object} config - Configuration object
+ * @param {Object} contextFilePath - Path to context file for state persistence
+ * @param {Object} historyFilePath - Path to history file for command history
+ * @param {number} maxHistory - Maximum number of history entries to keep
  * @param {Object} commandProcessor - Command processor instance
  * @returns {Promise<void>}
  */
-export async function start(config, commandProcessor) {
+export async function start(contextFilePath, historyFilePath, maxHistory, commandProcessor) {
 	const repl = getReplInstance();
-	return await repl.start(config, commandProcessor);
+	return await repl.start(contextFilePath, historyFilePath, maxHistory, commandProcessor);
 }
 
 /**

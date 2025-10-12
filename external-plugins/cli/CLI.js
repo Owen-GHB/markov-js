@@ -1,18 +1,9 @@
 import { formatResult } from '../shared/format.js';
 
 export class CLI {
-	constructor(config, commandProcessor) {
-		if (!config || typeof config !== 'object') {
-			throw new Error('CLI requires a config object');
-		}
-
-		// Extract paths from nested config object
-		const paths = config.paths || {};
-
-		if (!paths.contextFilePath) {
-			throw new Error(
-				'CLI config requires paths with contextFilePath property',
-			);
+	constructor(contextFilePath, commandProcessor) {
+		if (!contextFilePath) {
+			throw new Error('CLI requires a contextFilePath property');
 		}
 
 		if (
@@ -24,7 +15,7 @@ export class CLI {
 			);
 		}
 		this.processor = commandProcessor;
-		this.contextFilePath = paths.contextFilePath;
+		this.contextFilePath = contextFilePath;
 		if (this.contextFilePath) this.processor.stateManager.loadState(this.contextFilePath);
 	}
 
