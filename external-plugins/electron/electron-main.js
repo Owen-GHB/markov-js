@@ -46,7 +46,7 @@ if (!projectRoot || !kernelPath) {
 		// Directly instantiate and start ElectronApp with the dynamically created components
 		const electronApp = new ElectronApp();
 
-		await electronApp.start(config, commandProcessor);
+		await electronApp.start(config.electron, commandProcessor);
 	} catch (error) {
 		console.error('❌ Error in Electron main process:', error.message);
 		process.exit(1);

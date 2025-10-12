@@ -34,19 +34,26 @@ export async function launch(args, projectRoot) {
 			process.exit(1);
 		}
 
-		return electronPlugin.start(config.electron, commandProcessor);
+		return electronPlugin.start(
+			config.paths.kernelDir
+		);
 	}
 	// Check if we should regenerate UI with EJS templates
 	else if (args.includes('--generate')) {
-		// Get the generate-html plugin and run it using the plugin loader
-		const generateHtmlPlugin = await pluginLoader.getPlugin('generate');
-		if (!generateHtmlPlugin) {
-			console.error('❌ Generate-HTML plugin not found or invalid');
+		// Get the generate plugin and run it using the plugin loader
+		const generatePlugin = await pluginLoader.getPlugin('generate');
+		if (!generatePlugin) {
+			console.error('❌ Generate plugin not found or invalid');
 			process.exit(1);
 		}
 
-		return generateHtmlPlugin
-			.run(config.generate, manifest, commandProcessor)
+		return generatePlugin
+			.run(
+				config.generate.paths.userTemplateDir,
+				config.generate.paths.generatedUIDir,
+				manifest,
+				commandProcessor,
+			)
 			.then(() => {
 				console.log('✅ EJS-based UI generation completed successfully!');
 				process.exit(0);
@@ -66,17 +73,21 @@ export async function launch(args, projectRoot) {
 		}
 
 		return httpPlugin.start(
-			config.http.port, 
-			config.http.paths.servedUIDir, 
-			config.http.apiEndpoint, 
-			commandProcessor
+			config.http.port,
+			config.http.paths.servedUIDir,
+			config.http.apiEndpoint,
+			commandProcessor,
 		);
 	} else {
 		// For other kernel commands or to show help
 		console.log('Kernel command-line interface');
 		console.log('Available commands:');
-		console.log('  --generate             Generate UI from contracts using EJS templates');
-		console.log('  --http                 Serve UI and API on specified port (default 8080)');
+		console.log(
+			'  --generate             Generate UI from contracts using EJS templates',
+		);
+		console.log(
+			'  --http                 Serve UI and API on specified port (default 8080)',
+		);
 		console.log('  --electron             Launch Electron application');
 		process.exit(0);
 	}

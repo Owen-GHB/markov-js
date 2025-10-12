@@ -6,20 +6,21 @@ const __dirname = path.dirname(__filename);
 
 /**
  * Start the Electron plugin by launching electron-main.js via npx
- * @param {Object} config - Configuration object (contains paths information)
+ * @param {string} servedUIDir - Directory for served UI files
+ * @param {string} electronPreloadPath - Path to electron preload script
+ * @param {string} kernelDir - Path to the kernel directory
  * @param {Object} commandProcessor - Command processor instance (not used directly, as electron-main.js recreates kernel)
  * @returns {Promise<void>}
  */
-export async function start(config, commandProcessor) {
+export async function start(kernelDir) {
 	// Since Electron needs to be launched as a separate process, we spawn electron using npx
 	// which will run electron-main.js. The electron-main.js will now use dynamic kernel loading.
 	return import('child_process')
 		.then(({ spawn }) => {
-			// Get the project root and kernel path from the config
+			// Get the project root from current working directory
 			const projectRoot = process.cwd(); // Use current working directory as project root
-			const kernelDir = config.paths?.kernelDir;
 			if (!kernelDir) {
-			throw new Error('kernelDir must be provided in config.paths by the path resolver');
+			throw new Error('kernelDir must be provided as a parameter');
 			}
 
 

@@ -12,8 +12,8 @@ class ElectronUIManager {
 	 * @param {Object} paths - Paths object containing required paths
 	 * @returns {boolean} True if the served UI directory exists and has the file
 	 */
-	hasServedUI(filename = 'index.html', paths = {}) {
-		const servedDir = paths.servedUIDir;
+	hasServedUI(filename = 'index.html', servedUIDir) {
+		const servedDir = servedUIDir;
 		const indexPath = path.join(servedDir, filename);
 		return fs.existsSync(servedDir) && fs.existsSync(indexPath);
 	}
@@ -24,8 +24,8 @@ class ElectronUIManager {
 	 * @param {Object} paths - Paths object containing required paths
 	 * @returns {string} The path to the UI file
 	 */
-	getUIPath(filename = 'index.html', paths = {}) {
-		const servedDir = paths.servedUIDir;
+	getUIPath(filename = 'index.html', servedUIDir) {
+		const servedDir = servedUIDir;
 		return path.join(servedDir, filename);
 	}
 }
@@ -79,7 +79,7 @@ export class ElectronApp {
 		const mainWindow = new BrowserWindow(this.windowOptions);
 
 		// Check if UI exists first, refuse to work if not
-		if (!this.uiManager.hasServedUI('index.html', this.paths)) {
+		if (!this.uiManager.hasServedUI('index.html', this.paths.servedUIDir)) {
 			console.error(
 				"UI files not found. Please generate UI files first using 'node kernel.js --generate'",
 			);
@@ -101,7 +101,7 @@ export class ElectronApp {
 
 		// Load the UI from the served UI directory
 		try {
-			const uiPath = this.uiManager.getUIPath('index.html', this.paths);
+			const uiPath = this.uiManager.getUIPath('index.html', this.paths.servedUIDir);
 			// Load the generated UI
 			mainWindow.loadFile(uiPath);
 		} catch (err) {
@@ -127,14 +127,13 @@ export class ElectronApp {
 		});
 	}
 
-	async start(config = {}, commandProcessor) {
+	async start(config, commandProcessor) {
 		// Validate config object
-		if (typeof config !== 'object' || config === null) {
+		if (!config || typeof config !== 'object') {
 			throw new Error('config parameter must be an object');
 		}
 
-		if (
-			!commandProcessor ||
+		if ( !commandProcessor ||
 			typeof commandProcessor.processCommand !== 'function'
 		) {
 			throw new Error(

@@ -21,14 +21,23 @@ function getGeneratorInstance() {
 
 /**
  * Run the EJS-based generator plugin
- * @param {Object} config - Configuration object
+ * @param {string} userTemplateDir - Directory for user templates
+ * @param {string} generatedUIDir - Directory for generated UI output
  * @param {Object} manifest - Manifest object
  * @param {Object} commandProcessor - CommandProcessor instance
  * @returns {Promise<void>}
  */
-export async function run(config, manifest, commandProcessor) {
+export async function run(
+	userTemplateDir,
+	generatedUIDir,
+	manifest
+) {
 	const generator = getGeneratorInstance();
-	return await generator.run(config, manifest, commandProcessor);
+	return await generator.run(
+		userTemplateDir,
+		generatedUIDir,
+		manifest
+	);
 }
 
 /**

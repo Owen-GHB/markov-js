@@ -9,33 +9,37 @@ import { fileURLToPath } from 'url';
  * Main EJS-based UI Generator class that creates a complete SPA from contract manifests
  */
 export class UI {
-    constructor() {
-        this.__dirname = path.dirname(fileURLToPath(import.meta.url));
-    }
+	constructor() {
+		this.__dirname = path.dirname(fileURLToPath(import.meta.url));
+	}
 
-    /**
-     * Generate the complete SPA from manifests using EJS templates
-     * @param {Object} config - Configuration object containing paths and settings
-     * @param {Object} manifest - The contract manifest with global and command information
-     */
-	async run(config, manifest) {
+	/**
+	 * Generate the complete SPA from manifests using EJS templates
+	 * @param {string} userTemplateDir - Directory for user templates
+	 * @param {string} generatedUIDir - Directory for generated UI output
+	 * @param {Object} manifest - The contract manifest with global and command information
+	 * @param {Object} commandProcessor - Command processor instance
+	 * @param {Object} config - Configuration object containing paths and settings
+	 * @param {Object} manifest - The contract manifest with global and command information
+	 */
+	async run(userTemplateDir, generatedUIDir, manifest, commandProcessor) {
 		try {
-			const outputDir = config.paths.generatedUIDir;
-			
+			const outputDir = generatedUIDir;
+
 			// First try user templates, fall back to built-in templates
 			let templateDir;
-			if (config.paths.userTemplateDir && fs.existsSync(config.paths.userTemplateDir)) {
-				templateDir = config.paths.userTemplateDir;
+			if (userTemplateDir && fs.existsSync(userTemplateDir)) {
+				templateDir = userTemplateDir;
 				console.log(`Using user templates from: ${templateDir}`);
 			} else {
 				// Fall back to built-in templates
 				templateDir = path.resolve(this.__dirname, 'templates');
 				console.log(`Using built-in templates from: ${templateDir}`);
-				
+
 				// Verify built-in templates exist
 				if (!fs.existsSync(templateDir)) {
 					throw new Error(
-						`Built-in templates directory not found: ${templateDir}. Please ensure the templates are included with the generator.`
+						`Built-in templates directory not found: ${templateDir}. Please ensure the templates are included with the generator.`,
 					);
 				}
 			}
@@ -46,7 +50,7 @@ export class UI {
 			const globalManifest = manifest;
 			const commandManifests = manifest.commands || [];
 			console.log(
-				`Processing manifest with ${commandManifests.length} command manifests`
+				`Processing manifest with ${commandManifests.length} command manifests`,
 			);
 
 			// Ensure output directory exists and is empty
@@ -59,9 +63,9 @@ export class UI {
 
 			// Generate all command forms using EJS templates
 			const commandForms = await this.generateCommandForms(
-				commandManifests, 
-				globalManifest, 
-				templateDir
+				commandManifests,
+				globalManifest,
+				templateDir,
 			);
 
 			// Generate the main SPA using EJS template
@@ -70,7 +74,7 @@ export class UI {
 				commandManifests,
 				commandForms,
 				outputDir,
-				templateDir
+				templateDir,
 			);
 
 			// Generate client-side JavaScript
@@ -78,7 +82,7 @@ export class UI {
 				globalManifest,
 				commandManifests,
 				outputDir,
-				templateDir
+				templateDir,
 			);
 
 			// Copy CSS file
@@ -86,219 +90,242 @@ export class UI {
 
 			console.log(`EJS-based UI generated successfully at: ${outputDir}`);
 			console.log('UI generation completed!');
-
 		} catch (error) {
 			console.error('Error during EJS-based UI generation:', error);
 			throw error;
 		}
 	}
 
-    /**
-     * Generate all command forms using EJS templates
-     * @param {Array} commandManifests - Array of command manifests
-     * @param {Object} globalManifest - Global manifest for state defaults
-     * @param {string} templateDir - Path to templates directory
-     * @returns {Promise<Array>} Array of rendered command form HTML
-     */
-    async generateCommandForms(commandManifests, globalManifest, templateDir) {
-        const commandForms = [];
-        const initialState = globalManifest.stateDefaults || {};
+	/**
+	 * Generate all command forms using EJS templates
+	 * @param {Array} commandManifests - Array of command manifests
+	 * @param {Object} globalManifest - Global manifest for state defaults
+	 * @param {string} templateDir - Path to templates directory
+	 * @returns {Promise<Array>} Array of rendered command form HTML
+	 */
+	async generateCommandForms(commandManifests, globalManifest, templateDir) {
+		const commandForms = [];
+		const initialState = globalManifest.stateDefaults || {};
 
-        for (const command of commandManifests) {
-            try {
-                const formHtml = await this.renderCommandForm(
-                    command, 
-                    initialState, 
-                    templateDir
-                );
-                commandForms.push(formHtml);
-            } catch (error) {
-                console.error(`Error generating form for command ${command.name}:`, error);
-                throw error;
-            }
-        }
+		for (const command of commandManifests) {
+			try {
+				const formHtml = await this.renderCommandForm(
+					command,
+					initialState,
+					templateDir,
+				);
+				commandForms.push(formHtml);
+			} catch (error) {
+				console.error(
+					`Error generating form for command ${command.name}:`,
+					error,
+				);
+				throw error;
+			}
+		}
 
-        return commandForms;
-    }
+		return commandForms;
+	}
 
-    /**
-     * Render a single command form using EJS template
-     * @param {Object} command - Command manifest
-     * @param {Object} state - Current state for runtime fallbacks
-     * @param {string} templateDir - Path to templates directory
-     * @returns {Promise<string>} Rendered HTML for the command form
-     */
-    async renderCommandForm(command, state, templateDir) {
-        const formTemplatePath = path.join(templateDir, 'command-form.ejs');
-        
-        if (!fs.existsSync(formTemplatePath)) {
-            throw new Error(`Command form template not found: ${formTemplatePath}`);
-        }
+	/**
+	 * Render a single command form using EJS template
+	 * @param {Object} command - Command manifest
+	 * @param {Object} state - Current state for runtime fallbacks
+	 * @param {string} templateDir - Path to templates directory
+	 * @returns {Promise<string>} Rendered HTML for the command form
+	 */
+	async renderCommandForm(command, state, templateDir) {
+		const formTemplatePath = path.join(templateDir, 'command-form.ejs');
 
-        const template = fs.readFileSync(formTemplatePath, 'utf8');
-        
-        // Generate parameter fields for this command
-        const parameterFields = await this.generateParameterFields(command, state, templateDir);
+		if (!fs.existsSync(formTemplatePath)) {
+			throw new Error(`Command form template not found: ${formTemplatePath}`);
+		}
 
-        const data = {
-            command: command,
-            parameterFields: parameterFields,
-            formSubmitButton: 'Execute Command'
-        };
+		const template = fs.readFileSync(formTemplatePath, 'utf8');
 
-        return ejs.render(template, data);
-    }
+		// Generate parameter fields for this command
+		const parameterFields = await this.generateParameterFields(
+			command,
+			state,
+			templateDir,
+		);
 
-    /**
-     * Generate parameter fields for a command using EJS template
-     * @param {Object} command - Command manifest
-     * @param {Object} state - Current state for runtime fallbacks
-     * @param {string} templateDir - Path to templates directory
-     * @returns {Promise<string>} Rendered HTML for all parameter fields
-     */
-    async generateParameterFields(command, state, templateDir) {
-        const paramTemplatePath = path.join(templateDir, 'param-field.ejs');
-        
-        if (!fs.existsSync(paramTemplatePath)) {
-            throw new Error(`Parameter field template not found: ${paramTemplatePath}`);
-        }
+		const data = {
+			command: command,
+			parameterFields: parameterFields,
+			formSubmitButton: 'Execute Command',
+		};
 
-        const template = fs.readFileSync(paramTemplatePath, 'utf8');
-        let allParameterFields = '';
+		return ejs.render(template, data);
+	}
 
-        for (const paramName in command.parameters || {}) {
-            const param = command.parameters[paramName];
-            param.name = paramName; // Ensure name is available
-            
-            // Calculate default value considering runtime fallbacks
-            const defaultValue = this.getParameterDefaultValue(param, state);
+	/**
+	 * Generate parameter fields for a command using EJS template
+	 * @param {Object} command - Command manifest
+	 * @param {Object} state - Current state for runtime fallbacks
+	 * @param {string} templateDir - Path to templates directory
+	 * @returns {Promise<string>} Rendered HTML for all parameter fields
+	 */
+	async generateParameterFields(command, state, templateDir) {
+		const paramTemplatePath = path.join(templateDir, 'param-field.ejs');
 
-            const data = {
-                param: param,
-                defaultValue: defaultValue
-            };
+		if (!fs.existsSync(paramTemplatePath)) {
+			throw new Error(
+				`Parameter field template not found: ${paramTemplatePath}`,
+			);
+		}
 
-            const fieldHtml = ejs.render(template, data);
-            allParameterFields += fieldHtml;
-        }
+		const template = fs.readFileSync(paramTemplatePath, 'utf8');
+		let allParameterFields = '';
 
-        return allParameterFields;
-    }
+		for (const paramName in command.parameters || {}) {
+			const param = command.parameters[paramName];
+			param.name = paramName; // Ensure name is available
 
-    /**
-     * Get default value for a parameter considering runtime fallbacks
-     * @param {Object} param - Parameter definition
-     * @param {Object} state - Current state object
-     * @returns {any} Default value
-     */
-    getParameterDefaultValue(param, state) {
-        // First check for runtime fallback
-        if (param.runtimeFallback && state && state[param.runtimeFallback] !== undefined) {
-            return state[param.runtimeFallback];
-        }
+			// Calculate default value considering runtime fallbacks
+			const defaultValue = this.getParameterDefaultValue(param, state);
 
-        // Otherwise use default from manifest
-        if (param.default !== undefined) {
-            return param.default;
-        }
+			const data = {
+				param: param,
+				defaultValue: defaultValue,
+			};
 
-        return undefined;
-    }
+			const fieldHtml = ejs.render(template, data);
+			allParameterFields += fieldHtml;
+		}
 
-    /**
-     * Generate the main SPA HTML using EJS template
-     * @param {Object} globalManifest - Global manifest
-     * @param {Array} commandManifests - Array of command manifests
-     * @param {Array} commandForms - Array of rendered command form HTML
-     * @param {string} outputDir - Output directory
-     * @param {string} templateDir - Templates directory
-     */
-    async generateSPA(globalManifest, commandManifests, commandForms, outputDir, templateDir) {
-        const baseTemplatePath = path.join(templateDir, 'spa-base.ejs');
-        
-        if (!fs.existsSync(baseTemplatePath)) {
-            throw new Error(`SPA base template not found: ${baseTemplatePath}`);
-        }
+		return allParameterFields;
+	}
 
-        const template = fs.readFileSync(baseTemplatePath, 'utf8');
+	/**
+	 * Get default value for a parameter considering runtime fallbacks
+	 * @param {Object} param - Parameter definition
+	 * @param {Object} state - Current state object
+	 * @returns {any} Default value
+	 */
+	getParameterDefaultValue(param, state) {
+		// First check for runtime fallback
+		if (
+			param.runtimeFallback &&
+			state &&
+			state[param.runtimeFallback] !== undefined
+		) {
+			return state[param.runtimeFallback];
+		}
 
-        const data = {
-            htmlTitle: globalManifest.name || 'Command Interface',
-            pageHeader: globalManifest.description || 'Command Interface',
-            commandSelectorLabel: 'Select Command:',
-            commands: commandManifests,
-            commandForms: commandForms.join('\n')
-        };
+		// Otherwise use default from manifest
+		if (param.default !== undefined) {
+			return param.default;
+		}
 
-        const renderedHtml = ejs.render(template, data);
-        const htmlFilePath = path.join(outputDir, 'index.html');
-        fs.writeFileSync(htmlFilePath, renderedHtml);
-        
-        console.log(`Generated main SPA: ${htmlFilePath}`);
-    }
+		return undefined;
+	}
 
-    /**
-     * Generate client-side JavaScript file
-     * @param {Object} globalManifest - Global manifest
-     * @param {Array} commandManifests - Array of command manifests
-     * @param {string} outputDir - Output directory
+	/**
+	 * Generate the main SPA HTML using EJS template
+	 * @param {Object} globalManifest - Global manifest
+	 * @param {Array} commandManifests - Array of command manifests
+	 * @param {Array} commandForms - Array of rendered command form HTML
+	 * @param {string} outputDir - Output directory
 	 * @param {string} templateDir - Templates directory
-     */
-	async generateClientSideJavaScript(globalManifest, commandManifests, outputDir, templateDir) {
+	 */
+	async generateSPA(
+		globalManifest,
+		commandManifests,
+		commandForms,
+		outputDir,
+		templateDir,
+	) {
+		const baseTemplatePath = path.join(templateDir, 'spa-base.ejs');
+
+		if (!fs.existsSync(baseTemplatePath)) {
+			throw new Error(`SPA base template not found: ${baseTemplatePath}`);
+		}
+
+		const template = fs.readFileSync(baseTemplatePath, 'utf8');
+
+		const data = {
+			htmlTitle: globalManifest.name || 'Command Interface',
+			pageHeader: globalManifest.description || 'Command Interface',
+			commandSelectorLabel: 'Select Command:',
+			commands: commandManifests,
+			commandForms: commandForms.join('\n'),
+		};
+
+		const renderedHtml = ejs.render(template, data);
+		const htmlFilePath = path.join(outputDir, 'index.html');
+		fs.writeFileSync(htmlFilePath, renderedHtml);
+
+		console.log(`Generated main SPA: ${htmlFilePath}`);
+	}
+
+	/**
+	 * Generate client-side JavaScript file
+	 * @param {Object} globalManifest - Global manifest
+	 * @param {Array} commandManifests - Array of command manifests
+	 * @param {string} outputDir - Output directory
+	 * @param {string} templateDir - Templates directory
+	 */
+	async generateClientSideJavaScript(
+		globalManifest,
+		commandManifests,
+		outputDir,
+		templateDir,
+	) {
 		const jsTemplatePath = path.join(templateDir, 'app.js.ejs');
-		
+
 		if (!fs.existsSync(jsTemplatePath)) {
 			throw new Error(`JavaScript template not found: ${jsTemplatePath}`);
 		}
 
 		const template = fs.readFileSync(jsTemplatePath, 'utf8');
-		
+
 		const data = {
 			initialState: globalManifest.stateDefaults || {},
-			commands: commandManifests
+			commands: commandManifests,
 		};
 
 		const renderedJS = ejs.render(template, data);
 		const jsFilePath = path.join(outputDir, 'app.js');
 		fs.writeFileSync(jsFilePath, renderedJS);
-		
+
 		console.log(`Generated client-side JavaScript: ${jsFilePath}`);
 	}
 
-    /**
-     * Copy CSS file to output directory
-     * @param {string} templateDir - Templates directory
-     * @param {string} outputDir - Output directory
-     */
-    async copyCSSFile(templateDir, outputDir) {
-        const cssSourcePath = path.join(templateDir, 'global.css');
-        const cssDestPath = path.join(outputDir, 'app.css');
-        
-        if (fs.existsSync(cssSourcePath)) {
-            fs.copyFileSync(cssSourcePath, cssDestPath);
-            console.log(`Copied CSS file: ${cssDestPath}`);
-        } else {
-            console.warn(`CSS file not found at: ${cssSourcePath}`);
-        }
-    }
+	/**
+	 * Copy CSS file to output directory
+	 * @param {string} templateDir - Templates directory
+	 * @param {string} outputDir - Output directory
+	 */
+	async copyCSSFile(templateDir, outputDir) {
+		const cssSourcePath = path.join(templateDir, 'global.css');
+		const cssDestPath = path.join(outputDir, 'app.css');
 
-    /**
-     * Empty a directory by removing all files and subdirectories
-     * @param {string} dirPath - Path to the directory to empty
-     */
-    emptyDirectory(dirPath) {
-        const items = fs.readdirSync(dirPath);
-        
-        for (const item of items) {
-            const itemPath = path.join(dirPath, item);
-            const stat = fs.statSync(itemPath);
-            
-            if (stat.isDirectory()) {
-                this.emptyDirectory(itemPath);
-                fs.rmdirSync(itemPath);
-            } else {
-                fs.unlinkSync(itemPath);
-            }
-        }
-    }
+		if (fs.existsSync(cssSourcePath)) {
+			fs.copyFileSync(cssSourcePath, cssDestPath);
+			console.log(`Copied CSS file: ${cssDestPath}`);
+		} else {
+			console.warn(`CSS file not found at: ${cssSourcePath}`);
+		}
+	}
+
+	/**
+	 * Empty a directory by removing all files and subdirectories
+	 * @param {string} dirPath - Path to the directory to empty
+	 */
+	emptyDirectory(dirPath) {
+		const items = fs.readdirSync(dirPath);
+
+		for (const item of items) {
+			const itemPath = path.join(dirPath, item);
+			const stat = fs.statSync(itemPath);
+
+			if (stat.isDirectory()) {
+				this.emptyDirectory(itemPath);
+				fs.rmdirSync(itemPath);
+			} else {
+				fs.unlinkSync(itemPath);
+			}
+		}
+	}
 }
