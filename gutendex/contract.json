@@ -1,0 +1,6 @@
+{
+	"name": "gutendex-api",
+	"version": "0.0.0",
+	"description": "Module to interface with the Gutendex API for fetching texts",
+	"prompt": "gutendex> "
+}

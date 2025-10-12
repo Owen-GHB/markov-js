@@ -1,0 +1,25 @@
+{  
+  "delete": {
+    "name": "delete",
+    "commandType": "native-method",
+    "methodName": "deleteModelFile",
+    "parameters": {
+      "modelName": {
+        "type": "string",
+        "required": true
+      }
+    }
+  },
+  "listCorpus": {
+    "name": "listCorpus",
+    "commandType": "native-method",
+    "methodName": "listCorpusFiles",
+    "parameters": {}
+  },
+  "listModels": {
+    "name": "listModels",
+    "commandType": "native-method",
+    "methodName": "listAvailableModels",
+    "parameters": {}
+  }
+}

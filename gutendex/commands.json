@@ -1,0 +1,39 @@
+{
+  "pgb_download": {
+    "name": "pgb_download",
+    "commandType": "native-method",
+    "methodName": "downloadGutenberg",
+    "parameters": {
+      "id_or_title": {
+        "type": "string|integer",
+        "required": true
+      },
+      "file": {
+        "type": "string",
+        "required": false
+      }
+    }
+  },
+  "pgb_info": {
+    "name": "pgb_info",
+    "commandType": "native-method",
+    "methodName": "getGutenbergInfo",
+    "parameters": {
+      "id_or_title": {
+        "type": "string|integer",
+        "required": true
+      }
+    }
+  },
+  "pgb_search": {
+    "name": "pgb_search",
+    "commandType": "native-method",
+    "methodName": "searchGutenberg",
+    "parameters": {
+      "query": {
+        "type": "string",
+        "required": true
+      }
+    }
+  }
+}

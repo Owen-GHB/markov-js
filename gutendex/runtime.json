@@ -1,0 +1,45 @@
+{
+  "pgb_download": {
+    "parameters": {
+      "id_or_title": {
+        "description": "Book ID or title to download",
+        "transform": {
+          "if": "integer",
+          "then": {
+            "id": "value"
+          },
+          "else": {
+            "title": "value"
+          }
+        }
+      },
+      "file": {
+        "description": "Filename to save the downloaded text",
+        "default": null
+      }
+    }
+  },
+  "pgb_info": {
+    "parameters": {
+      "id_or_title": {
+        "description": "Book ID or title to get information about",
+        "transform": {
+          "if": "integer",
+          "then": {
+            "id": "value"
+          },
+          "else": {
+            "title": "value"
+          }
+        }
+      }
+    }
+  },
+  "pgb_search": {
+    "parameters": {
+      "query": {
+        "description": "Search query for Project Gutenberg"
+      }
+    }
+  }
+}

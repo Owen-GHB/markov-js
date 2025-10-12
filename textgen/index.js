@@ -1,6 +1,6 @@
 // Main textgen module exports
-import { trainModel } from './core/train.js';
-import { generateText } from './core/generate.js';
+import { trainModel } from './commands/train.js';
+import { generateText } from './commands/generate.js';
 
 /**
  * Train a model from a text corpus file

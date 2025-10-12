@@ -1,0 +1,6 @@
+{
+	"name": "markov-data-ops",
+	"version": "0.0.0",
+	"description": "Markov chain data operations module",
+	"prompt": "dataOps> "
+}

@@ -1,0 +1,95 @@
+{
+  "generate": {
+    "sideEffects": {
+      "setState": {
+        "currentModel": {
+          "fromParam": "modelName"
+        }
+      }
+    },
+    "parameters": {
+      "modelName": {
+        "description": "Model file to use for generation",
+        "runtimeFallback": "currentModel"
+      },
+      "length": {
+        "default": 100,
+        "min": 1,
+        "description": "Maximum number of tokens to generate"
+      },
+      "min_tokens": {
+        "default": 50,
+        "min": 1,
+        "description": "Minimum number of tokens to generate"
+      },
+      "temperature": {
+        "default": 1.0,
+        "min": 0.0,
+        "max": 2.0,
+        "description": "Randomness factor (lower = more predictable)"
+      },
+      "prompt": {
+        "description": "Starting text for generation"
+      },
+      "stop": {
+        "default": [
+          ".",
+          "!",
+          "?"
+        ],
+        "description": "Stop tokens that end generation"
+      },
+      "samples": {
+        "default": 1,
+        "min": 1,
+        "description": "Number of samples to generate"
+      },
+      "allowRepetition": {
+        "default": true,
+        "description": "Allow immediate token repetition"
+      }
+    }
+  },
+  "train": {
+    "sideEffects": {
+      "setState": {
+        "currentModel": {
+          "fromParam": "modelName",
+          "template": "{{file | basename}}.json"
+        }
+      }
+    },
+    "parameters": {
+      "file": {
+        "description": "Corpus file to train from",
+        "runtimeFallback": "defaultCorpus"
+      },
+      "modelType": {
+        "description": "Type of model to train",
+        "enum": [
+          "markov",
+          "vlmm",
+          "hmm"
+        ]
+      },
+      "order": {
+        "default": 2,
+        "min": 1,
+        "max": 10,
+        "description": "Markov order (n-gram size)"
+      },
+      "modelName": {
+        "kind": "implicit",
+        "description": "Filename to save the trained model"
+      },
+      "caseSensitive": {
+        "default": false,
+        "description": "Whether to preserve case during tokenization"
+      },
+      "trackStartStates": {
+        "default": true,
+        "description": "Whether to track sentence start states"
+      }
+    }
+  }
+}

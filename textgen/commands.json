@@ -1,0 +1,72 @@
+{
+  "generate": {
+    "name": "generate",
+    "commandType": "native-method",
+    "methodName": "generateText",
+    "parameters": {
+      "modelName": {
+        "type": "string",
+        "required": true
+      },
+      "length": {
+        "type": "integer",
+        "required": false
+      },
+      "min_tokens": {
+        "type": "integer",
+        "required": false
+      },
+      "temperature": {
+        "type": "number",
+        "required": false
+      },
+      "prompt": {
+        "type": "string",
+        "required": false
+      },
+      "stop": {
+        "type": "array",
+        "required": false
+      },
+      "samples": {
+        "type": "integer",
+        "required": false
+      },
+      "allowRepetition": {
+        "type": "boolean",
+        "required": false
+      }
+    }
+  },
+  "train": {
+    "name": "train",
+    "commandType": "native-method",
+    "methodName": "trainModel",
+    "parameters": {
+      "file": {
+        "type": "string",
+        "required": true
+      },
+      "modelType": {
+        "type": "string",
+        "required": true
+      },
+      "order": {
+        "type": "integer",
+        "required": false
+      },
+      "modelName": {
+        "type": "string",
+        "required": false
+      },
+      "caseSensitive": {
+        "type": "boolean",
+        "required": false
+      },
+      "trackStartStates": {
+        "type": "boolean",
+        "required": false
+      }
+    }
+  }
+}

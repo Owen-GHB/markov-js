@@ -1,0 +1,23 @@
+{
+  "delete": {
+    "description": "Delete a saved model",
+    "syntax": "delete(modelName)",
+    "examples": [
+      "delete(\"old_model.json\")"
+    ]
+  },
+  "listCorpus": {
+    "description": "List all available corpus files",
+    "syntax": "listCorpus()",
+    "examples": [
+      "listCorpus()"
+    ]
+  },
+  "listModels": {
+    "description": "List all available saved models",
+    "syntax": "listModels()",
+    "examples": [
+      "listModels()"
+    ]
+  }
+}
