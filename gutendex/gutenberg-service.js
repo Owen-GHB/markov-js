@@ -1,6 +1,6 @@
 import { getJSON, downloadFile } from './GutendexAPI.js';
-import { FileHandler } from '../textgen/io/FileHandler.js';
 import fs from 'fs';
+import path from 'path';
 
 /**
  * Service class for Project Gutenberg operations
@@ -8,7 +8,7 @@ import fs from 'fs';
 export class GutenbergService {
 	constructor() {
 		this.API_BASE = 'https://gutendex.com';
-		this.fileHandler = new FileHandler();
+		this.defaultCorpusDir = './data/corpus';
 	}
 
 	/**
@@ -112,6 +112,8 @@ export class GutenbergService {
 		}
 	}
 
+
+
 	/**
 	 * Download a book from Project Gutenberg
 	 * @param {Object} params - Download parameters
@@ -135,9 +137,8 @@ export class GutenbergService {
 		}
 
 		try {
-			await this.fileHandler.ensureDirectoryExists(
-				this.fileHandler.defaultCorpusDir,
-			);
+			// Inlined ensureDirectoryExists functionality
+			await this.ensureDirectoryExists(this.defaultCorpusDir);
 
 			let book;
 			if (id) {
@@ -175,7 +176,8 @@ export class GutenbergService {
 				throw new Error('No plain text format available');
 			}
 
-			const corpusPath = this.fileHandler.resolveCorpusPath(filename);
+			// Inlined resolveCorpusPath functionality
+			const corpusPath = this.resolveCorpusPath(filename);
 
 			await downloadFile(txtUrl, corpusPath);
 			await this.cleanGutenbergText(corpusPath);
@@ -184,6 +186,57 @@ export class GutenbergService {
 		} catch (error) {
 			throw new Error(`Download failed: ${error.message}`);
 		}
+	}
+
+	/**
+	 * Ensure directory exists, create if needed (inlined from FileHandler)
+	 * @param {string} dirPath - Directory path
+	 */
+	async ensureDirectoryExists(dirPath) {
+		if (!dirPath || typeof dirPath !== 'string') {
+			throw new Error(`Invalid directory path: ${dirPath}`);
+		}
+
+		const absolutePath = path.resolve(dirPath);
+		try {
+			// Use fs.promises.mkdir for promise-based API
+			await fs.promises.mkdir(absolutePath, { recursive: true });
+		} catch (error) {
+			if (error.code !== 'EEXIST') {
+				// Ignore if directory already exists
+				throw new Error(
+					`Failed to create directory ${absolutePath}: ${error.message}`,
+				);
+			}
+		}
+	}
+
+	/**
+	 * Resolve corpus file path (inlined from FileHandler)
+	 * @param {string} filename - File name or path
+	 * @returns {string} - Full resolved path
+	 */
+	resolveCorpusPath(filename) {
+		if (!filename || typeof filename !== 'string') {
+			throw new Error('Invalid filename');
+		}
+
+		// Prevent directory traversal
+		if (filename.includes('../') || filename.includes('..\\')) {
+			throw new Error('Invalid path');
+		}
+
+		if (path.isAbsolute(filename)) {
+			return filename;
+		}
+
+		// Try relative to current directory first
+		if (filename.includes('/') || filename.includes('\\')) {
+			return path.resolve(filename);
+		}
+
+		// Default to corpus directory
+		return path.join(this.defaultCorpusDir, filename);
 	}
 
 	/**

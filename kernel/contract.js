@@ -15,7 +15,7 @@ function initializeContractSync(contractDir, projectRoot) {
 
 	// Load global manifest from contract directory
 	const globalManifest = JSON.parse(
-		fs.readFileSync(path.join(contractDir, 'global.json'), 'utf8'),
+		fs.readFileSync(path.join(projectRoot, 'contract.json'), 'utf8'),
 	);
 
 	// Get all command directories from the contract folder
@@ -25,7 +25,6 @@ function initializeContractSync(contractDir, projectRoot) {
 			(dirent) =>
 				dirent.isDirectory() &&
 				dirent.name !== 'index.js' &&
-				dirent.name !== 'global.json' &&
 				dirent.name !== 'exit' && // Filter out built-in commands
 				dirent.name !== 'help',
 		) // Filter out built-in commands
@@ -37,7 +36,7 @@ function initializeContractSync(contractDir, projectRoot) {
 	for (const dir of commandDirs) {
 		try {
 			// Load manifest slice from contract directory
-			const manifestPath = path.join(contractDir, dir, 'manifest.json');
+			const manifestPath = path.join(contractDir, dir, 'command.json');
 			let manifestSlice = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
 
 			// Load runtime slice if it exists

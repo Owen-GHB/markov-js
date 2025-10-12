@@ -141,15 +141,48 @@ export class CommandHandler {
 				throw new Error(`Cannot resolve local source '${sourceSpec}': projectRoot not available`);
 			}
 			resolvedPath = path.resolve(projectRoot, sourcePath);
+			
+			// Handle directory imports
+			if (fs.existsSync(resolvedPath) && fs.statSync(resolvedPath).isDirectory()) {
+				// First, check for package.json with main entry
+				const packageJsonPath = path.join(resolvedPath, 'package.json');
+				if (fs.existsSync(packageJsonPath)) {
+					try {
+						const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+						if (packageJson.main) {
+							resolvedPath = path.resolve(resolvedPath, packageJson.main);
+						} else {
+							// package.json exists but no main? Fall back to index.js
+							resolvedPath = path.join(resolvedPath, 'index.js');
+						}
+					} catch (error) {
+						// If package.json is invalid, fall back to index.js
+						resolvedPath = path.join(resolvedPath, 'index.js');
+					}
+				} else {
+					// No package.json? Straight to index.js fallback
+					resolvedPath = path.join(resolvedPath, 'index.js');
+				}
+			}
+			
+			// Ensure it has .js extension if it's still a file path without one
+			if (!resolvedPath.endsWith('.js') && !resolvedPath.endsWith('.mjs')) {
+				resolvedPath += '.js';
+			}
 		} else {
-			// npm package - use as-is (Node.js will resolve it)
+			// npm package - use as-is
 			resolvedPath = sourcePath;
+		}
+
+		// Check if the resolved file exists
+		if (!fs.existsSync(resolvedPath)) {
+			throw new Error(`Source file not found: ${resolvedPath}`);
 		}
 
 		// Convert to file URL for proper ES module loading
 		const moduleUrl = pathToFileURL(resolvedPath).href;
 
-		// Dynamically import the module using Node.js native resolution
+		// Dynamically import the module
 		const module = await import(moduleUrl);
 
 		// Cache the module for future use

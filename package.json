@@ -1,6 +1,6 @@
 {
 	"name": "markov-text-generator",
-	"version": "1.0.0",
+	"version": "0.0.0",
 	"description": "Configurable Markov chain text generator with CLI interface",
 	"main": "main.js",
 	"type": "module",

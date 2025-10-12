@@ -1,6 +1,6 @@
 {
 	"name": "markov-text-generator",
-	"version": "1.0.0",
+	"version": "0.0.0",
 	"description": "Markov chain text generation engine with multiple model types",
 	"prompt": "markov> ",
 	"stateDefaults": {
@@ -8,8 +8,8 @@
 		"defaultCorpus": "sample.txt"
 	},
 	"sources": {
-		"textgen": "./textgen/index.js",
-		"gutendex": "./gutendex/index.js",
-		"dataOps": "./dataOps/index.js"
+		"textgen": "./textgen",
+		"gutendex": "./gutendex",
+		"dataOps": "./dataOps"
 	}
 }
