@@ -4,17 +4,22 @@ import fs from 'fs';
 import path from 'path';
 
 export class HTTPServer {
-	constructor(config = {}) {
-		this.port = config.port || 8080;
-		this.staticDir = config.paths?.servedUIDir || null;
-		this.apiEndpoint = config.apiEndpoint || '/api';
+	constructor() {
 		this.commandProcessor = null; // Will be initialized in start method
 	}
 
-	start(config = {}, commandProcessor) {
-		// Validate config object
-		if (typeof config !== 'object' || config === null) {
-			throw new Error('config parameter must be an object');
+	start(port, servedUIDir, apiEndpoint, commandProcessor) {
+		// Validate parameters
+		if (typeof port !== 'number' || port <= 0) {
+			throw new Error('port parameter must be a positive number');
+		}
+
+		if (servedUIDir && typeof servedUIDir !== 'string') {
+			throw new Error('servedUIDir parameter must be a string if provided');
+		}
+
+		if (apiEndpoint && typeof apiEndpoint !== 'string') {
+			throw new Error('apiEndpoint parameter must be a string if provided');
 		}
 
 		if (
@@ -26,18 +31,11 @@ export class HTTPServer {
 			);
 		}
 
-		// Extract paths from config object
-		const paths = config.paths || {};
-
-		// Initialize command processor with unified config
+		// Initialize properties with explicit parameters
+		this.port = port;
+		this.staticDir = servedUIDir;
+		this.apiEndpoint = apiEndpoint;
 		this.commandProcessor = commandProcessor;
-
-		// Use provided config with fallback defaults - only unnested format now
-		const effectiveConfig = { ...config };
-
-		// Use unnested port format only (no longer supports nested config.http.port)
-		const effectivePort = this.port || config.port || 8080;
-		const effectiveStaticDir = this.staticDir || config.paths?.servedUIDir || null;
 
 		return new Promise((resolve, reject) => {
 			const server = http.createServer(async (req, res) => {
@@ -59,7 +57,7 @@ export class HTTPServer {
 				}
 
 				// Serve static files if directory is configured
-				if (effectiveStaticDir) {
+				if (this.staticDir) {
 					await this.handleStaticRequest(req, res);
 					return;
 				}
@@ -69,16 +67,16 @@ export class HTTPServer {
 				res.end(JSON.stringify({ error: 'Not found' }));
 			});
 
-			server.listen(effectivePort, () => {
-				console.log(`🔗 HTTP server running on port ${effectivePort}`);
-				if (effectiveStaticDir) {
-					console.log(`   Serving static files from: ${effectiveStaticDir}`);
+			server.listen(this.port, () => {
+				console.log(`🔗 HTTP server running on port ${this.port}`);
+				if (this.staticDir) {
+					console.log(`   Serving static files from: ${this.staticDir}`);
 				}
 				console.log(
-					`   API available at: http://localhost:${effectivePort}${this.apiEndpoint}`,
+					`   API available at: http://localhost:${this.port}${this.apiEndpoint}`,
 				);
-				if (effectiveStaticDir) {
-					console.log(`   UI available at: http://localhost:${effectivePort}/`);
+				if (this.staticDir) {
+					console.log(`   UI available at: http://localhost:${this.port}/`);
 				}
 				resolve(server);
 			});

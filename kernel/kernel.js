@@ -65,13 +65,18 @@ export async function launch(args, projectRoot) {
 			process.exit(1);
 		}
 
-		return httpPlugin.start(config, commandProcessor);
+		return httpPlugin.start(
+			config.http.port, 
+			config.http.paths.servedUIDir, 
+			config.http.apiEndpoint, 
+			commandProcessor
+		);
 	} else {
 		// For other kernel commands or to show help
 		console.log('Kernel command-line interface');
 		console.log('Available commands:');
-		console.log('  --generate-html        Generate UI from contracts using EJS templates');
-		console.log('  --http          Serve UI and API on specified port (default 8080)');
+		console.log('  --generate             Generate UI from contracts using EJS templates');
+		console.log('  --http                 Serve UI and API on specified port (default 8080)');
 		console.log('  --electron             Launch Electron application');
 		process.exit(0);
 	}

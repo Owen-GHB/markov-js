@@ -10,25 +10,26 @@ let httpInstance = null;
 
 /**
  * Initialize and get the HTTP instance
- * @param {Object} config - Configuration object
  * @returns {HTTPServer} HTTP plugin instance
  */
-function getHttpInstance(config) {
+function getHttpInstance() {
 	if (!httpInstance) {
-		httpInstance = new HTTPServer(config);
+		httpInstance = new HTTPServer();
 	}
 	return httpInstance;
 }
 
 /**
  * Start the HTTP server plugin
- * @param {Object} config - Configuration object
+ * @param {number} port - Port number for the server
+ * @param {string} servedUIDir - Directory to serve static UI files from
+ * @param {string} apiEndpoint - API endpoint path
  * @param {Object} commandProcessor - Command processor instance
  * @returns {Promise<void>}
  */
-export async function start(config, commandProcessor) {
-	const httpServer = getHttpInstance(config);
-	return await httpServer.start(config, commandProcessor);
+export async function start(port, servedUIDir, apiEndpoint, commandProcessor) {
+	const httpServer = getHttpInstance();
+	return await httpServer.start(port, servedUIDir, apiEndpoint, commandProcessor);
 }
 
 /**
