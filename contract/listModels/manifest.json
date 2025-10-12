@@ -1,7 +1,7 @@
 {
 	"name": "listModels",
 	"commandType": "external-method",
-	"source": "textgen",
+	"source": "dataOps",
 	"methodName": "listAvailableModels",
 	"parameters": {}
 }

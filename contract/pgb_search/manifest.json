@@ -1,7 +1,7 @@
 {
 	"name": "pgb_search",
 	"commandType": "external-method",
-	"source": "textgen",
+	"source": "gutendex",
 	"methodName": "searchGutenberg",
 	"parameters": {
 		"query": {

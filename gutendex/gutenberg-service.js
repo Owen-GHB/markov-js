@@ -1,5 +1,5 @@
-import { getJSON, downloadFile } from '../utils/GutendexAPI.js';
-import { FileHandler } from '../io/FileHandler.js';
+import { getJSON, downloadFile } from './GutendexAPI.js';
+import { FileHandler } from '../textgen/io/FileHandler.js';
 import fs from 'fs';
 
 /**

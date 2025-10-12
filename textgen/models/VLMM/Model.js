@@ -4,7 +4,7 @@ import {
 	GenerationResult,
 } from '../Interfaces.js';
 import { VLMMNode } from './VLMMNode.js';
-import { random } from '../../utils/RNG.js';
+import { random } from '../RNG.js';
 
 /**
  * Variable-Length Markov Model for text generation

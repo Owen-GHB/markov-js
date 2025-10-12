@@ -1,4 +1,4 @@
-import { FileHandler } from '../io/FileHandler.js';
+import { FileHandler } from '../textgen/io/FileHandler.js';
 
 /**
  * List available corpus files

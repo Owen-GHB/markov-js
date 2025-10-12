@@ -1,7 +1,7 @@
 {
 	"name": "pgb_info",
 	"commandType": "external-method",
-	"source": "textgen",
+	"source": "gutendex",
 	"methodName": "getGutenbergInfo",
 	"parameters": {
 		"id_or_title": {

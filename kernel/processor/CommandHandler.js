@@ -29,8 +29,8 @@ export class CommandHandler {
 		this.config = config;
 		this.contractDir = config.paths.contractDir;
 		
-		// Initialize dependency cache for shared module instances
-		this.dependencyCache = new Map();
+		// Initialize source cache for shared module instances
+		this.sourceCache = new Map();
 	}
 
 	/**
@@ -59,7 +59,7 @@ export class CommandHandler {
 				return this.handleInternalCommand(command, commandSpec);
 			}
 
-			// Handle external-method commands using dependency system
+			// Handle external-method commands using source system
 			if (commandSpec.commandType === 'external-method') {
 				return await this.handleExternalMethod(command, commandSpec);
 			}
@@ -115,35 +115,35 @@ export class CommandHandler {
 	}
 
 	/**
-	 * Get or load a dependency module
-	 * @param {string} dependencySpec - The dependency name from global.json
+	 * Get or load a source module
+	 * @param {string} sourceSpec - The source name from global.json
 	 * @returns {Promise<Object>} - The loaded module
 	 */
-	async getDependency(dependencySpec) {
-		// Check if dependency is already cached
-		if (this.dependencyCache.has(dependencySpec)) {
-			return this.dependencyCache.get(dependencySpec);
+	async getSource(sourceSpec) {
+		// Check if source is already cached
+		if (this.sourceCache.has(sourceSpec)) {
+			return this.sourceCache.get(sourceSpec);
 		}
 
-		// Look up the dependency path in global manifest
-		const dependencyPath = this.manifest.dependencies?.[dependencySpec];
+		// Look up the source path in global manifest
+		const sourcePath = this.manifest.sources?.[sourceSpec];
 		
-		if (!dependencyPath) {
-			throw new Error(`Dependency '${dependencySpec}' not found in global.json`);
+		if (!sourcePath) {
+			throw new Error(`Source '${sourceSpec}' not found in global.json`);
 		}
 
-		// Resolve the dependency path relative to project root if it's a local path
+		// Resolve the source path relative to project root if it's a local path
 		let resolvedPath;
-		if (dependencyPath.startsWith('./') || dependencyPath.startsWith('../')) {
+		if (sourcePath.startsWith('./') || sourcePath.startsWith('../')) {
 			// Local path - resolve relative to project root
 			const projectRoot = this.config.paths?.projectRoot;
 			if (!projectRoot) {
-				throw new Error(`Cannot resolve local dependency '${dependencySpec}': projectRoot not available`);
+				throw new Error(`Cannot resolve local source '${sourceSpec}': projectRoot not available`);
 			}
-			resolvedPath = path.resolve(projectRoot, dependencyPath);
+			resolvedPath = path.resolve(projectRoot, sourcePath);
 		} else {
 			// npm package - use as-is (Node.js will resolve it)
-			resolvedPath = dependencyPath;
+			resolvedPath = sourcePath;
 		}
 
 		// Convert to file URL for proper ES module loading
@@ -153,13 +153,13 @@ export class CommandHandler {
 		const module = await import(moduleUrl);
 
 		// Cache the module for future use
-		this.dependencyCache.set(dependencySpec, module);
+		this.sourceCache.set(sourceSpec, module);
 
 		return module;
 	}
 
 	/**
-	 * Handle an external-method command using dependency resolution with caching
+	 * Handle an external-method command using source resolution with caching
 	 * @param {Object} command - The parsed command object
 	 * @param {Object} commandSpec - The command manifest specification
 	 * @returns {Promise<Object>} - The result of the command
@@ -168,10 +168,10 @@ export class CommandHandler {
 		const { args = {} } = command;
 
 		try {
-			// Get the dependency spec from the command manifest
-			const dependencySpec = commandSpec.source;
+			// Get the source spec from the command manifest
+			const sourceSpec = commandSpec.source;
 			
-			if (!dependencySpec) {
+			if (!sourceSpec) {
 				return {
 					error: `External-method command '${commandSpec.name}' missing 'source' property in manifest`,
 					output: null,
@@ -179,7 +179,7 @@ export class CommandHandler {
 			}
 
 			// Get the module from cache or load it
-			const module = await this.getDependency(dependencySpec);
+			const module = await this.getSource(sourceSpec);
 
 			// Get the method from the module
 			const method = module[commandSpec.methodName];
@@ -188,7 +188,7 @@ export class CommandHandler {
 			if (typeof method !== 'function') {
 				const availableMethods = Object.keys(module).filter(key => typeof module[key] === 'function');
 				return {
-					error: `Method '${commandSpec.methodName}' not found in dependency '${dependencySpec}'. Available methods: ${availableMethods.join(', ') || 'none'}`,
+					error: `Method '${commandSpec.methodName}' not found in source '${sourceSpec}'. Available methods: ${availableMethods.join(', ') || 'none'}`,
 					output: null,
 				};
 			}
@@ -210,7 +210,7 @@ export class CommandHandler {
 			}
 		} catch (error) {
 			return {
-				error: `Failed to execute external method '${commandSpec.methodName}' from dependency '${commandSpec.source}': ${error.message}`,
+				error: `Failed to execute external method '${commandSpec.methodName}' from source '${commandSpec.source}': ${error.message}`,
 				output: null,
 			};
 		}
@@ -237,25 +237,25 @@ export class CommandHandler {
 	}
 
 	/**
-	 * Get cached dependency count (for debugging/monitoring)
-	 * @returns {number} - Number of cached dependencies
+	 * Get cached source count (for debugging/monitoring)
+	 * @returns {number} - Number of cached sources
 	 */
-	getCachedDependencyCount() {
-		return this.dependencyCache.size;
+	getCachedSourceCount() {
+		return this.sourceCache.size;
 	}
 
 	/**
-	 * Get list of cached dependencies (for debugging/monitoring)
-	 * @returns {string[]} - Array of cached dependency names
+	 * Get list of cached sources (for debugging/monitoring)
+	 * @returns {string[]} - Array of cached source names
 	 */
-	getCachedDependencies() {
-		return Array.from(this.dependencyCache.keys());
+	getCachedSources() {
+		return Array.from(this.sourceCache.keys());
 	}
 
 	/**
-	 * Clear the dependency cache (useful for development/reloading)
+	 * Clear the source cache (useful for development/reloading)
 	 */
 	clearCache() {
-		this.dependencyCache.clear();
+		this.sourceCache.clear();
 	}
 }

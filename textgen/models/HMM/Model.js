@@ -3,7 +3,7 @@ import {
 	GenerationContext,
 	GenerationResult,
 } from '../Interfaces.js';
-import { random } from '../../utils/RNG.js';
+import { random } from '../RNG.js';
 
 /**
  * Hidden Markov Model for text generation

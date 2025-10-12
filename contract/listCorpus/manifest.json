@@ -1,7 +1,7 @@
 {
 	"name": "listCorpus",
 	"commandType": "external-method",
-	"source": "textgen",
+	"source": "dataOps",
 	"methodName": "listCorpusFiles",
 	"parameters": {}
 }

@@ -1,4 +1,4 @@
-import { ModelSerializer } from '../io/ModelSerializer.js';
+import { ModelSerializer } from '../textgen/io/ModelSerializer.js';
 
 /**
  * Delete a saved model file

@@ -7,7 +7,9 @@
 		"currentModel": null,
 		"defaultCorpus": "sample.txt"
 	},
-	"dependencies": {
-		"textgen": "./textgen/index.js"
+	"sources": {
+		"textgen": "./textgen/index.js",
+		"gutendex": "./gutendex/index.js",
+		"dataOps": "./dataOps/index.js"
 	}
 }

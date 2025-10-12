@@ -1,7 +1,7 @@
 {
 	"name": "delete",
 	"commandType": "external-method",
-	"source": "textgen",
+	"source": "dataOps",
 	"methodName": "deleteModelFile",
 	"parameters": {
 		"modelName": {
