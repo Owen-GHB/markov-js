@@ -1,3 +1,4 @@
+// manifestLoader.js
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -5,136 +6,121 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Synchronously load and cache all manifests at module initialization
-let contractCache = null;
+/**
+ * Loads and merges manifest from the new 4-file structure
+ * @param {string} projectRoot - Root directory of the project
+ * @returns {Object} - Complete merged manifest
+ */
+export function loadManifest(projectRoot) {
+  // Load the four core files
+  const contract = loadJSONFile(projectRoot, 'contract.json');
+  const commands = loadJSONFile(projectRoot, 'commands.json');
+  const runtime = loadJSONFile(projectRoot, 'runtime.json', {}); // Optional
+  const help = loadJSONFile(projectRoot, 'help.json', {}); // Optional
 
-function initializeContractSync(contractDir, projectRoot) {
-	if (contractCache) {
-		return contractCache;
-	}
+  // Transform commands object into array with name property
+  const commandArray = Object.entries(commands).map(([commandName, commandSpec]) => {
+    return {
+      name: commandName,
+      ...commandSpec,
+      // Merge runtime and help data for this command
+      ...(runtime[commandName] || {}),
+      ...(help[commandName] || {}),
+      // Deep merge parameters from all sources
+      parameters: mergeParameters(
+        commandSpec.parameters,
+        runtime[commandName]?.parameters,
+        help[commandName]?.parameters
+      )
+    };
+  });
 
-	// Load global manifest from contract directory
-	const globalManifest = JSON.parse(
-		fs.readFileSync(path.join(projectRoot, 'contract.json'), 'utf8'),
-	);
-
-	// Get all command directories from the contract folder
-	const items = fs.readdirSync(contractDir, { withFileTypes: true });
-	const commandDirs = items
-		.filter(
-			(dirent) =>
-				dirent.isDirectory() &&
-				dirent.name !== 'index.js' &&
-				dirent.name !== 'exit' && // Filter out built-in commands
-				dirent.name !== 'help',
-		) // Filter out built-in commands
-		.map((dirent) => dirent.name);
-
-	// Load all manifest slices synchronously
-	const commands = [];
-
-	for (const dir of commandDirs) {
-		try {
-			// Load manifest slice from contract directory
-			const manifestPath = path.join(contractDir, dir, 'command.json');
-			let manifestSlice = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-
-			// Load runtime slice if it exists
-			const runtimePath = path.join(contractDir, dir, 'runtime.json');
-			let runtimeSlice = {};
-			if (fs.existsSync(runtimePath)) {
-				runtimeSlice = JSON.parse(fs.readFileSync(runtimePath, 'utf8'));
-			}
-
-			// Load help slice if it exists
-			const helpPath = path.join(contractDir, dir, 'help.json');
-			let helpSlice = {};
-			if (fs.existsSync(helpPath)) {
-				helpSlice = JSON.parse(fs.readFileSync(helpPath, 'utf8'));
-			}
-
-			// Deep merge parameters objects, preserving all properties from all three
-			const mergedParameters = {};
-			// First, add all parameters from the base manifest
-			for (const paramName in manifestSlice.parameters || {}) {
-				mergedParameters[paramName] = {
-					...manifestSlice.parameters[paramName],
-				};
-			}
-			// Then, add/extend with parameters from runtime.json
-			for (const paramName in runtimeSlice.parameters || {}) {
-				if (mergedParameters[paramName]) {
-					// Merge parameter properties
-					mergedParameters[paramName] = {
-						...mergedParameters[paramName],
-						...runtimeSlice.parameters[paramName],
-					};
-				} else {
-					// Add new parameter from runtime
-					mergedParameters[paramName] = {
-						...runtimeSlice.parameters[paramName],
-					};
-				}
-			}
-			// Finally, add/extend with parameters from help.json
-			for (const paramName in helpSlice.parameters || {}) {
-				if (mergedParameters[paramName]) {
-					// Merge parameter properties
-					mergedParameters[paramName] = {
-						...mergedParameters[paramName],
-						...helpSlice.parameters[paramName],
-					};
-				} else {
-					// Add new parameter from help
-					mergedParameters[paramName] = { ...helpSlice.parameters[paramName] };
-				}
-			}
-
-			// Create the merged manifest slice by combining all three
-			let mergedManifestSlice = {
-				...manifestSlice,
-				...runtimeSlice,
-				...helpSlice,
-				parameters: mergedParameters,
-			};
-
-			// If this is an external-method command, resolve the module path ahead of time
-			if (
-				mergedManifestSlice.commandType === 'external-method' &&
-				mergedManifestSlice.modulePath
-			) {
-				// Use the provided project root to resolve the module path
-				const absoluteModulePath = path.resolve(
-					projectRoot,
-					mergedManifestSlice.modulePath,
-				);
-				// Add the resolvedAbsolutePath to the manifest for use by the command handler
-				mergedManifestSlice = {
-					...mergedManifestSlice,
-					resolvedAbsolutePath: absoluteModulePath,
-				};
-			}
-
-			commands.push(mergedManifestSlice);
-		} catch (error) {
-			console.warn(`Warning: Could not load from ${dir}:`, error.message);
-		}
-	}
-
-	const manifest = {
-		...globalManifest,
-		commands: commands,
-	};
-
-	contractCache = {
-		manifest,
-	};
-
-	return contractCache;
+  return {
+    ...contract,
+    commands: commandArray
+  };
 }
 
-// Export manifestReader function that can be called with parameters
+/**
+ * Load a JSON file with optional default value
+ */
+function loadJSONFile(projectRoot, filename, defaultValue = null) {
+  const filePath = path.join(projectRoot, filename);
+  
+  if (!fs.existsSync(filePath)) {
+    if (defaultValue !== null) {
+      return defaultValue;
+    }
+    throw new Error(`Required manifest file not found: ${filename}`);
+  }
+
+  try {
+    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+  } catch (error) {
+    throw new Error(`Failed to parse ${filename}: ${error.message}`);
+  }
+}
+
+/**
+ * Deep merge parameters from multiple sources
+ */
+function mergeParameters(...paramSources) {
+  const merged = {};
+  
+  for (const params of paramSources) {
+    if (!params || typeof params !== 'object') continue;
+    
+    for (const [paramName, paramSpec] of Object.entries(params)) {
+      if (merged[paramName]) {
+        // Merge existing parameter spec
+        merged[paramName] = { ...merged[paramName], ...paramSpec };
+      } else {
+        // Create new parameter spec
+        merged[paramName] = { ...paramSpec };
+      }
+    }
+  }
+  
+  return merged;
+}
+
+/**
+ * Utility to validate the manifest structure
+ */
+export function validateManifest(manifest) {
+  const errors = [];
+
+  if (!manifest.sources || typeof manifest.sources !== 'object') {
+    errors.push('Manifest must contain a sources object');
+  }
+
+  if (!Array.isArray(manifest.commands)) {
+    errors.push('Manifest must contain a commands array');
+  } else {
+    manifest.commands.forEach((command, index) => {
+      if (!command.name) {
+        errors.push(`Command at index ${index} missing name property`);
+      }
+      if (!command.commandType) {
+        errors.push(`Command '${command.name}' missing commandType`);
+      }
+      if (command.commandType === 'external-method' && !command.source) {
+        errors.push(`External-method command '${command.name}' missing source property`);
+      }
+    });
+  }
+
+  if (errors.length > 0) {
+    throw new Error(`Manifest validation failed:\n- ${errors.join('\n- ')}`);
+  }
+
+  return true;
+}
+
+// Updated version that works with the new loader
 export function manifestReader(contractDir, projectRoot) {
-	const { manifest } = initializeContractSync(contractDir, projectRoot);
-	return manifest;
+  // For backward compatibility, but now we ignore contractDir 
+  // and load from project root instead
+  console.warn('Note: manifestReader now loads from project root, contractDir parameter is ignored');
+  return loadManifest(projectRoot);
 }

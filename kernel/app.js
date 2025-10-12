@@ -9,7 +9,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 /**
- * Launch the hosted application (Markov text generator) with the given arguments and project root
+ * Launch the hosted application with the given arguments and project root
  * @param {string[]} args - Command line arguments
  * @param {string} projectRoot - The project root directory
  * @returns {Promise<void>}

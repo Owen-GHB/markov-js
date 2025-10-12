@@ -1,5 +1,0 @@
-{
-	"description": "List all available saved models",
-	"syntax": "listModels()",
-	"examples": ["listModels()"]
-}

@@ -1,0 +1,150 @@
+{
+  "delete": {
+    "name": "delete",
+    "commandType": "external-method",
+    "source": "dataOps",
+    "methodName": "deleteModelFile",
+    "parameters": {
+      "modelName": {
+        "type": "string",
+        "required": true
+      }
+    }
+  },
+  "generate": {
+    "name": "generate",
+    "commandType": "external-method",
+    "source": "textgen",
+    "methodName": "generateText",
+    "parameters": {
+      "modelName": {
+        "type": "string",
+        "required": true
+      },
+      "length": {
+        "type": "integer",
+        "required": false
+      },
+      "min_tokens": {
+        "type": "integer",
+        "required": false
+      },
+      "temperature": {
+        "type": "number",
+        "required": false
+      },
+      "prompt": {
+        "type": "string",
+        "required": false
+      },
+      "stop": {
+        "type": "array",
+        "required": false
+      },
+      "samples": {
+        "type": "integer",
+        "required": false
+      },
+      "allowRepetition": {
+        "type": "boolean",
+        "required": false
+      }
+    }
+  },
+  "listCorpus": {
+    "name": "listCorpus",
+    "commandType": "external-method",
+    "source": "dataOps",
+    "methodName": "listCorpusFiles",
+    "parameters": {}
+  },
+  "listModels": {
+    "name": "listModels",
+    "commandType": "external-method",
+    "source": "dataOps",
+    "methodName": "listAvailableModels",
+    "parameters": {}
+  },
+  "pgb_download": {
+    "name": "pgb_download",
+    "commandType": "external-method",
+    "source": "gutendex",
+    "methodName": "downloadGutenberg",
+    "parameters": {
+      "id_or_title": {
+        "type": "string|integer",
+        "required": true
+      },
+      "file": {
+        "type": "string",
+        "required": false
+      }
+    }
+  },
+  "pgb_info": {
+    "name": "pgb_info",
+    "commandType": "external-method",
+    "source": "gutendex",
+    "methodName": "getGutenbergInfo",
+    "parameters": {
+      "id_or_title": {
+        "type": "string|integer",
+        "required": true
+      }
+    }
+  },
+  "pgb_search": {
+    "name": "pgb_search",
+    "commandType": "external-method",
+    "source": "gutendex",
+    "methodName": "searchGutenberg",
+    "parameters": {
+      "query": {
+        "type": "string",
+        "required": true
+      }
+    }
+  },
+  "train": {
+    "name": "train",
+    "commandType": "external-method",
+    "source": "textgen",
+    "methodName": "trainModel",
+    "parameters": {
+      "file": {
+        "type": "string",
+        "required": true
+      },
+      "modelType": {
+        "type": "string",
+        "required": true
+      },
+      "order": {
+        "type": "integer",
+        "required": false
+      },
+      "modelName": {
+        "type": "string",
+        "required": false
+      },
+      "caseSensitive": {
+        "type": "boolean",
+        "required": false
+      },
+      "trackStartStates": {
+        "type": "boolean",
+        "required": false
+      }
+    }
+  },
+  "use": {
+    "name": "use",
+    "commandType": "internal",
+    "parameters": {
+      "modelName": {
+        "type": "string",
+        "required": true
+      }
+    }
+  }
+}

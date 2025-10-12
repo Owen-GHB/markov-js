@@ -1,7 +1,0 @@
-{
-	"name": "listCorpus",
-	"commandType": "external-method",
-	"source": "dataOps",
-	"methodName": "listCorpusFiles",
-	"parameters": {}
-}

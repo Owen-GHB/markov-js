@@ -1,0 +1,71 @@
+{
+  "delete": {
+    "description": "Delete a saved model",
+    "syntax": "delete(modelName)",
+    "examples": [
+      "delete(\"old_model.json\")"
+    ]
+  },
+  "generate": {
+    "description": "Generate text from a trained model",
+    "syntax": "generate(modelName, [options])",
+    "examples": [
+      "generate(\"model.json\", length=50, temperature=0.8)",
+      "generate({modelName: \"story_model.json\", prompt: \"Once upon a time\"})"
+    ]
+  },
+  "listCorpus": {
+    "description": "List all available corpus files",
+    "syntax": "listCorpus()",
+    "examples": [
+      "listCorpus()"
+    ]
+  },
+  "listModels": {
+    "description": "List all available saved models",
+    "syntax": "listModels()",
+    "examples": [
+      "listModels()"
+    ]
+  },
+  "pgb_download": {
+    "description": "Download a book from Project Gutenberg",
+    "syntax": "pgb_download(id|title, [options])",
+    "examples": [
+      "pgb_download(1342)",
+      "pgb_download(\"Moby Dick\", file=\"whale.txt\")"
+    ]
+  },
+  "pgb_info": {
+    "description": "Get book details from Project Gutenberg",
+    "syntax": "pgb_info(id_or_title)",
+    "examples": [
+      "pgb_info(1342)",
+      "pgb_info(\"Pride and Prejudice\")",
+      "pgb_info({id: 1342})",
+      "pgb_info({title: \"Pride and Prejudice\"})"
+    ]
+  },
+  "pgb_search": {
+    "description": "Search Project Gutenberg by title/author",
+    "syntax": "pgb_search(query)",
+    "examples": [
+      "pgb_search(\"Sherlock Holmes\")"
+    ]
+  },
+  "train": {
+    "description": "Train a model from a text corpus file",
+    "syntax": "train(file, modelType, [options])",
+    "examples": [
+      "train(\"sample.txt\", \"markov\", order=2)",
+      "train({file: \"corpus.txt\", modelType: \"vlmm\", order: 3})"
+    ]
+  },
+  "use": {
+    "description": "Set the current model to use",
+    "syntax": "use(modelName)",
+    "examples": [
+      "use(\"current_model.json\")"
+    ]
+  }
+}

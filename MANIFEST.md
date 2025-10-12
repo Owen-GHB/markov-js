@@ -14,15 +14,14 @@ Each command is defined by three JSON files in its dedicated directory:
 
 ```
 contract/
-├── global.json              # Application-wide configuration
 ├── [command-name]/
-│   ├── manifest.json       # Kernel requirements only
+│   ├── command.json       # Kernel requirements only
 │   ├── runtime.json        # Runtime features and logic
 │   └── help.json           # User documentation
 └── ...
 ```
 
-## manifest.json - Core Kernel Requirements
+## command.json - Core Kernel Requirements
 
 Contains only the essential information the kernel needs to register and route the command:
 
@@ -48,7 +47,7 @@ Contains only the essential information the kernel needs to register and route t
 **Purpose**: Define the minimal requirements for kernel operation:
 
 - Command identity (`name`, `commandType`)
-- Execution details (`modulePath`, `methodName`)
+- Execution details (`source`, `methodName`)
 - Parameter structure (`type`, `required`)
 
 ## runtime.json - Runtime Behavior

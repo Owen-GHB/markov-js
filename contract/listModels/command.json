@@ -1,7 +1,0 @@
-{
-	"name": "listModels",
-	"commandType": "external-method",
-	"source": "dataOps",
-	"methodName": "listAvailableModels",
-	"parameters": {}
-}
