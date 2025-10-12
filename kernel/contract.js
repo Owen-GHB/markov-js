@@ -104,8 +104,8 @@ export function validateManifest(manifest) {
       if (!command.commandType) {
         errors.push(`Command '${command.name}' missing commandType`);
       }
-      if (command.commandType === 'external-method' && !command.source) {
-        errors.push(`External-method command '${command.name}' missing source property`);
+      if (command.commandType === 'native-method' && !command.source) {
+        errors.push(`Native-method command '${command.name}' missing source property`);
       }
     });
   }

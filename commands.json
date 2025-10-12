@@ -1,8 +1,8 @@
 {
   "delete": {
     "name": "delete",
-    "commandType": "external-method",
-    "source": "dataOps",
+    "commandType": "native-method",
+    "source": "markov-js",
     "methodName": "deleteModelFile",
     "parameters": {
       "modelName": {
@@ -13,8 +13,8 @@
   },
   "generate": {
     "name": "generate",
-    "commandType": "external-method",
-    "source": "textgen",
+    "commandType": "native-method",
+    "source": "markov-js",
     "methodName": "generateText",
     "parameters": {
       "modelName": {
@@ -53,22 +53,22 @@
   },
   "listCorpus": {
     "name": "listCorpus",
-    "commandType": "external-method",
-    "source": "dataOps",
+    "commandType": "native-method",
+    "source": "markov-js",
     "methodName": "listCorpusFiles",
     "parameters": {}
   },
   "listModels": {
     "name": "listModels",
-    "commandType": "external-method",
-    "source": "dataOps",
+    "commandType": "native-method",
+    "source": "markov-js",
     "methodName": "listAvailableModels",
     "parameters": {}
   },
   "pgb_download": {
     "name": "pgb_download",
-    "commandType": "external-method",
-    "source": "gutendex",
+    "commandType": "native-method",
+    "source": "markov-js",
     "methodName": "downloadGutenberg",
     "parameters": {
       "id_or_title": {
@@ -83,8 +83,8 @@
   },
   "pgb_info": {
     "name": "pgb_info",
-    "commandType": "external-method",
-    "source": "gutendex",
+    "commandType": "native-method",
+    "source": "markov-js",
     "methodName": "getGutenbergInfo",
     "parameters": {
       "id_or_title": {
@@ -95,8 +95,8 @@
   },
   "pgb_search": {
     "name": "pgb_search",
-    "commandType": "external-method",
-    "source": "gutendex",
+    "commandType": "native-method",
+    "source": "markov-js",
     "methodName": "searchGutenberg",
     "parameters": {
       "query": {
@@ -107,8 +107,8 @@
   },
   "train": {
     "name": "train",
-    "commandType": "external-method",
-    "source": "textgen",
+    "commandType": "native-method",
+    "source": "markov-js",
     "methodName": "trainModel",
     "parameters": {
       "file": {

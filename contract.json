@@ -8,8 +8,6 @@
 		"defaultCorpus": "sample.txt"
 	},
 	"sources": {
-		"textgen": "./textgen",
-		"gutendex": "./gutendex",
-		"dataOps": "./dataOps"
+		"markov-js": "./"
 	}
 }

@@ -62,7 +62,7 @@ Create these four files in your **project root** (not in a contract directory):
 ```json
 {
   "yourcommand": {
-    "commandType": "external-method",
+    "commandType": "native",
     "source": "yourDomain",
     "methodName": "yourMethod",
     "description": "Description of what your command does",
