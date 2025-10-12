@@ -118,9 +118,6 @@ export function validateManifest(manifest) {
 }
 
 // Updated version that works with the new loader
-export function manifestReader(contractDir, projectRoot) {
-  // For backward compatibility, but now we ignore contractDir 
-  // and load from project root instead
-  console.warn('Note: manifestReader now loads from project root, contractDir parameter is ignored');
+export function manifestReader(projectRoot) {
   return loadManifest(projectRoot);
 }

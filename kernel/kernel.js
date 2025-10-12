@@ -19,8 +19,8 @@ export async function launch(args, projectRoot) {
 	// Calculate config path relative to this file's location (kernel.js is in kernel/ dir)
 	const configFilePath = path.join(__dirname, 'config.json');
 	const config = buildConfig(configFilePath, projectRoot);
-	const manifest = manifestReader(config.paths.contractDir, projectRoot);
-	const commandProcessor = new CommandProcessor(config, manifest);
+	const manifest = manifestReader(projectRoot);
+	const commandProcessor = new CommandProcessor(projectRoot, manifest);
 
 	// Create plugin loader once for all plugin operations
 	const pluginLoader = new PluginLoader(config.paths.pluginsDir);

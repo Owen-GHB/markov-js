@@ -7,27 +7,19 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export class CommandHandler {
-	constructor(manifest, config = {}) {
+	constructor(manifest, projectRoot) {
 		// Validate manifest parameter
 		if (!manifest || typeof manifest !== 'object') {
 			throw new Error('CommandHandler requires a manifest object');
 		}
 
 		// Validate config parameter
-		if (typeof config !== 'object' || config === null) {
-			throw new Error('CommandHandler requires a config object');
-		}
-
-		// Extract contractDir from paths in config
-		if (!config.paths || !config.paths.contractDir) {
-			throw new Error(
-				'CommandHandler config requires paths.contractDir property',
-			);
+		if (projectRoot === null) {
+			throw new Error('CommandHandler requires a projectRoot parameter');
 		}
 
 		this.manifest = manifest;
-		this.config = config;
-		this.contractDir = config.paths.contractDir;
+		this.projectRoot = projectRoot;
 		
 		// Initialize source cache for shared module instances
 		this.sourceCache = new Map();
@@ -136,7 +128,7 @@ export class CommandHandler {
 		let resolvedPath;
 		if (sourcePath.startsWith('./') || sourcePath.startsWith('../')) {
 			// Local path - resolve relative to project root
-			const projectRoot = this.config.paths?.projectRoot;
+			const projectRoot = this.projectRoot;
 			if (!projectRoot) {
 				throw new Error(`Cannot resolve local source '${sourceSpec}': projectRoot not available`);
 			}
@@ -267,28 +259,5 @@ export class CommandHandler {
 			}
 			return match; // Keep original placeholder if param not found
 		});
-	}
-
-	/**
-	 * Get cached source count (for debugging/monitoring)
-	 * @returns {number} - Number of cached sources
-	 */
-	getCachedSourceCount() {
-		return this.sourceCache.size;
-	}
-
-	/**
-	 * Get list of cached sources (for debugging/monitoring)
-	 * @returns {string[]} - Array of cached source names
-	 */
-	getCachedSources() {
-		return Array.from(this.sourceCache.keys());
-	}
-
-	/**
-	 * Clear the source cache (useful for development/reloading)
-	 */
-	clearCache() {
-		this.sourceCache.clear();
 	}
 }

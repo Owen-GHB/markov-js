@@ -145,18 +145,6 @@ export function buildConfig(configFilePath, projectRoot) {
     globalPaths.configFilePath = configFilePath;
 
     // Add utility functions for dynamic paths (with security validation)
-    globalPaths.getContractManifestPath = (commandName) => {
-        if (!globalPaths.contractDir) return null;
-        const manifestPath = path.join(globalPaths.contractDir, commandName, 'manifest.json');
-        return validatePathSecurity(manifestPath, projectRoot, `contracts/${commandName}/manifest.json`);
-    };
-    
-    globalPaths.getContractHandlerPath = (commandName) => {
-        if (!globalPaths.contractDir) return null;
-        const handlerPath = path.join(globalPaths.contractDir, commandName, 'handler.js');
-        return validatePathSecurity(handlerPath, projectRoot, `contracts/${commandName}/handler.js`);
-    };
-    
     globalPaths.getUIFilePath = (filename = 'index.html') => {
         if (!globalPaths.generatedUIDir) return null;
         const uiPath = path.join(globalPaths.generatedUIDir, filename);

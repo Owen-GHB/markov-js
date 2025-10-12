@@ -1,6 +1,5 @@
 {
 	"paths": {
-		"contractDir": "contract",
-		"pluginsDir": "external-plugins"
+		"pluginsDir": "kernel-plugins"
 	}
 }

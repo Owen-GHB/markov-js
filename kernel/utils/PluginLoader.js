@@ -139,29 +139,6 @@ export class PluginLoader {
 
 		return metadata;
 	}
-
-	/**
-	 * Reset the plugin cache (useful for development or reloading)
-	 */
-	clearCache() {
-		this.pluginCache.clear();
-	}
-
-	/**
-	 * Get cached plugin count
-	 * @returns {number} - Number of cached plugins
-	 */
-	getCachedPluginCount() {
-		return this.pluginCache.size;
-	}
-
-	/**
-	 * Get list of cached plugin names
-	 * @returns {string[]} - Array of cached plugin names
-	 */
-	getCachedPlugins() {
-		return Array.from(this.pluginCache.keys());
-	}
 }
 
 // Export the class only - consumers need to create instances with the pluginsDir
