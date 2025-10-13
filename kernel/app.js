@@ -17,9 +17,11 @@ export async function launch(args, projectRoot) {
 	// Calculate config path relative to this file's location (app.js is in kernel/ dir)
 	const configFilePath = path.join(__dirname, 'config.json');
 	const config = buildConfig(configFilePath, projectRoot);
+	console.log('Using configuration:', config);
 
 	// Create plugin loader once and get the repl and cli plugins
-	const pluginLoader = new PluginLoader(config.paths.pluginsDir);
+	const defaultPluginsDir = path.join(__dirname, 'default-plugins');
+	const pluginLoader = new PluginLoader(defaultPluginsDir);
 	const replStart = await pluginLoader.getPluginMethod('repl', 'start');
 	const cliRun = await pluginLoader.getPluginMethod('cli', 'run');
 

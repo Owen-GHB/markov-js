@@ -99,12 +99,41 @@ export function buildConfig(configFilePath, projectRoot) {
     // Calculate kernel directory (fixed relative to this file)
     const kernelPath = path.join(__dirname, '..');
 
-    // Load plugin configurations by scanning the plugins directory
+    // Load plugin configurations from BOTH directories
     const pluginConfigs = {};
+    
+    // 1. Scan DEFAULT plugins directory (hardcoded)
+    const defaultPluginsDir = path.join(kernelPath, 'default-plugins');
+    if (fs.existsSync(defaultPluginsDir)) {
+        try {
+            const defaultPluginDirs = fs.readdirSync(defaultPluginsDir).filter(item => {
+                const itemPath = path.join(defaultPluginsDir, item);
+                return fs.statSync(itemPath).isDirectory();
+            });
+
+            for (const pluginName of defaultPluginDirs) {
+                const pluginConfigPath = path.join(defaultPluginsDir, pluginName, 'config.json');
+                if (fs.existsSync(pluginConfigPath)) {
+                    try {
+                        const pluginRawConfig = JSON.parse(fs.readFileSync(pluginConfigPath, 'utf8'));
+                        pluginConfigs[pluginName] = pluginRawConfig;
+                    } catch (error) {
+                        console.warn(`⚠️ Could not load config for default plugin ${pluginName}:`, error.message);
+                    }
+                } else {
+                    // Default plugin exists but has no config - initialize empty
+                    pluginConfigs[pluginName] = {};
+                }
+            }
+        } catch (error) {
+            console.warn(`⚠️ Could not scan default plugins directory ${defaultPluginsDir}:`, error.message);
+        }
+    }
+
+    // 2. Scan CONFIGURABLE plugins directory (from config)
     if (rawKernelConfig.paths?.pluginsDir) {
         const pluginsDir = resolveSecurePath(rawKernelConfig.paths.pluginsDir, projectRoot);
         
-        // Scan the plugins directory for all plugin folders
         if (fs.existsSync(pluginsDir)) {
             try {
                 const pluginDirs = fs.readdirSync(pluginsDir).filter(item => {
@@ -143,6 +172,9 @@ export function buildConfig(configFilePath, projectRoot) {
     globalPaths.projectRoot = projectRoot;
     globalPaths.kernelPath = kernelPath;
     globalPaths.configFilePath = configFilePath;
+    
+    // Add default plugins directory to paths for easy access
+    globalPaths.defaultPluginsDir = defaultPluginsDir;
 
     // Add utility functions for dynamic paths (with security validation)
     globalPaths.getUIFilePath = (filename = 'index.html') => {
