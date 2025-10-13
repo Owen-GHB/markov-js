@@ -73,8 +73,7 @@ export async function launch(args, projectRoot) {
 			config.http.port,
 			config.http.paths.servedUIDir,
 			config.http.apiEndpoint,
-			config.paths.kernelPath,
-			config.paths.projectRoot
+			config.paths.kernelPath
 		);
 	} else {
 		// For other kernel commands or to show help

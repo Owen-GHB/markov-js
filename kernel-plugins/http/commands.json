@@ -4,17 +4,17 @@
     "methodName": "http", 
     "description": "Start HTTP server serving UI and API",
     "parameters": {
-      "servedUIDir": {
-        "type": "string",
-        "required": false,
-        "runtimeFallback": "servedUIDir",
-        "description": "Directory containing UI files to serve"
-      },
       "serverPort": {
         "type": "integer",
         "required": false, 
         "runtimeFallback": "serverPort",
         "description": "Port number for the server"
+      },
+      "servedUIDir": {
+        "type": "string",
+        "required": false,
+        "runtimeFallback": "servedUIDir",
+        "description": "Directory containing UI files to serve"
       },
       "apiEndpoint": {
         "type": "string",

@@ -34,7 +34,7 @@ class ElectronUIManager {
  * Handles commands for the Electron application via IPC
  */
 class ElectronCommandHandler {
-	constructor(config, commandProcessor) {
+	constructor(commandProcessor) {
 		this.commandProcessor = commandProcessor;
 	}
 
@@ -152,11 +152,8 @@ export class ElectronApp {
 		// Store paths for use by UI manager methods
 		this.paths = paths;
 
-		// Initialize command handler with unified config
-		this.commandHandler = new ElectronCommandHandler(config, commandProcessor);
-
-		// Use provided config with potential defaults
-		const effectiveConfig = { ...config };
+		// Initialize command handler
+		this.commandHandler = new ElectronCommandHandler(commandProcessor);
 
 		// Cache path resolver value at the beginning of start method
 		const preloadPath = paths.electronPreloadPath;

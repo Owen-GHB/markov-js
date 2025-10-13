@@ -31,10 +31,10 @@ export async function launch(args, projectRoot) {
 	// Default to REPL mode if no args or if args are application-specific
 	if (args.length === 0) {
 		// Default to REPL mode if no args
-		return replStart(config.repl.paths.contextFilePath,config.repl.paths.replHistoryFilePath,config.repl.maxHistory, config.paths.kernelPath, projectRoot);
+		return replStart(config.repl.paths.contextFilePath,config.repl.paths.replHistoryFilePath,config.repl.maxHistory, config.paths.kernelPath);
 	} else {
 		// Check if we're being called directly with command line args
-		return cliRun(config.cli.paths.contextFilePath, config.paths.kernelPath, projectRoot, args);
+		return cliRun(config.cli.paths.contextFilePath, config.paths.kernelPath, args);
 	}
 }
 

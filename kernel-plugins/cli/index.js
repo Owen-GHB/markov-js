@@ -28,7 +28,8 @@ function getCliInstance(contextFilePath, kernelPath, projectRoot) {
  * @param {string[]} args - Command line arguments
  * @returns {Promise<void>}
  */
-export async function run(contextFilePath, kernelPath, projectRoot, args) {
+export async function run(contextFilePath, kernelPath, args) {
+	const projectRoot = process.cwd();
 	const cli = getCliInstance(contextFilePath, kernelPath, projectRoot);
 	return await cli.run(args);
 }

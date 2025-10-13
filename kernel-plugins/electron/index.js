@@ -12,13 +12,11 @@ const __dirname = path.dirname(__filename);
  * @param {Object} commandProcessor - Command processor instance (not used directly, as electron-main.js recreates kernel)
  * @returns {Promise<void>}
  */
-export async function start(kernelPath) {
+export async function start(kernelPath, projectRoot = process.cwd()) {
 	// Since Electron needs to be launched as a separate process, we spawn electron using npx
 	// which will run electron-main.js. The electron-main.js will now use dynamic kernel loading.
 	return import('child_process')
 		.then(({ spawn }) => {
-			// Get the project root from current working directory
-			const projectRoot = process.cwd(); // Use current working directory as project root
 			if (!kernelPath) {
 			throw new Error('kernelPath must be provided as a parameter');
 			}
