@@ -4,7 +4,7 @@ A domain-agnostic command processing engine that automatically discovers and exe
 
 ## 🎯 Purpose
 
-Vertex provides a universal command processing system that works with any domain. Simply define your commands in a contract and the kernel automatically discovers, validates, and executes them through multiple interfaces.
+Vertex provides a universal command processing system that works with any domain. Simply define your commands in a 4-file contract and the kernel automatically discovers, validates, and executes them through multiple interfaces with full state management and recursive source expansion.
 
 ## 📁 Project Structure
 
@@ -12,10 +12,17 @@ Vertex provides a universal command processing system that works with any domain
 your-project/
 ├── kernel/                    # Generic command engine (copy once) - "Vertex"
 │   ├── utils/                 # Shared utilities
+│   │   ├── config-loader.js   # Advanced configuration with security
+│   │   └── PluginLoader.js    # Dynamic plugin loader
 │   ├── processor/             # Command processing pipeline
+│   │   ├── CommandParser.js   # Multi-format command parsing
+│   │   ├── CommandHandler.js  # Command routing & execution
+│   │   ├── CommandProcessor.js # Unified processing pipeline
+│   │   ├── StateManager.js    # Persistent state with side effects
+│   │   └── adapters/          # Command type handlers
 │   ├── app.js                 # REPL/CLI launcher
 │   ├── kernel.js              # UI/Electron/HTTP launcher  
-│   ├── contract.js            # Contract loading and validation
+│   ├── contract.js            # Advanced contract loading & validation
 │   └── config.json            # Kernel configuration
 ├── external-plugins/          # Plugin directory (configurable)
 │   ├── cli/                   # CLI interface
@@ -24,11 +31,12 @@ your-project/
 │   ├── http/                  # HTTP server with UI+API
 │   ├── electron/              # Electron desktop app
 │   └── generate/              # UI generation system
-├── contract.json              # Domain configuration
+├── contract.json              # Domain configuration & sources
 ├── commands.json              # Command definitions
-├── runtime.json               # Runtime behavior (optional)
-├── help.json                  # User documentation (optional)
+├── runtime.json               # Runtime behavior & side effects
+├── help.json                  # User documentation & examples
 ├── your-domain/               # Your domain-specific logic
+│   └── index.js               # Domain methods
 └── main.js                    # Project entry point
 ```
 
@@ -38,22 +46,24 @@ your-project/
 
 Copy the entire `/kernel` directory to your project. This is the universal command engine - you never need to modify it.
 
-### 2. Create Your Contract
+### 2. Create Your Contract (4-File System)
 
-Create these four files in your **project root** (not in a contract directory):
+Create these four files in your **project root**:
 
 **contract.json**
 ```json
 {
   "name": "your-app-name",
-  "version": "1.0.0", 
+  "version": "1.0.0",
   "description": "Your application description",
   "sources": {
-    "yourDomain": "./your-domain/index.js"
+    "yourDomain": "./your-domain",
+    "sharedUtils": "../shared-utils"  // Supports recursive sources!
   },
   "stateDefaults": {
     "currentUser": null,
-    "currentProject": null
+    "currentProject": null,
+    "lastOperation": "none"
   }
 }
 ```
@@ -61,43 +71,72 @@ Create these four files in your **project root** (not in a contract directory):
 **commands.json**
 ```json
 {
-  "yourcommand": {
-    "commandType": "native",
-    "source": "yourDomain",
-    "methodName": "yourMethod",
-    "description": "Description of what your command does",
+  "createProject": {
+    "commandType": "native-method",
+    "source": "yourDomain", 
+    "methodName": "createProject",
+    "description": "Create a new project",
     "parameters": {
-      "param1": {
+      "projectName": {
         "type": "string",
         "required": true,
-        "description": "Required parameter"
+        "description": "Name of the project to create"
+      },
+      "template": {
+        "type": "string",
+        "enum": ["basic", "advanced", "custom"],
+        "default": "basic",
+        "description": "Project template type"
+      }
+    }
+  },
+  "use": {
+    "commandType": "internal",
+    "description": "Set current project context",
+    "parameters": {
+      "projectName": {
+        "type": "string", 
+        "required": true,
+        "runtimeFallback": "currentProject",
+        "description": "Project name to use"
       }
     }
   }
 }
 ```
 
-**runtime.json** (optional)
+**runtime.json** (optional - for side effects & behavior)
 ```json
 {
-  "yourcommand": {
+  "createProject": {
     "sideEffects": {
       "setState": {
-        "currentProject": {"fromParam": "param1"}
+        "currentProject": {"fromParam": "projectName"},
+        "lastOperation": {"template": "created_{{projectName}}"}
       }
     }
+  },
+  "use": {
+    "sideEffects": {
+      "setState": {
+        "currentProject": {"fromParam": "projectName"}
+      }
+    },
+    "successOutput": "✅ Now using project: {{projectName}}"
   }
 }
 ```
 
-**help.json** (optional)
+**help.json** (optional - for user documentation)
 ```json
 {
-  "yourcommand": {
+  "createProject": {
     "examples": [
-      "yourcommand(param1=\"value\")",
-      "yourcommand({param1: \"value\"})"
-    ]
+      "createProject(\"my-app\")",
+      "createProject(\"my-app\", template=\"advanced\")",
+      "createProject({projectName: \"my-app\", template: \"custom\"})"
+    ],
+    "notes": "Projects are created in the current workspace directory."
   }
 }
 ```
@@ -106,8 +145,23 @@ Create these four files in your **project root** (not in a contract directory):
 
 **your-domain/index.js**
 ```javascript
-export function yourMethod(args) {
-  return `Processed: ${args.param1}`;
+export function createProject(args) {
+  const { projectName, template = 'basic' } = args;
+  
+  // Your domain logic here
+  console.log(`Creating project "${projectName}" with ${template} template`);
+  
+  // Return value becomes command output
+  return {
+    success: true,
+    projectId: `proj_${Date.now()}`,
+    message: `Project ${projectName} created successfully with ${template} template`
+  };
+}
+
+export function otherMethod(args) {
+  // Can be called by other commands
+  return "Operation completed";
 }
 ```
 
@@ -119,7 +173,7 @@ export function yourMethod(args) {
 import { launch } from './kernel/app.js';
 
 const projectRoot = process.cwd();
-launch(process.argv.slice(2), projectRoot);
+launch(process.argv.slice(2), projectRoot).catch(console.error);
 ```
 
 **kernel-main.js** (for UI/Electron/HTTP)
@@ -128,25 +182,27 @@ launch(process.argv.slice(2), projectRoot);
 import { launch } from './kernel/kernel.js';
 
 const projectRoot = process.cwd();
-launch(process.argv.slice(2), projectRoot);
+launch(process.argv.slice(2), projectRoot).catch(console.error);
 ```
 
 ### 5. Run Your Application
 
 ```bash
-# REPL mode (interactive)
+# REPL mode (interactive with history & completion)
 node main.js
 
-# CLI mode  
-node main.js yourcommand param1=value
+# CLI mode - multiple syntaxes supported
+node main.js createProject "my-app"
+node main.js createProject projectName="my-app" template="advanced"
+node main.js "createProject({projectName: 'my-app', template: 'custom'})"
 
-# Generate web UI
+# Generate web UI from your contract
 node kernel-main.js --generate
 
-# Serve web UI + API
+# Serve web UI + REST API
 node kernel-main.js --http
 
-# Launch Electron app
+# Launch Electron desktop app
 node kernel-main.js --electron
 
 # Show kernel help
@@ -155,30 +211,30 @@ node kernel-main.js
 
 ## 🧠 Command Types
 
-### 1. External-Method Commands (`commandType: "external-method"`)
+### 1. Native-Method Commands (`commandType: "native-method"`)
 
-Automatically call methods from your domain code:
+Call methods from your domain code with automatic source resolution:
 
 ```json
 {
-  "name": "yourCommand",
-  "commandType": "external-method", 
+  "name": "createProject",
+  "commandType": "native-method",
   "source": "yourDomain",
-  "methodName": "yourMethod"
+  "methodName": "createProject"
 }
 ```
 
 **Your domain method signature:**
 ```javascript
 export function yourMethod(args) {
-  // args contains parsed parameters
+  // args contains validated parameters
   return "Success result"; // Return value becomes command output
 }
 ```
 
 ### 2. Internal Commands (`commandType: "internal"`)
 
-Declarative commands handled by the kernel:
+Declarative commands handled by the kernel with templates and side effects:
 
 ```json
 {
@@ -188,13 +244,42 @@ Declarative commands handled by the kernel:
   "parameters": {
     "projectName": {
       "type": "string", 
-      "required": true
+      "required": true,
+      "runtimeFallback": "currentProject"
+    }
+  },
+  "sideEffects": {
+    "setState": {
+      "currentProject": {"fromParam": "projectName"}
     }
   }
 }
 ```
 
-## 🔧 Configuration
+## 🔌 Advanced Source System
+
+### Recursive Source Expansion
+
+Sources can reference other Vertex projects with their own contracts:
+
+**contract.json**
+```json
+{
+  "sources": {
+    "myDomain": "./my-domain",
+    "sharedTools": "../shared-tools",
+    "teamUtils": "../../team-utils"
+  }
+}
+```
+
+**Features:**
+- **Automatic conflict detection** - warns on duplicate command names
+- **Path security** - prevents escaping project root
+- **State inheritance** - child state defaults merge with parent
+- **Command transformation** - paths are properly resolved between contexts
+
+## ⚙️ Configuration
 
 **kernel/config.json**
 ```json
@@ -205,61 +290,26 @@ Declarative commands handled by the kernel:
 }
 ```
 
-## 📝 Command Syntax
-
-All these work the same:
-
-**Function style:**
-```
-yourcommand("value", key="option")
-```
-
-**Object style:**
-```
-yourcommand({param1: "value", key: "option"})  
-```
-
-**CLI style:**
-```
-yourcommand value key=option
-```
-
-**JSON style:**
-```json
-{"name": "yourcommand", "args": {"param1": "value"}}
-```
-
-## 🔌 Plugin System
-
-Plugins are simple - just create a directory with `index.js`:
-
-**external-plugins/your-plugin/index.js**
-```javascript
-export function start(config, commandProcessor) {
-  // Your plugin logic
-}
-
-export function run(config, commandProcessor, args) {
-  // Your plugin logic  
-}
-```
+**Plugin-specific configs** are automatically loaded from `external-plugins/plugin-name/config.json` and merged with global configuration.
 
 ## 🎛️ Available Transports
 
 ### REPL Transport
-Interactive shell with tab completion, history, and help:
+Interactive shell with tab completion, history, and rich help:
 ```bash
 node main.js
 > help
-> yourcommand param1=value
+> help(createProject)
+> createProject("my-app", template="advanced")
 > exit
 ```
 
 ### CLI Transport  
-Execute commands directly:
+Execute commands directly with multiple syntaxes:
 ```bash
-node main.js yourcommand param1=value
-node main.js "yourcommand({param1: 'value'})"
+node main.js createProject "my-app"
+node main.js createProject projectName="my-app" template="advanced"
+node main.js "createProject({projectName: 'my-app', template: 'custom'})"
 ```
 
 ### HTTP Transport
@@ -267,9 +317,9 @@ Web UI + REST API on port 8080:
 ```bash
 node kernel-main.js --http
 ```
-- UI: http://localhost:8080/
-- API: http://localhost:8080/api
-- Command via GET: `http://localhost:8080?json={"name":"command","args":{}}`
+- **UI**: http://localhost:8080/
+- **API**: http://localhost:8080/api
+- **Command via GET**: `http://localhost:8080/api/command?json={"name":"createProject","args":{"projectName":"my-app"}}`
 
 ### Electron Transport
 Desktop application:
@@ -283,23 +333,38 @@ Generate web interface from your contract:
 node kernel-main.js --generate
 ```
 
-## ⚡ How It Works
+## 🗂️ State Management
 
-### Command Processing Pipeline:
-1. **Parse**: Convert input string to command object
-2. **Validate**: Check parameters against manifest  
-3. **Execute**: Route to appropriate handler based on `commandType`
-4. **Apply Side Effects**: Update state if command succeeds
+### Persistent State
+State is automatically saved and restored between sessions:
 
-### Automatic Source Resolution:
-- External methods are loaded from sources defined in `contract.json`
-- Modules are cached for performance
-- Supports both local files and npm packages
+```json
+{
+  "stateDefaults": {
+    "currentProject": null,
+    "userPreferences": {"theme": "dark"},
+    "recentItems": []
+  }
+}
+```
 
-### State Management:
-- Persistent state saved to context file
-- Automatic fallbacks: `runtimeFallback: "currentProject"`
-- Template rendering: `{{paramName}}` in success messages
+### Side Effects
+Commands can automatically update state:
+
+```json
+{
+  "sideEffects": {
+    "setState": {
+      "currentProject": {"fromParam": "projectName"},
+      "lastOperation": {"template": "created_{{projectName}}"}
+    },
+    "clearState": ["tempData"],
+    "clearStateIf": {
+      "currentProject": {"fromParam": "projectName"}
+    }
+  }
+}
+```
 
 ## 🛠️ Advanced Features
 
@@ -317,6 +382,10 @@ node kernel-main.js --generate
     "type": "string", 
     "enum": ["fast", "slow", "auto"],
     "default": "auto"
+  },
+  "files": {
+    "type": "array",
+    "description": "List of files to process"
   }
 }
 ```
@@ -344,3 +413,67 @@ node kernel-main.js --generate
   }
 }
 ```
+
+## 🔒 Security Features
+
+- **Path security validation** - prevents directory traversal
+- **Source containment** - sources cannot escape project root
+- **Parameter validation** - type checking and range validation
+- **Command conflict detection** - warns on duplicate commands
+
+## 🚨 Error Handling
+
+The system provides detailed error messages:
+- **Command not found**: "Unknown command: createproject"
+- **Parameter validation**: "Parameter projectName must be a string"
+- **Source errors**: "Failed to load source 'myDomain': Source file not found"
+- **Type errors**: "Parameter amount must be of type: integer|number"
+
+## 📝 Command Syntax
+
+All these work identically:
+
+**Function style:**
+```
+createProject("my-app", template="advanced")
+```
+
+**Object style:**
+```
+createProject({projectName: "my-app", template: "advanced"})  
+```
+
+**CLI style:**
+```
+createProject my-app template=advanced
+```
+
+**JSON style:**
+```json
+{"name": "createProject", "args": {"projectName": "my-app"}}
+```
+
+## 🎯 How It Works
+
+### Command Processing Pipeline:
+1. **Parse**: Convert input to command object using multi-format parser
+2. **Validate**: Check parameters against manifest with type checking
+3. **Resolve**: Expand recursive sources and handle conflicts
+4. **Execute**: Route to appropriate handler based on `commandType`
+5. **Apply Side Effects**: Update state and persist if command succeeds
+
+### Source Resolution:
+- **Native methods**: Loaded from sources defined in `contract.json`
+- **Recursive expansion**: Sources can have their own 4-file contracts
+- **Module caching**: Sources are cached for performance
+- **Path security**: All paths validated against project root
+
+### State Management:
+- **Persistent state**: Saved to context file automatically
+- **Template rendering**: `{{paramName}}` in success messages and state values
+- **Side effects**: Automatic state updates based on command results
+- **Runtime fallbacks**: Missing parameters can use current state values
+
+---
+
+**Vertex Kernel** - Build once, run anywhere with any domain! 🚀
