@@ -5,8 +5,9 @@ import { pathToFileURL } from 'url';
  * KernelLoader - Dynamically loads kernel modules using provided paths
  */
 export class KernelLoader {
-    constructor(kernelPath) {
+    constructor(kernelPath, projectRoot) {
         this.kernelPath = kernelPath;
+        this.projectRoot = projectRoot;
     }
 
     /**
@@ -21,19 +22,30 @@ export class KernelLoader {
     }
 
     /**
-	 * Gets the manifest using the dynamic contract loader
-	 * @param {string} projectRoot - The project root path
-	 * @returns {Promise<Object>} - The manifest
-	 */
-	async getManifest(projectRoot) {
-		const { manifestReader } = await this.importKernelModule('contract.js');
-		return manifestReader(projectRoot);
-	}
+     * Builds the configuration using the dynamic config loader
+     * @returns {Promise<Object>} - The built configuration
+     */
+    async buildConfig() {
+        const { buildConfig } = await this.importKernelModule(
+            'utils/config-loader.js',
+        );
+        const configFilePath = path.join(this.kernelPath, 'config.json');
+        return buildConfig(configFilePath, this.projectRoot);
+    }
 
+    /**
+     * Gets the manifest using the dynamic contract loader
+     * @param {string} projectRoot - The project root path
+     * @returns {Promise<Object>} - The manifest
+     */
+    async getManifest(projectRoot) {
+        const { manifestReader } = await this.importKernelModule('contract.js');
+        return manifestReader(projectRoot);
+    }
 
     /**
      * Creates a CommandProcessor instance using dynamically loaded modules
-     * @param {Object} config - The configuration object
+     * @param {string} projectRoot - The project root directory
      * @param {Object} manifest - The manifest object
      * @returns {Promise<Object>} - The CommandProcessor instance
      */

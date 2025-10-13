@@ -2,7 +2,7 @@ import readline from 'readline';
 import fs from 'fs';
 import path from 'path';
 import { formatResult } from '../shared/format.js';
-import { KernelLoader } from './KernelLoader.js';
+import { KernelLoader } from '../shared/KernelLoader.js';
 
 export class REPL {
 	constructor() {

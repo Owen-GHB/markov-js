@@ -1,6 +1,5 @@
 import { buildConfig } from './utils/config-loader.js';
 import { manifestReader } from './contract.js';
-import { CommandProcessor } from './processor/CommandProcessor.js';
 import { PluginLoader } from './utils/PluginLoader.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -20,7 +19,6 @@ export async function launch(args, projectRoot) {
 	const configFilePath = path.join(__dirname, 'config.json');
 	const config = buildConfig(configFilePath, projectRoot);
 	const manifest = manifestReader(projectRoot);
-	const commandProcessor = new CommandProcessor(projectRoot, manifest);
 
 	// Create plugin loader once for all plugin operations
 	const pluginLoader = new PluginLoader(config.paths.pluginsDir);
@@ -51,8 +49,7 @@ export async function launch(args, projectRoot) {
 			.run(
 				config.generate.paths.userTemplateDir,
 				config.generate.paths.generatedUIDir,
-				manifest,
-				commandProcessor,
+				manifest
 			)
 			.then(() => {
 				console.log('✅ EJS-based UI generation completed successfully!');
@@ -76,7 +73,8 @@ export async function launch(args, projectRoot) {
 			config.http.port,
 			config.http.paths.servedUIDir,
 			config.http.apiEndpoint,
-			commandProcessor,
+			config.paths.kernelPath,
+			config.paths.projectRoot
 		);
 	} else {
 		// For other kernel commands or to show help

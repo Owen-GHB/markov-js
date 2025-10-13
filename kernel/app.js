@@ -1,8 +1,6 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { manifestReader } from './contract.js';
 import { buildConfig } from './utils/config-loader.js';
-import { CommandProcessor } from './processor/CommandProcessor.js';
 import { PluginLoader } from './utils/PluginLoader.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -19,8 +17,6 @@ export async function launch(args, projectRoot) {
 	// Calculate config path relative to this file's location (app.js is in kernel/ dir)
 	const configFilePath = path.join(__dirname, 'config.json');
 	const config = buildConfig(configFilePath, projectRoot);
-	const manifest = manifestReader(projectRoot);
-	const commandProcessor = new CommandProcessor(projectRoot, manifest);
 
 	// Create plugin loader once and get the repl and cli plugins
 	const pluginLoader = new PluginLoader(config.paths.pluginsDir);

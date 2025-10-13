@@ -22,12 +22,9 @@ export class HTTPServer {
 			throw new Error('apiEndpoint parameter must be a string if provided');
 		}
 
-		if (
-			!commandProcessor ||
-			typeof commandProcessor.processCommand !== 'function'
-		) {
+		if (!commandProcessor || typeof commandProcessor.processCommand !== 'function') {
 			throw new Error(
-				'start method requires a valid commandProcessor with processCommand method',
+				'commandProcessor parameter must be a valid command processor instance',
 			);
 		}
 

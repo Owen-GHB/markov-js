@@ -1,5 +1,5 @@
 import { ElectronApp } from './ElectronApp.js';
-import { KernelLoader } from './KernelLoader.js';
+import { KernelLoader } from '../shared/KernelLoader.js';
 
 // Parse command line arguments to get project root and kernel path
 const args = process.argv.slice(2);

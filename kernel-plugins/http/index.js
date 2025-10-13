@@ -1,4 +1,5 @@
 import { HTTPServer } from './HTTP.js';
+import { KernelLoader } from '../shared/KernelLoader.js';
 
 /**
  * HTTP plugin wrapper
@@ -27,7 +28,13 @@ function getHttpInstance() {
  * @param {Object} commandProcessor - Command processor instance
  * @returns {Promise<void>}
  */
-export async function start(port, servedUIDir, apiEndpoint, commandProcessor) {
+export async function start(port, servedUIDir, apiEndpoint, kernelPath, projectRoot) {
+	const kernelLoader = new KernelLoader(kernelPath);
+	const manifest = await kernelLoader.getManifest(projectRoot);
+	const commandProcessor = await kernelLoader.createCommandProcessor(
+		projectRoot,
+		manifest,
+	);
 	const httpServer = getHttpInstance();
 	return await httpServer.start(port, servedUIDir, apiEndpoint, commandProcessor);
 }

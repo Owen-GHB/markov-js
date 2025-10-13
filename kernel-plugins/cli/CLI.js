@@ -1,5 +1,5 @@
 import { formatResult } from '../shared/format.js';
-import { KernelLoader } from './KernelLoader.js';
+import { KernelLoader } from '../shared/KernelLoader.js';
 
 export class CLI {
 	constructor(contextFilePath, kernelPath, projectRoot) {
