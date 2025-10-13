@@ -26,7 +26,6 @@ export class PluginLoader {
 		try {
 			// Build the plugin file path
 			const pluginPath = path.join(this.pluginsBaseDir, pluginName, 'index.js');
-
 			// Check if the plugin file exists
 			if (!fs.existsSync(pluginPath)) {
 				console.warn(`Warning: Plugin not found at: ${pluginPath}`);
@@ -35,7 +34,6 @@ export class PluginLoader {
 
 			// Convert to file URL for proper ES module loading
 			const moduleUrl = pathToFileURL(pluginPath).href;
-
 			// Dynamically import the plugin module
 			const pluginModule = await import(moduleUrl);
 

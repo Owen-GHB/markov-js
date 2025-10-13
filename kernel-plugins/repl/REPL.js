@@ -13,12 +13,12 @@ export class REPL {
 		this.historyFilePath = null;
 	}
 
-	async initialize(contextFilePath, historyFilePath, maxHistory, kernelPath, projectRoot) {
+	async initialize(kernelPath, projectRoot, contextFilePath, historyFilePath, maxHistory) {
+		this.kernelPath = kernelPath;
+		this.projectRoot = projectRoot;
 		this.contextFilePath = contextFilePath;
 		this.maxHistory = maxHistory;
 		this.historyFilePath = historyFilePath;
-		this.kernelPath = kernelPath;
-		this.projectRoot = projectRoot;
 		const kernelLoader = new KernelLoader(this.kernelPath);
 		const manifest = await kernelLoader.getManifest(projectRoot);
 		const commandProcessor = await kernelLoader.createCommandProcessor(
@@ -30,7 +30,7 @@ export class REPL {
 		this.loadHistory();
 	}
 
-	async start(contextFilePath, historyFilePath, maxHistory, kernelPath, projectRoot) {
+	async start(kernelPath, projectRoot, contextFilePath, historyFilePath, maxHistory) {
 		// Validate parameters
 		if (contextFilePath && typeof contextFilePath !== 'string') {
 			throw new Error('contextFilePath parameter must be a string if provided');
@@ -49,7 +49,7 @@ export class REPL {
 		}
 
 		// Initialize with provided path and config values at the beginning of start
-		await this.initialize(contextFilePath, historyFilePath, maxHistory, kernelPath, projectRoot);
+		await this.initialize(kernelPath, projectRoot, contextFilePath, historyFilePath, maxHistory);
 
 		// Initialize REPL instance
 		this.rl = readline.createInterface({

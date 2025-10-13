@@ -2,7 +2,7 @@ import { formatResult } from '../shared/format.js';
 import { KernelLoader } from '../shared/KernelLoader.js';
 
 export class CLI {
-	constructor(contextFilePath, kernelPath, projectRoot) {
+	constructor(kernelPath, projectRoot, contextFilePath) {
 		if (!contextFilePath) {
 			throw new Error('CLI requires a contextFilePath property');
 		}
@@ -21,7 +21,7 @@ export class CLI {
 	 * @param {string[]} args - Command line arguments
 	 */
 	async run(args) {
-		const kernelLoader = new KernelLoader(this.kernelPath);
+		const kernelLoader = new KernelLoader(this.kernelPath, this.projectRoot);
 		const manifest = await kernelLoader.getManifest(this.projectRoot);
 		const commandProcessor = await kernelLoader.createCommandProcessor(
 			this.projectRoot,

@@ -1,5 +1,4 @@
 import { buildConfig } from './utils/config-loader.js';
-import { manifestReader } from './contract.js';
 import { PluginLoader } from './utils/PluginLoader.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -18,7 +17,6 @@ export async function launch(args, projectRoot) {
 	// Calculate config path relative to this file's location (kernel.js is in kernel/ dir)
 	const configFilePath = path.join(__dirname, 'config.json');
 	const config = buildConfig(configFilePath, projectRoot);
-	const manifest = manifestReader(projectRoot);
 
 	// Create plugin loader once for all plugin operations
 	const pluginLoader = new PluginLoader(config.paths.pluginsDir);
@@ -33,7 +31,10 @@ export async function launch(args, projectRoot) {
 		}
 
 		return electronPlugin.start(
-			config.paths.kernelPath
+			config.paths.kernelPath,
+			projectRoot,
+			config.electron.paths.servedUIDir,
+			config.electron.paths.electronPreloadPath
 		);
 	}
 	// Check if we should regenerate UI with EJS templates
@@ -47,9 +48,10 @@ export async function launch(args, projectRoot) {
 
 		return generatePlugin
 			.run(
+				config.paths.kernelPath,
+				projectRoot,
 				config.generate.paths.userTemplateDir,
-				config.generate.paths.generatedUIDir,
-				manifest
+				config.generate.paths.generatedUIDir
 			)
 			.then(() => {
 				console.log('✅ EJS-based UI generation completed successfully!');
@@ -70,10 +72,11 @@ export async function launch(args, projectRoot) {
 		}
 
 		return httpPlugin.start(
+			config.paths.kernelPath, 
+			projectRoot,
 			config.http.port,
 			config.http.paths.servedUIDir,
-			config.http.apiEndpoint,
-			config.paths.kernelPath
+			config.http.apiEndpoint
 		);
 	} else {
 		// For other kernel commands or to show help

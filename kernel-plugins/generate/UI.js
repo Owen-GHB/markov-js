@@ -13,16 +13,13 @@ export class UI {
 		this.__dirname = path.dirname(fileURLToPath(import.meta.url));
 	}
 
-	/**
-	 * Generate the complete SPA from manifests using EJS templates
-	 * @param {string} userTemplateDir - Directory for user templates
-	 * @param {string} generatedUIDir - Directory for generated UI output
-	 * @param {Object} manifest - The contract manifest with global and command information
-	 * @param {Object} commandProcessor - Command processor instance
-	 * @param {Object} config - Configuration object containing paths and settings
-	 * @param {Object} manifest - The contract manifest with global and command information
-	 */
-	async run(userTemplateDir, generatedUIDir, manifest, commandProcessor) {
+	    /**
+     * Generate the complete SPA from manifests using EJS templates
+     * @param {string} userTemplateDir - Directory for user templates  
+     * @param {string} generatedUIDir - Directory for generated UI output
+     * @param {Object} manifest - The contract manifest with global and command information
+     */
+	async run(userTemplateDir, generatedUIDir, manifest) {
 		try {
 			const outputDir = generatedUIDir;
 

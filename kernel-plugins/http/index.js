@@ -28,7 +28,7 @@ function getHttpInstance() {
  * @param {Object} commandProcessor - Command processor instance
  * @returns {Promise<void>}
  */
-export async function start(port, servedUIDir, apiEndpoint, kernelPath, projectRoot = process.cwd()) {
+export async function start(kernelPath, projectRoot, port, servedUIDir, apiEndpoint) {
 	const kernelLoader = new KernelLoader(kernelPath);
 	const manifest = await kernelLoader.getManifest(projectRoot);
 	const commandProcessor = await kernelLoader.createCommandProcessor(

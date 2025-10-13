@@ -1,47 +1,34 @@
-import { UI } from './UI.js';
+// File: generate/index.js
 
-/**
- * EJS-based Generator plugin wrapper
- * Encapsulates the EJS generator plugin instantiation and exposes functional interface
- */
+import { UI } from './UI.js';
+import { KernelLoader } from '../shared/KernelLoader.js';
 
 // Plugin instance (singleton)
 let generatorInstance = null;
 
-/**
- * Initialize and get the generator instance
- * @returns {UI} Generator plugin instance
- */
 function getGeneratorInstance() {
-	if (!generatorInstance) {
-		generatorInstance = new UI();
-	}
-	return generatorInstance;
+    if (!generatorInstance) {
+        generatorInstance = new UI();
+    }
+    return generatorInstance;
 }
 
 /**
  * Run the EJS-based generator plugin
  * @param {string} userTemplateDir - Directory for user templates
  * @param {string} generatedUIDir - Directory for generated UI output
- * @param {Object} manifest - Manifest object
+ * @param {string} kernelPath - Path to kernel directory
+ * @param {string} projectRoot - Project root directory (defaults to cwd)
  * @returns {Promise<void>}
  */
-export async function run(
-	userTemplateDir,
-	generatedUIDir,
-	manifest
-) {
-	const generator = getGeneratorInstance();
-	return await generator.run(
-		userTemplateDir,
-		generatedUIDir,
-		manifest
-	);
+export async function run(kernelPath, projectRoot, userTemplateDir, generatedUIDir) {
+    const kernelLoader = new KernelLoader(kernelPath);
+    const manifest = await kernelLoader.getManifest(projectRoot);
+    
+    const generator = getGeneratorInstance();
+    return await generator.run(userTemplateDir, generatedUIDir, manifest);
 }
 
-/**
- * Expose the plugin's run method for direct usage
- */
 export default {
-	run,
+    run,
 };
