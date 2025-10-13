@@ -122,7 +122,14 @@ export class NativeAdapter {
 
             // Call the method with the command arguments
             try {
-                const result = await method(args);
+                let result;
+                // Detect async functions and handle appropriately
+                if (method.constructor.name === 'AsyncFunction') {
+                    result = await method(args);
+                } else {
+                    result = method(args);  // Direct sync call - no microtask overhead
+                }
+                
                 // Treat the result as success output
                 return {
                     error: null,
