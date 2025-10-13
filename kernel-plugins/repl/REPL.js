@@ -2,6 +2,7 @@ import readline from 'readline';
 import fs from 'fs';
 import path from 'path';
 import { formatResult } from '../shared/format.js';
+import { KernelLoader } from './KernelLoader.js';
 
 export class REPL {
 	constructor() {
@@ -12,14 +13,24 @@ export class REPL {
 		this.historyFilePath = null;
 	}
 
-	async initialize(contextFilePath, historyFilePath, maxHistory) {
+	async initialize(contextFilePath, historyFilePath, maxHistory, kernelPath, projectRoot) {
 		this.contextFilePath = contextFilePath;
 		this.maxHistory = maxHistory;
 		this.historyFilePath = historyFilePath;
+		this.kernelPath = kernelPath;
+		this.projectRoot = projectRoot;
+		const kernelLoader = new KernelLoader(this.kernelPath);
+		const manifest = await kernelLoader.getManifest(projectRoot);
+		const commandProcessor = await kernelLoader.createCommandProcessor(
+			this.projectRoot,
+			manifest,
+		);
+		this.processor = commandProcessor;
+		if (contextFilePath) this.processor.stateManager.loadState(contextFilePath);
 		this.loadHistory();
 	}
 
-	async start(contextFilePath, historyFilePath, maxHistory, commandProcessor) {
+	async start(contextFilePath, historyFilePath, maxHistory, kernelPath, projectRoot) {
 		// Validate parameters
 		if (contextFilePath && typeof contextFilePath !== 'string') {
 			throw new Error('contextFilePath parameter must be a string if provided');
@@ -30,21 +41,15 @@ export class REPL {
 		if (maxHistory && (typeof maxHistory !== 'number' || maxHistory <= 0)) {
 			throw new Error('maxHistory parameter must be a positive number if provided');
 		}
-		if (
-			!commandProcessor ||
-			typeof commandProcessor.processCommand !== 'function'
-		) {
-			throw new Error(
-				'start method requires a valid commandProcessor with processCommand method',
-			);
+		if (!kernelPath || typeof kernelPath !== 'string') {
+			throw new Error('REPL requires a kernelPath parameter');
+		}
+		if (!projectRoot || typeof projectRoot !== 'string') {
+			throw new Error('REPL requires a projectRoot parameter');
 		}
 
-		// Initialize command processor
-		this.processor = commandProcessor;
-		if (contextFilePath) this.processor.stateManager.loadState(contextFilePath);
-
 		// Initialize with provided path and config values at the beginning of start
-		await this.initialize(contextFilePath, historyFilePath, maxHistory);
+		await this.initialize(contextFilePath, historyFilePath, maxHistory, kernelPath, projectRoot);
 
 		// Initialize REPL instance
 		this.rl = readline.createInterface({

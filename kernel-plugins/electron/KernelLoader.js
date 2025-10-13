@@ -35,25 +35,24 @@ export class KernelLoader {
 
 	/**
 	 * Gets the manifest using the dynamic contract loader
-	 * @param {string} contractDir - The contract directory path
 	 * @param {string} projectRoot - The project root path
 	 * @returns {Promise<Object>} - The manifest
 	 */
-	async getManifest(contractDir, projectRoot) {
+	async getManifest(projectRoot) {
 		const { manifestReader } = await this.importKernelModule('contract.js');
-		return manifestReader(contractDir, projectRoot);
+		return manifestReader(projectRoot);
 	}
 
 	/**
 	 * Creates a CommandProcessor instance using dynamically loaded modules
-	 * @param {Object} config - The configuration object
+	 * @param {string} projectRoot - The project root directory
 	 * @param {Object} manifest - The manifest object
 	 * @returns {Promise<Object>} - The CommandProcessor instance
 	 */
-	async createCommandProcessor(config, manifest) {
+	async createCommandProcessor(projectRoot, manifest) {
 		const { CommandProcessor } = await this.importKernelModule(
 			'processor/CommandProcessor.js',
 		);
-		return new CommandProcessor(config, manifest);
+		return new CommandProcessor(projectRoot, manifest);
 	}
 }

@@ -35,7 +35,7 @@ export async function launch(args, projectRoot) {
 		}
 
 		return electronPlugin.start(
-			config.paths.kernelDir
+			config.paths.kernelPath
 		);
 	}
 	// Check if we should regenerate UI with EJS templates

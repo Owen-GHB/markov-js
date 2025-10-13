@@ -36,7 +36,7 @@ if (!projectRoot || !kernelPath) {
 
 		// Create CommandProcessor dynamically
 		const commandProcessor = await kernelLoader.createCommandProcessor(
-			config,
+			projectRoot,
 			manifest,
 		);
 

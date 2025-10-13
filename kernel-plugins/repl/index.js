@@ -27,9 +27,9 @@ function getReplInstance() {
  * @param {Object} commandProcessor - Command processor instance
  * @returns {Promise<void>}
  */
-export async function start(contextFilePath, historyFilePath, maxHistory, commandProcessor) {
+export async function start(contextFilePath, historyFilePath, maxHistory, kernelPath, projectRoot) {
 	const repl = getReplInstance();
-	return await repl.start(contextFilePath, historyFilePath, maxHistory, commandProcessor);
+	return await repl.start(contextFilePath, historyFilePath, maxHistory, kernelPath, projectRoot);
 }
 
 /**

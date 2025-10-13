@@ -12,8 +12,6 @@ export class CommandProcessor {
 			throw new Error('CommandProcessor requires a projectRoot parameter');
 		}
 
-
-
 		// Validate manifest parameter
 		if (!manifest || typeof manifest !== 'object') {
 			throw new Error('CommandProcessor requires a manifest object');

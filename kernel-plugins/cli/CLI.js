@@ -1,22 +1,19 @@
 import { formatResult } from '../shared/format.js';
+import { KernelLoader } from './KernelLoader.js';
 
 export class CLI {
-	constructor(contextFilePath, commandProcessor) {
+	constructor(contextFilePath, kernelPath, projectRoot) {
 		if (!contextFilePath) {
 			throw new Error('CLI requires a contextFilePath property');
 		}
 
-		if (
-			!commandProcessor ||
-			typeof commandProcessor.processCommand !== 'function'
-		) {
-			throw new Error(
-				'start method requires a valid commandProcessor with processCommand method',
-			);
+		if (!kernelPath) {
+			throw new Error('CLI requires a kernelPath property');
 		}
-		this.processor = commandProcessor;
+		this.processor = null;
 		this.contextFilePath = contextFilePath;
-		if (this.contextFilePath) this.processor.stateManager.loadState(this.contextFilePath);
+		this.kernelPath = kernelPath;
+		this.projectRoot = projectRoot;	
 	}
 
 	/**
@@ -24,6 +21,15 @@ export class CLI {
 	 * @param {string[]} args - Command line arguments
 	 */
 	async run(args) {
+		const kernelLoader = new KernelLoader(this.kernelPath);
+		const manifest = await kernelLoader.getManifest(this.projectRoot);
+		const commandProcessor = await kernelLoader.createCommandProcessor(
+			this.projectRoot,
+			manifest,
+		);
+		this.processor = commandProcessor;
+		if (this.contextFilePath) this.processor.stateManager.loadState(this.contextFilePath);
+
 		if (args.length === 0) {
 			// Show help when no arguments provided by processing the help command
 			const result = await this.processor.processCommand(

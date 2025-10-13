@@ -97,7 +97,7 @@ export function buildConfig(configFilePath, projectRoot) {
     const rawKernelConfig = loadConfigFromFile(configFilePath);
 
     // Calculate kernel directory (fixed relative to this file)
-    const kernelDir = path.join(__dirname, '..');
+    const kernelPath = path.join(__dirname, '..');
 
     // Load plugin configurations by scanning the plugins directory
     const pluginConfigs = {};
@@ -141,7 +141,7 @@ export function buildConfig(configFilePath, projectRoot) {
 
     // Add kernel-calculated paths (these are safe by construction)
     globalPaths.projectRoot = projectRoot;
-    globalPaths.kernelDir = kernelDir;
+    globalPaths.kernelPath = kernelPath;
     globalPaths.configFilePath = configFilePath;
 
     // Add utility functions for dynamic paths (with security validation)
