@@ -24,7 +24,6 @@ function getGeneratorInstance() {
  * @param {string} userTemplateDir - Directory for user templates
  * @param {string} generatedUIDir - Directory for generated UI output
  * @param {Object} manifest - Manifest object
- * @param {Object} commandProcessor - CommandProcessor instance
  * @returns {Promise<void>}
  */
 export async function run(

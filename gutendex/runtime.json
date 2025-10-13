@@ -19,6 +19,44 @@
       }
     }
   },
+  "pgb_download_html": {
+    "parameters": {
+      "id_or_title": {
+        "description": "Book ID or title to download in HTML format",
+        "transform": {
+          "if": "integer",
+          "then": {
+            "id": "value"
+          },
+          "else": {
+            "title": "value"
+          }
+        }
+      },
+      "file": {
+        "description": "Filename to save the downloaded HTML",
+        "default": null
+      }
+    }
+  },
+  "pgb_serve_book": {
+    "parameters": {
+      "filename": {
+        "description": "Filename of the ebook to serve (must exist in data/ebooks)"
+      },
+      "port": {
+        "description": "Port to run the HTTP server on",
+        "default": 3000
+      }
+    }
+  },
+  "pgb_electron": {
+    "parameters": {
+      "filename": {
+        "description": "HTML filename to display in Electron window (must exist in data/ebooks)"
+      }
+    }
+  },
   "pgb_info": {
     "parameters": {
       "id_or_title": {

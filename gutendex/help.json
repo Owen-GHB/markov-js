@@ -7,6 +7,30 @@
       "pgb_download(\"Moby Dick\", file=\"whale.txt\")"
     ]
   },
+  "pgb_download_html": {
+    "description": "Download a book in HTML format from Project Gutenberg",
+    "syntax": "pgb_download_html(id|title, [options])",
+    "examples": [
+      "pgb_download_html(1342)",
+      "pgb_download_html(\"Moby Dick\", file=\"whale.html\")"
+    ]
+  },
+  "pgb_serve_book": {
+    "description": "Start an HTTP server to serve an ebook from the ebooks directory",
+    "syntax": "pgb_serve_book(filename, [port])",
+    "examples": [
+      "pgb_serve_book(\"moby_dick.html\")",
+      "pgb_serve_book(\"pride_and_prejudice.html\", port=8080)"
+    ]
+  },
+  "pgb_electron": {
+    "description": "Launch Electron window to display an ebook",
+    "syntax": "pgb_electron(filename)",
+    "examples": [
+      "pgb_electron(\"moby_dick.html\")",
+      "pgb_electron(\"pride_and_prejudice.html\")"
+    ]
+  },
   "pgb_info": {
     "description": "Get book details from Project Gutenberg",
     "syntax": "pgb_info(id_or_title)",

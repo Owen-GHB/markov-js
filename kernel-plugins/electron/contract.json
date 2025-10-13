@@ -1,0 +1,13 @@
+{
+  "name": "electron-plugin",
+  "version": "0.0.0", 
+  "description": "Electron Desktop Application",
+  "stateDefaults": {
+    "servedUIDir": "./generated-ui",
+    "electronPreloadPath": "./electron-preload.js",
+    "windowWidth": 1200,
+    "windowHeight": 800,
+    "showDevTools": true,
+    "isElectronRunning": false
+  }
+}

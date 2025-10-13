@@ -1,0 +1,21 @@
+{
+  "generate": {
+    "commandType": "native-method",
+    "methodName": "run",
+    "description": "Generate web UI from contract using EJS templates",
+    "parameters": {
+      "userTemplateDir": {
+        "type": "string",
+        "required": false,
+        "runtimeFallback": "userTemplateDir",
+        "description": "Custom template directory (uses built-in if not provided)"
+      },
+      "generatedUIDir": {
+        "type": "string", 
+        "required": false,
+        "runtimeFallback": "generatedUIDir",
+        "description": "Output directory for generated UI files"
+      }
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "electron": {
+    "examples": [
+      "electron()",
+      "electron(servedui=\"./dist\")",
+      "electron(servedui=\"./public\", electronPreloadPath=\"./preload.js\")"
+    ],
+    "notes": "Launches as separate process. Falls back gracefully if UI files missing. Requires Electron dependency."
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "electron": {
+    "commandType": "native-method",
+    "methodName": "start",
+    "description": "Launch Electron desktop application",
+    "parameters": {
+      "servedui": {
+        "type": "string",
+        "required": false,
+        "runtimeFallback": "servedUIDir", 
+        "description": "UI directory to load in Electron window"
+      },
+      "electronPreloadPath": {
+        "type": "string",
+        "required": false,
+        "runtimeFallback": "electronPreloadPath",
+        "description": "Path to Electron preload script"
+      }
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "generate": {
+    "examples": [
+      "generate()",
+      "generate(generatedUIDir=\"./dist\")",
+      "generate(userTemplateDir=\"./my-templates\", generatedUIDir=\"./public\")"
+    ],
+    "notes": "Generates complete SPA with forms for all commands. Overwrites existing files by default."
+  }
+}

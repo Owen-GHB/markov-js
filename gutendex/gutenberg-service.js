@@ -112,7 +112,89 @@ export class GutenbergService {
 		}
 	}
 
+	/**
+	 * Download a book in HTML format from Project Gutenberg
+	 * @param {Object} params - Download parameters
+	 * @param {number|string} params.id_or_title - Book ID or title
+	 * @param {string} params.file - Target filename (optional)
+	 * @returns {Promise<string>} - Download confirmation message
+	 */
+	async downloadBookHTML(params) {
+		const { id_or_title, file } = params;
+		let id = null;
+		let title = null;
 
+		if (typeof id_or_title === 'number' || /^\d+$/.test(id_or_title)) {
+			id = Number(id_or_title);
+		} else if (typeof id_or_title === 'string') {
+			title = id_or_title.trim();
+		}
+
+		if (!id && !title) {
+			throw new Error('Please specify either an ID or title');
+		}
+
+		try {
+			// Create ebooks directory instead of corpus
+			const ebooksDir = './data/ebooks';
+			await this.ensureDirectoryExists(ebooksDir);
+
+			let book;
+			if (id) {
+				book = await getJSON(`${this.API_BASE}/books/${id}`);
+				if (!book || book.detail === 'Not found') {
+					throw new Error(`No book found with ID "${id}"`);
+				}
+			} else {
+				const searchResults = await getJSON(
+					`${this.API_BASE}/books/?search=${encodeURIComponent(title)}`,
+				);
+				if (!searchResults.results?.length) {
+					throw new Error(`No book found with title "${title}"`);
+				}
+				book = searchResults.results[0];
+			}
+
+			let filename;
+			if (file && file != 'null') {
+				filename = file;
+			} else if (id) {
+				filename = `${id}.html`;
+			} else {
+				// Sanitize title for filename
+				const sanitizedTitle = book.title
+					.toLowerCase()
+					.replace(/[^a-z0-9]/g, '_')
+					.replace(/_+/g, '_')
+					.substring(0, 50); // Limit length
+				filename = `${sanitizedTitle}.html`;
+			}
+
+			const htmlUrl = this.findHTMLFormat(book.formats);
+			if (!htmlUrl) {
+				throw new Error('No HTML format available');
+			}
+
+			const filepath = path.join(ebooksDir, filename);
+			await downloadFile(htmlUrl, filepath);
+
+			return `✅ Successfully downloaded HTML "${book.title}" to ${filename}`;
+		} catch (error) {
+			throw new Error(`HTML download failed: ${error.message}`);
+		}
+	}
+
+	/**
+	 * Find the HTML format URL from available formats
+	 * @param {Object} formats - Available book formats
+	 * @returns {string|null} - HTML format URL or null
+	 */
+	findHTMLFormat(formats) {
+		const htmlEntry =
+			Object.entries(formats).find(([_, url]) => url.endsWith('.html')) ||
+			Object.entries(formats).find(([key]) => key.startsWith('text/html'));
+		return htmlEntry?.[1];
+	}
 
 	/**
 	 * Download a book from Project Gutenberg
@@ -271,6 +353,144 @@ export class GutenbergService {
 			}
 		} catch (error) {
 			console.warn('Error cleaning text:', error.message);
+		}
+	}
+
+	/**
+	 * Start an HTTP server to serve an ebook
+	 * @param {Object} params - Server parameters
+	 * @param {string} params.filename - Filename to serve
+	 * @param {number} params.port - Port to run server on
+	 * @returns {Promise<string>} - Server start message
+	 */
+	async serveBook(params) {
+		const { filename, port } = params;
+		
+		if (!filename) {
+			throw new Error('Please specify a filename to serve');
+		}
+
+		try {
+			const ebooksDir = path.resolve('./data/ebooks');
+			const filepath = path.join(ebooksDir, filename);
+			console.log(`Serving file from: ${filepath}`);
+			
+			// Check if file exists - use the same fs instance we'll use for serving
+			const fs = (await import('fs')).default;
+			try {
+				await fs.promises.access(filepath, fs.constants.F_OK);
+			} catch (error) {
+				throw new Error(`File "${filename}" not found in ebooks directory`);
+			}
+
+			// Use dynamic imports to avoid circular dependencies
+			const http = (await import('http')).default;
+			const pathModule = (await import('path')).default;
+
+			const server = http.createServer((req, res) => {
+				// Serve the same file for all paths
+				fs.readFile(filepath, 'utf8', (err, data) => {
+					if (err) {
+						res.writeHead(500, { 'Content-Type': 'text/plain' });
+						res.end('Error reading file');
+						return;
+					}
+
+					// Set appropriate content type based on file extension
+					const ext = pathModule.extname(filename).toLowerCase();
+					const contentType = ext === '.html' ? 'text/html' : 
+									ext === '.txt' ? 'text/plain' : 
+									'application/octet-stream';
+
+					res.writeHead(200, { 
+						'Content-Type': contentType,
+						'Access-Control-Allow-Origin': '*'
+					});
+					res.end(data);
+				});
+			});
+
+			server.listen(port, () => {
+				console.log(`📚 Serving "${filename}" at http://localhost:${port}/`);
+			});
+
+			// Handle server shutdown
+			process.on('SIGINT', () => {
+				console.log('\nShutting down server...');
+				server.close(() => {
+					console.log('Server stopped');
+					process.exit(0);
+				});
+			});
+
+			return `🚀 Server started on port ${port}. Serving "${filename}" at all paths.\nVisit http://localhost:${port}/ to view the book.`;
+		} catch (error) {
+			throw new Error(`Failed to start server: ${error.message}`);
+		}
+	}
+
+	/**
+	 * Launch Electron window to display an ebook
+	 * @param {Object} params - Electron parameters
+	 * @param {string} params.filename - HTML filename to display
+	 * @returns {Promise<string>} - Launch confirmation
+	 */
+	async launchElectron(params) {
+		const { filename } = params;
+		
+		if (!filename) {
+			throw new Error('Please specify a filename to display');
+		}
+
+		try {
+			const ebooksDir = path.resolve('./data/ebooks');
+			const filepath = path.join(ebooksDir, filename);
+			
+			// Check if file exists
+			const fs = (await import('fs')).default;
+			try {
+				await fs.promises.access(filepath, fs.constants.F_OK);
+			} catch (error) {
+				throw new Error(`File "${filename}" not found in ebooks directory`);
+			}
+
+			const { spawn } = await import('child_process');
+			
+			// Get the directory of THIS file (gutenberg-service.js)
+			const __filename = (await import('url')).fileURLToPath(import.meta.url);
+			const __dirname = path.dirname(__filename);
+			
+			// Use the proper Electron main process file
+			const mainProcessPath = path.join(__dirname, 'electron-main.js');
+
+			// Use the exact same pattern as the working version
+			const electronProcess = spawn(
+				'npx',
+				[
+					'electron',
+					mainProcessPath,
+					filepath
+				],
+				{
+					stdio: 'inherit',
+					cwd: process.cwd(), // Crucial: run from project root
+					shell: true,
+				}
+			);
+
+			electronProcess.on('error', (err) => {
+				console.error('❌ Failed to start Electron:', err.message);
+			});
+
+			electronProcess.on('close', (code) => {
+				console.log(`Electron process exited with code ${code}`);
+			});
+
+			// NO unref() - let the process manage its own lifecycle
+			return `🚀 Launched Electron window displaying "${filename}"`;
+
+		} catch (error) {
+			throw new Error(`Electron launch failed: ${error.message}`);
 		}
 	}
 }
