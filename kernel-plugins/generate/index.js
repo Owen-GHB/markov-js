@@ -1,7 +1,8 @@
 // File: generate/index.js
 
 import { UI } from './UI.js';
-import { KernelLoader } from '../shared/KernelLoader.js';
+import path from 'path';
+import { pathToFileURL } from 'url';
 
 // Plugin instance (singleton)
 let generatorInstance = null;
@@ -22,8 +23,9 @@ function getGeneratorInstance() {
  * @returns {Promise<void>}
  */
 export async function run(kernelPath, projectRoot, userTemplateDir, generatedUIDir) {
-    const kernelLoader = new KernelLoader(kernelPath);
-    const manifest = await kernelLoader.getManifest(projectRoot);
+    const manifestUrl = pathToFileURL(path.join(kernelPath, 'contract.js')).href;
+	const { manifestReader } = await import(manifestUrl);
+	const manifest = manifestReader(projectRoot);
     
     const generator = getGeneratorInstance();
     return await generator.run(userTemplateDir, generatedUIDir, manifest);

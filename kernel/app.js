@@ -1,6 +1,7 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { buildConfig } from './utils/config-loader.js';
+import { loadManifest } from './contract.js';
+import fs from 'fs';
 import { PluginLoader } from './utils/PluginLoader.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -13,11 +14,8 @@ const __dirname = path.dirname(__filename);
  * @returns {Promise<void>}
  */
 export async function launch(args, projectRoot) {
-	// Build unified configuration once at the beginning
-	// Calculate config path relative to this file's location (app.js is in kernel/ dir)
-	const configFilePath = path.join(__dirname, 'config.json');
-	const config = buildConfig(configFilePath, projectRoot);
-	console.log('Using configuration:', config);
+	const config = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8'));
+	const manifest = loadManifest(config.paths.pluginsDir); // load kernel's own manifest
 
 	// Create plugin loader once and get the repl and cli plugins
 	const defaultPluginsDir = path.join(__dirname, 'default-plugins');
@@ -33,10 +31,10 @@ export async function launch(args, projectRoot) {
 	// Default to REPL mode if no args or if args are application-specific
 	if (args.length === 0) {
 		// Default to REPL mode if no args
-		return replStart(config.paths.kernelPath, projectRoot, config.repl.paths.contextFilePath, config.repl.paths.replHistoryFilePath, config.repl.maxHistory);
+		return replStart(__dirname, projectRoot, manifest.stateDefaults.contextFilePath, manifest.stateDefaults.replHistoryFilePath, manifest.stateDefaults.maxHistory);
 	} else {
 		// Check if we're being called directly with command line args
-		return cliRun(config.paths.kernelPath, projectRoot, config.cli.paths.contextFilePath, args);
+		return cliRun(__dirname, projectRoot, manifest.stateDefaults.contextFilePath, args);
 	}
 }
 

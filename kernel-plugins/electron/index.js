@@ -8,10 +8,10 @@ const __dirname = path.dirname(__filename);
 
 /**
  * Start the Electron plugin by launching electron-main.js via npx
+ * @param {string} kernelPath - Path to the kernel directory
+ * @param {string} projectRoot - Project root directory
  * @param {string} servedui - Directory for served UI files
  * @param {string} electronPreloadPath - Path to electron preload script
- * @param {string} kernelPath - Path to the kernel directory
- * @param {string} projectRoot - Project root directory (defaults to cwd)
  * @returns {Promise<void>}
  */
 export async function start(kernelPath, projectRoot, servedui, electronPreloadPath) {

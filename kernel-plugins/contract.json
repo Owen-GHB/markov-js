@@ -8,8 +8,9 @@
     "electron": "./electron"
   },
   "stateDefaults": {
-    "currentMode": "cli",
-    "lastOperation": "initialized",
-    "activePort": 8080
+    "pluginsDir": "./kernel-plugins",
+    "contextFilePath": "./context/state.json",
+    "replHistoryFilePath": "./context/repl-history.txt",
+    "maxReplHistory": 100
   }
 }

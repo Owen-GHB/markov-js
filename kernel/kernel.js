@@ -1,5 +1,7 @@
-import { buildConfig } from './utils/config-loader.js';
 import { PluginLoader } from './utils/PluginLoader.js';
+import { loadManifest } from './contract.js';
+import { resolveSecurePath } from './utils/path-resolver.js';
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -13,16 +15,17 @@ const __dirname = path.dirname(__filename);
  * @returns {Promise<void>}
  */
 export async function launch(args, projectRoot) {
-	// Build unified configuration once at the beginning
-	// Calculate config path relative to this file's location (kernel.js is in kernel/ dir)
-	const configFilePath = path.join(__dirname, 'config.json');
-	const config = buildConfig(configFilePath, projectRoot);
-
+	const config = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8'));
 	// Create plugin loader once for all plugin operations
 	const pluginLoader = new PluginLoader(config.paths.pluginsDir);
+	const manifest = loadManifest(config.paths.pluginsDir); // load kernel's own manifest
 
 	// Check if we should run in Electron
 	if (args.includes('--electron')) {
+		// resolve parameter paths relative to project root
+		const servedUIDir = resolveSecurePath(manifest.stateDefaults.servedUIDir, projectRoot);
+		const electronPreloadPath = resolveSecurePath(manifest.stateDefaults.electronPreloadPath, projectRoot);
+
 		// Get the electron plugin and start it using the plugin loader
 		const electronPlugin = await pluginLoader.getPlugin('electron');
 		if (!electronPlugin) {
@@ -31,14 +34,18 @@ export async function launch(args, projectRoot) {
 		}
 
 		return electronPlugin.start(
-			config.paths.kernelPath,
+			__dirname,
 			projectRoot,
-			config.electron.paths.servedUIDir,
-			config.electron.paths.electronPreloadPath
+			servedUIDir,
+			electronPreloadPath
 		);
 	}
 	// Check if we should regenerate UI with EJS templates
 	else if (args.includes('--generate')) {
+		// resolve parameter paths relative to project root
+		const userTemplateDir = resolveSecurePath(manifest.stateDefaults.userTemplateDir, projectRoot);
+		const generatedUIDir = resolveSecurePath(manifest.stateDefaults.generatedUIDir, projectRoot);
+
 		// Get the generate plugin and run it using the plugin loader
 		const generatePlugin = await pluginLoader.getPlugin('generate');
 		if (!generatePlugin) {
@@ -48,10 +55,10 @@ export async function launch(args, projectRoot) {
 
 		return generatePlugin
 			.run(
-				config.paths.kernelPath,
+				__dirname,
 				projectRoot,
-				config.generate.paths.userTemplateDir,
-				config.generate.paths.generatedUIDir
+				userTemplateDir,
+				generatedUIDir
 			)
 			.then(() => {
 				console.log('✅ EJS-based UI generation completed successfully!');
@@ -64,6 +71,11 @@ export async function launch(args, projectRoot) {
 	}
 	// Check if we should start HTTP server (now serves both UI and API, like old --serve)
 	else if (args.includes('--http')) {
+		// resolve parameter paths relative to project root
+		const port = manifest.stateDefaults.serverPort;
+		const servedUIDir = resolveSecurePath(manifest.stateDefaults.servedUIDir, projectRoot);
+		const apiEndpoint = manifest.stateDefaults.apiEndpoint;
+
 		// Get the HTTP plugin and start server that serves both UI and API
 		const httpPlugin = await pluginLoader.getPlugin('http');
 		if (!httpPlugin) {
@@ -72,11 +84,11 @@ export async function launch(args, projectRoot) {
 		}
 
 		return httpPlugin.start(
-			config.paths.kernelPath, 
+			__dirname, 
 			projectRoot,
-			config.http.port,
-			config.http.paths.servedUIDir,
-			config.http.apiEndpoint
+			port,
+			servedUIDir,
+			apiEndpoint
 		);
 	} else {
 		// For other kernel commands or to show help

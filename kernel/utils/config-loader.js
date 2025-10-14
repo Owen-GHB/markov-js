@@ -1,33 +1,10 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { resolveSecurePath, validatePathSecurity } from './path-resolver.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-/**
- * Validate that a resolved path doesn't escape the project root
- */
-function validatePathSecurity(resolvedPath, projectRoot, originalPath) {
-    // Ensure the resolved path is within the project root
-    if (!resolvedPath.startsWith(projectRoot)) {
-        throw new Error(
-            `Security violation: Path '${originalPath}' resolves to '${resolvedPath}' ` +
-            `which is outside project root '${projectRoot}'`
-        );
-    }
-    return resolvedPath;
-}
-
-/**
- * Safely resolve a path relative to project root with security validation
- */
-function resolveSecurePath(originalPath, projectRoot) {
-    if (!originalPath) return null;
-    
-    const resolvedPath = path.resolve(projectRoot, originalPath);
-    return validatePathSecurity(resolvedPath, projectRoot, originalPath);
-}
 
 /**
  * Load configuration from file

@@ -1,7 +1,8 @@
 // File: electron/electron-main.js
 
 import { ElectronApp } from './ElectronApp.js';
-import { KernelLoader } from '../shared/KernelLoader.js';
+import path from 'path';
+import { pathToFileURL } from 'url';
 
 // Parse command line arguments to get project root, kernel path, and electron parameters
 const args = process.argv.slice(2);
@@ -29,33 +30,20 @@ if (!projectRoot || !kernelPath) {
 // Create and start the Electron application by dynamically loading kernel modules
 (async () => {
     try {
-        // Create kernel loader with the provided paths
-        const kernelLoader = new KernelLoader(kernelPath, projectRoot);
-
-        // Build configuration dynamically
-        const config = await kernelLoader.buildConfig();
-
-        // Override config with command line parameters if provided
-        if (servedui) {
-            config.electron.paths.servedUIDir = servedui;
-        }
-        if (electronPreloadPath) {
-            config.electron.paths.electronPreloadPath = electronPreloadPath;
-        }
-
-        // Get manifest dynamically
-        const manifest = await kernelLoader.getManifest(projectRoot);
-
-        // Create CommandProcessor dynamically
-        const commandProcessor = await kernelLoader.createCommandProcessor(
-            projectRoot,
-            manifest,
-        );
+        const manifestUrl = pathToFileURL(path.join(kernelPath, 'contract.js')).href;
+		const { manifestReader } = await import(manifestUrl);
+		const manifest = manifestReader(projectRoot);
+		const commandProcessorUrl = pathToFileURL(path.join(kernelPath, 'processor/CommandProcessor.js')).href;
+		const { CommandProcessor } = await import(commandProcessorUrl);
+		const commandProcessor = new CommandProcessor(
+			projectRoot,
+			manifest
+		);
 
         // Directly instantiate and start ElectronApp with the dynamically created components
         const electronApp = new ElectronApp();
 
-        await electronApp.start(config.electron, commandProcessor);
+        await electronApp.start(servedui, electronPreloadPath, commandProcessor);
     } catch (error) {
         console.error('❌ Error in Electron main process:', error.message);
         process.exit(1);

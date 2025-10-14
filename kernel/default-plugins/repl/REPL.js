@@ -1,8 +1,8 @@
 import readline from 'readline';
 import fs from 'fs';
 import path from 'path';
+import { pathToFileURL } from 'url';
 import { formatResult } from '../shared/format.js';
-import { KernelLoader } from '../shared/KernelLoader.js';
 
 export class REPL {
 	constructor() {
@@ -19,11 +19,14 @@ export class REPL {
 		this.contextFilePath = contextFilePath;
 		this.maxHistory = maxHistory;
 		this.historyFilePath = historyFilePath;
-		const kernelLoader = new KernelLoader(this.kernelPath);
-		const manifest = await kernelLoader.getManifest(projectRoot);
-		const commandProcessor = await kernelLoader.createCommandProcessor(
+		const manifestUrl = pathToFileURL(path.join(this.kernelPath, 'contract.js')).href;
+		const { manifestReader } = await import(manifestUrl);
+		const manifest = manifestReader(this.projectRoot);
+		const commandProcessorUrl = pathToFileURL(path.join(this.kernelPath, 'processor/CommandProcessor.js')).href;
+		const { CommandProcessor } = await import(commandProcessorUrl);
+		const commandProcessor = new CommandProcessor(
 			this.projectRoot,
-			manifest,
+			manifest
 		);
 		this.processor = commandProcessor;
 		if (contextFilePath) this.processor.stateManager.loadState(contextFilePath);

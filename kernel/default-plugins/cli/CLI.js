@@ -1,5 +1,6 @@
 import { formatResult } from '../shared/format.js';
-import { KernelLoader } from '../shared/KernelLoader.js';
+import path from 'path';
+import { pathToFileURL } from 'url';
 
 export class CLI {
 	constructor(kernelPath, projectRoot, contextFilePath) {
@@ -21,11 +22,14 @@ export class CLI {
 	 * @param {string[]} args - Command line arguments
 	 */
 	async run(args) {
-		const kernelLoader = new KernelLoader(this.kernelPath, this.projectRoot);
-		const manifest = await kernelLoader.getManifest(this.projectRoot);
-		const commandProcessor = await kernelLoader.createCommandProcessor(
+		const manifestUrl = pathToFileURL(path.join(this.kernelPath, 'contract.js')).href;
+		const { manifestReader } = await import(manifestUrl);
+		const manifest = manifestReader(this.projectRoot);
+		const commandProcessorUrl = pathToFileURL(path.join(this.kernelPath, 'processor/CommandProcessor.js')).href;
+		const { CommandProcessor } = await import(commandProcessorUrl);
+		const commandProcessor = new CommandProcessor(
 			this.projectRoot,
-			manifest,
+			manifest
 		);
 		this.processor = commandProcessor;
 		if (this.contextFilePath) this.processor.stateManager.loadState(this.contextFilePath);

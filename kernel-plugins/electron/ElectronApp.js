@@ -127,40 +127,29 @@ export class ElectronApp {
 		});
 	}
 
-	async start(config, commandProcessor) {
-		// Validate config object
-		if (!config || typeof config !== 'object') {
-			throw new Error('config parameter must be an object');
+	async start(servedUIDir, electronPreloadPath, commandProcessor) {
+		// Validate parameters
+		if (!servedUIDir) {
+			console.error('❌ servedUIDir path must be provided');
+			process.exit(1);
 		}
-
-		if ( !commandProcessor ||
-			typeof commandProcessor.processCommand !== 'function'
-		) {
-			throw new Error(
-				'start method requires a valid commandProcessor with processCommand method',
-			);
+		if (!electronPreloadPath) {
+			console.error('❌ electronPreloadPath path must be provided');
+			process.exit(1)
 		}
-
-		// Extract paths from nested config object
-		const paths = config.paths || {};
-
-		// Check if required paths are provided
-		if (!paths.electronPreloadPath) {
-			console.warn('⚠️ electronPreloadPath not provided');
+		if (!commandProcessor) {
+			console.error('❌ commandProcessor must be provided');
+			process.exit(1);
 		}
 
 		// Store paths for use by UI manager methods
-		this.paths = paths;
+		this.paths = {servedUIDir, electronPreloadPath};
 
 		// Initialize command handler
 		this.commandHandler = new ElectronCommandHandler(commandProcessor);
 
-		// Cache path resolver value at the beginning of start method
-		const preloadPath = paths.electronPreloadPath;
-
 		// Update the preload path in webPreferences
-		this.windowOptions.webPreferences.preload =
-			this.options.preloadPath || preloadPath;
+		this.windowOptions.webPreferences.preload = electronPreloadPath;
 
 		// Ensure preload script exists
 		if (

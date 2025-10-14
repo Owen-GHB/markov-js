@@ -10,7 +10,7 @@ export class ResourceLoader {
     }
 
     /**
-     * Universal resource loader - the superior version from both files
+     * Universal resource loader
      */
     async getResource(resourceKey, customResolver = null) {
         if (this.cache.has(resourceKey)) {
@@ -39,17 +39,17 @@ export class ResourceLoader {
     }
 
     /**
-     * Default path resolver (superior logic from NativeAdapter + PluginLoader)
+     * Default path resolver
      */
     defaultResolver(resourceKey, baseDir = this.baseDir) {
-        // Handle relative paths (from NativeAdapter)
+        // Handle relative paths
         if (resourceKey.startsWith('./') || resourceKey.startsWith('../')) {
             if (!baseDir) {
                 throw new Error(`Cannot resolve local resource '${resourceKey}': baseDir not available`);
             }
             let resolvedPath = path.resolve(baseDir, resourceKey);
             
-            // Directory handling logic from NativeAdapter
+            // Directory handling logic
             if (fs.existsSync(resolvedPath) && fs.statSync(resolvedPath).isDirectory()) {
                 const packageJsonPath = path.join(resolvedPath, 'package.json');
                 if (fs.existsSync(packageJsonPath)) {
@@ -72,7 +72,7 @@ export class ResourceLoader {
             return resolvedPath;
         }
         
-        // Plugin-style paths (from PluginLoader)
+        // Plugin-style paths
         if (baseDir) {
             return path.join(baseDir, resourceKey, 'index.js');
         }
@@ -82,7 +82,7 @@ export class ResourceLoader {
     }
 
     /**
-     * Get a specific method from a resource (superior method extraction)
+     * Get a specific method from a resource
      */
     async getResourceMethod(resourceKey, methodName, customResolver = null) {
         const resource = await this.getResource(resourceKey, customResolver);
@@ -98,7 +98,7 @@ export class ResourceLoader {
         return resource[methodName];
     }
 
-    // Cache management methods (same as before)
+    // Cache management methods
     has(key) { return this.cache.has(key); }
     set(key, resource) { this.cache.set(key, resource); }
     delete(key) { return this.cache.delete(key); }

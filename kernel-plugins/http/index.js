@@ -1,5 +1,6 @@
 import { HTTPServer } from './HTTP.js';
-import { KernelLoader } from '../shared/KernelLoader.js';
+import path from 'path';
+import { pathToFileURL } from 'url';
 
 /**
  * HTTP plugin wrapper
@@ -29,11 +30,14 @@ function getHttpInstance() {
  * @returns {Promise<void>}
  */
 export async function start(kernelPath, projectRoot, port, servedUIDir, apiEndpoint) {
-	const kernelLoader = new KernelLoader(kernelPath);
-	const manifest = await kernelLoader.getManifest(projectRoot);
-	const commandProcessor = await kernelLoader.createCommandProcessor(
+	const manifestUrl = pathToFileURL(path.join(kernelPath, 'contract.js')).href;
+	const { manifestReader } = await import(manifestUrl);
+	const manifest = manifestReader(projectRoot);
+	const commandProcessorUrl = pathToFileURL(path.join(kernelPath, 'processor/CommandProcessor.js')).href;
+	const { CommandProcessor } = await import(commandProcessorUrl);
+	const commandProcessor = new CommandProcessor(
 		projectRoot,
-		manifest,
+		manifest
 	);
 	const httpServer = getHttpInstance();
 	return await httpServer.start(port, servedUIDir, apiEndpoint, commandProcessor);
