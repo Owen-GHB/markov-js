@@ -15,5 +15,8 @@
   "windowWidth": 1200,
   "windowHeight": 800,
   "showDevTools": true,
-  "isElectronRunning": false
+  "isElectronRunning": false,
+  "scannerOutputFile": "./context/scan.md",
+  "lastScanDate": "",
+  "scanIssueCount": 0
 }

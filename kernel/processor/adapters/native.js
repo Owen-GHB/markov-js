@@ -12,24 +12,40 @@ export class NativeAdapter {
         const { args = {} } = command;
         const sourcePath = commandSpec.source || './';
         const combineArguments = commandSpec.combineArguments === true;
+        const syncMethod = commandSpec.syncMethod === true;
 
         try {
             const method = await this.resourceLoader.getResourceMethod(sourcePath, commandSpec.methodName);
+            
             let result;
             
+            if (syncMethod) {
+                // Single-line obvious async detection
+                if (method.constructor.name === 'AsyncFunction') {
+                    console.warn(`⚠️ Method '${commandSpec.methodName}' is declared as sync but is an async function. Falling back to async execution.`);
+                    // Fall through to async execution
+                } else {
+                    // Trust the user - synchronous execution
+                    if (combineArguments) {
+                        result = method(args);
+                    } else {
+                        const methodArgs = this.buildMethodArguments(args, commandSpec);
+                        result = method(...methodArgs);
+                    }
+                    return { error: null, output: result };
+                }
+            }
+            
+            // Default async execution (or fallback from above)
             if (combineArguments) {
-                // pass args as single object
                 result = await method(args);
             } else {
-                // destructure args into individual parameters
                 const methodArgs = this.buildMethodArguments(args, commandSpec);
                 result = await method(...methodArgs);
             }
             
-            return {
-                error: null,
-                output: result,
-            };
+            return { error: null, output: result };
+            
         } catch (error) {
             const sourceInfo = commandSpec.source ? `from source '${commandSpec.source}'` : 'from default project root';
             return {

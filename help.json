@@ -1,34 +1,14 @@
 {
-  "pgb_download": {
-    "description": "Download a book from Project Gutenberg",
-    "syntax": "pgb_download(id|title, [options])",
-    "examples": [
-      "pgb_download(1342)",
-      "pgb_download(\"Moby Dick\", file=\"whale.txt\")"
-    ]
-  },
-  "pgb_info": {
-    "description": "Get book details from Project Gutenberg",
-    "syntax": "pgb_info(id_or_title)",
-    "examples": [
-      "pgb_info(1342)",
-      "pgb_info(\"Pride and Prejudice\")",
-      "pgb_info({id: 1342})",
-      "pgb_info({title: \"Pride and Prejudice\"})"
-    ]
-  },
-  "pgb_search": {
-    "description": "Search Project Gutenberg by title/author",
-    "syntax": "pgb_search(query)",
-    "examples": [
-      "pgb_search(\"Sherlock Holmes\")"
-    ]
-  },
   "use": {
     "description": "Set the current model to use",
     "syntax": "use(modelName)",
     "examples": [
       "use(\"current_model.json\")"
-    ]
+    ],
+    "parameters": {
+      "modelName": {
+        "description": "Name of the model to set as current"
+      }
+    }
   }
 }

@@ -4,7 +4,12 @@
     "syntax": "delete(modelName)",
     "examples": [
       "delete(\"old_model.json\")"
-    ]
+    ],
+    "parameters": {
+      "modelName": {
+        "description": "Name of the model file to delete"
+      }
+    }
   },
   "listCorpus": {
     "description": "List all available corpus files",

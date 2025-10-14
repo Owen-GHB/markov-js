@@ -2,7 +2,6 @@
   "pgb_download": {
     "parameters": {
       "id_or_title": {
-        "description": "Book ID or title to download",
         "transform": {
           "if": "integer",
           "then": {
@@ -14,7 +13,6 @@
         }
       },
       "file": {
-        "description": "Filename to save the downloaded text",
         "default": null
       }
     }
@@ -22,7 +20,6 @@
   "pgb_download_html": {
     "parameters": {
       "id_or_title": {
-        "description": "Book ID or title to download in HTML format",
         "transform": {
           "if": "integer",
           "then": {
@@ -34,33 +31,21 @@
         }
       },
       "file": {
-        "description": "Filename to save the downloaded HTML",
         "default": null
       }
     }
   },
   "pgb_serve_book": {
     "parameters": {
-      "filename": {
-        "description": "Filename of the ebook to serve (must exist in data/ebooks)"
-      },
       "port": {
-        "description": "Port to run the HTTP server on",
         "default": 3000
       }
     }
   },
-  "pgb_electron": {
-    "parameters": {
-      "filename": {
-        "description": "HTML filename to display in Electron window (must exist in data/ebooks)"
-      }
-    }
-  },
+  "pgb_electron": {},
   "pgb_info": {
     "parameters": {
       "id_or_title": {
-        "description": "Book ID or title to get information about",
         "transform": {
           "if": "integer",
           "then": {
@@ -73,11 +58,5 @@
       }
     }
   },
-  "pgb_search": {
-    "parameters": {
-      "query": {
-        "description": "Search query for Project Gutenberg"
-      }
-    }
-  }
+  "pgb_search": {}
 }
