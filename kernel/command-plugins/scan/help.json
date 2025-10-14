@@ -1,0 +1,12 @@
+{
+  "scan": {
+    "examples": [
+      "scan()",
+      "scan(scannerOutputFile=\"./reports/contract-analysis.md\")",
+      "scan(fix=true)",
+      "scan(scanDir=\"./my-subproject\")",
+      "scan(scanDir=\"./my-subproject\", fix=true, scannerOutputFile=\"./subproject-scan.md\")"
+    ],
+    "notes": "Analyzes contract syntax, parameter consistency, and function signatures. Generates Markdown report. Use fix=true to automatically fix file organization issues. Use scanDir to scan a specific directory."
+  }
+}
