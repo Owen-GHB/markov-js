@@ -14,28 +14,34 @@ const __dirname = path.dirname(__filename);
  * @returns {Promise<void>}
  */
 export async function launch(args, projectRoot) {
-	const config = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8'));
-	const manifest = loadManifest(config.pluginsDir); // load kernel's own manifest
+  const config   = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8'));
+  const manifest = loadManifest(config.pluginsDir);
 
-	// Create plugin loader once and get the repl and cli plugins
-	const defaultPluginsDir = path.join(__dirname, 'default-plugins');
-	const pluginLoader = new PluginLoader(defaultPluginsDir);
-	const replStart = await pluginLoader.getPluginMethod('repl', 'start');
-	const cliRun = await pluginLoader.getPluginMethod('cli', 'run');
+  const defaultPluginsDir = path.join(__dirname, 'default-plugins');
+  const pluginLoader      = new PluginLoader(defaultPluginsDir);
 
-	if (!replStart || !cliRun) {
-		console.error('❌ repl or cli plugin not found or invalid');
-		process.exit(1);
-	}
+  const run = async (plugin, method, ...params) => {
+    const fn = await pluginLoader.getPluginMethod(plugin, method);
+    if (!fn) {
+      console.error(`❌ ${plugin}.${method} not found or invalid`);
+      process.exit(1);
+    }
+    return fn(__dirname, projectRoot, ...params);
+  };
 
-	// Default to REPL mode if no args or if args are application-specific
-	if (args.length === 0) {
-		// Default to REPL mode if no args
-		return replStart(__dirname, projectRoot, manifest.stateDefaults.contextFilePath, manifest.stateDefaults.replHistoryFilePath, manifest.stateDefaults.maxHistory);
-	} else {
-		// Check if we're being called directly with command line args
-		return cliRun(__dirname, projectRoot, manifest.stateDefaults.contextFilePath, args);
-	}
+  if (args.length === 0) {
+    // REPL mode
+    return run(
+      'repl',
+      'start',
+      manifest.stateDefaults.contextFilePath,
+      manifest.stateDefaults.replHistoryFilePath,
+      manifest.stateDefaults.maxHistory
+    );
+  }
+
+  // CLI mode
+  return run('cli', 'run', manifest.stateDefaults.contextFilePath, args);
 }
 
 // Note: This file is not meant to be run directly. Use main.js in the project root.

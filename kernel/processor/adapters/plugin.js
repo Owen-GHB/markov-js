@@ -1,20 +1,26 @@
-// processor/adapters/native.js
+// processor/adapters/plugin.js
 import { ResourceLoader } from '../../utils/ResourceLoader.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-export class NativeAdapter {
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const kernelPath = path.resolve(__dirname, '../../');
+
+export class PluginAdapter {
     constructor(manifest, projectRoot) {
         this.resourceLoader = new ResourceLoader(projectRoot);
         this.manifest = manifest;
         this.projectRoot = projectRoot;
     }
 
-    async handleNativeMethod(command, commandSpec) {
+    async handleKernelPlugin(command, commandSpec) {
         const { args = {} } = command;
         const sourcePath = commandSpec.source || './';
 
         try {
             const method = await this.resourceLoader.getResourceMethod(sourcePath, commandSpec.methodName);
-            const result = await method(args);
+            const result = await method(kernelPath, this.projectRoot, args);
             
             return {
                 error: null,

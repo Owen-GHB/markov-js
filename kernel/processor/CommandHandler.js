@@ -1,5 +1,6 @@
 import { handleInternalCommand } from './adapters/internal.js';
 import { NativeAdapter } from './adapters/native.js';
+import { PluginAdapter } from './adapters/plugin.js';
 
 export class CommandHandler {
 	constructor(manifest, projectRoot) {
@@ -18,6 +19,7 @@ export class CommandHandler {
 		
 		// Create an instance of NativeAdapter
 		this.nativeAdapter = new NativeAdapter(manifest, projectRoot);
+		this.pluginAdapter = new PluginAdapter(manifest, projectRoot);
 	}
 
 	/**
@@ -49,6 +51,11 @@ export class CommandHandler {
 			// Handle native-method commands using source system
 			if (commandSpec.commandType === 'native-method') {
 				return await this.nativeAdapter.handleNativeMethod(command, commandSpec);
+			}
+
+			// Handle plugin commands using source system
+			if (commandSpec.commandType === 'kernel-plugin') {
+				return await this.pluginAdapter.handleKernelPlugin(command, commandSpec);
 			}
 
 			// If we get here, it's an unknown command type
