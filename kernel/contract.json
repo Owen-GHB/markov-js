@@ -1,0 +1,15 @@
+{
+  "name": "vertex",
+  "version": "0.0.0", 
+  "description": "Vertex Application Host",
+  "sources": {
+    "generate": "./generate",
+    "http": "./http",
+    "electron": "./electron"
+  },
+  "stateDefaults": {
+    "contextFilePath": "./context/state.json",
+    "replHistoryFilePath": "./context/repl-history.txt",
+    "maxReplHistory": 100
+  }
+}

@@ -30,7 +30,7 @@ function getHttpInstance() {
  * @returns {Promise<void>}
  */
 export async function start(kernelPath, commandRoot, projectRoot, serverPort, servedUIDir, apiEndpoint) {
-    const manifestUrl = pathToFileURL(path.join(kernelPath, 'contract.js')).href;
+    const manifestUrl = pathToFileURL(path.join(kernelPath, 'utils/manifestLoader.js')).href;
     const { manifestReader } = await import(manifestUrl);
     const manifest = manifestReader(projectRoot);
     const commandProcessorUrl = pathToFileURL(path.join(kernelPath, 'processor/CommandProcessor.js')).href;

@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { loadManifest } from './contract.js';
+import { loadManifest } from './utils/manifestLoader.js';
 import { ResourceLoader } from './utils/ResourceLoader.js';
 import { resolveSecurePath } from './utils/path-resolver.js';
 

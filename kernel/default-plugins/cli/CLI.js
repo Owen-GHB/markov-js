@@ -23,7 +23,7 @@ export class CLI {
 	 * @param {string[]} args - Command line arguments
 	 */
 	async run(args) {
-		const manifestReaderUrl = pathToFileURL(path.join(this.kernelPath, 'contract.js')).href;
+		const manifestReaderUrl = pathToFileURL(path.join(this.kernelPath, 'utils/manifestLoader.js')).href;
 		const { manifestReader } = await import(manifestReaderUrl);
 		const manifest = manifestReader(this.commandRoot);
 		const commandProcessorUrl = pathToFileURL(path.join(this.kernelPath, 'processor/CommandProcessor.js')).href;

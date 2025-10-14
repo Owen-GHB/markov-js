@@ -20,7 +20,7 @@ export class REPL {
 		this.contextFilePath = contextFilePath;
 		this.maxHistory = maxHistory;
 		this.historyFilePath = historyFilePath;
-		const manifestUrl = pathToFileURL(path.join(this.kernelPath, 'contract.js')).href;
+		const manifestUrl = pathToFileURL(path.join(this.kernelPath, 'utils/manifestLoader.js')).href;
 		const { manifestReader } = await import(manifestUrl);
 		const manifest = manifestReader(this.commandRoot);
 		const commandProcessorUrl = pathToFileURL(path.join(this.kernelPath, 'processor/CommandProcessor.js')).href;
