@@ -29,18 +29,21 @@ function getHttpInstance() {
  * @param {Object} commandProcessor - Command processor instance
  * @returns {Promise<void>}
  */
-export async function start(kernelPath, projectRoot, port, servedUIDir, apiEndpoint) {
-	const manifestUrl = pathToFileURL(path.join(kernelPath, 'contract.js')).href;
-	const { manifestReader } = await import(manifestUrl);
-	const manifest = manifestReader(projectRoot);
-	const commandProcessorUrl = pathToFileURL(path.join(kernelPath, 'processor/CommandProcessor.js')).href;
-	const { CommandProcessor } = await import(commandProcessorUrl);
-	const commandProcessor = new CommandProcessor(
-		projectRoot,
-		manifest
-	);
-	const httpServer = getHttpInstance();
-	return await httpServer.start(port, servedUIDir, apiEndpoint, commandProcessor);
+export async function start(kernelPath, projectRoot, serverPort, servedUIDir, apiEndpoint) {
+    const manifestUrl = pathToFileURL(path.join(kernelPath, 'contract.js')).href;
+    const { manifestReader } = await import(manifestUrl);
+    const manifest = manifestReader(projectRoot);
+    const commandProcessorUrl = pathToFileURL(path.join(kernelPath, 'processor/CommandProcessor.js')).href;
+    const { CommandProcessor } = await import(commandProcessorUrl);
+    const commandProcessor = new CommandProcessor(projectRoot, manifest);
+    
+    const httpServer = getHttpInstance();
+    
+    // Start the server but don't return the server object
+    await httpServer.start(serverPort, servedUIDir, apiEndpoint, commandProcessor);
+    
+    // Return a clean success message instead of the server object
+    return `HTTP server started on port ${serverPort}`;
 }
 
 /**

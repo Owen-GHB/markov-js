@@ -1,4 +1,3 @@
-import { PluginLoader } from './utils/PluginLoader.js';
 import { loadManifest } from './contract.js';
 import { resolveSecurePath } from './utils/path-resolver.js';
 import fs from 'fs';
@@ -6,53 +5,49 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __dirname   = path.dirname(__filename);
 
 /**
- * Launch the kernel infrastructure with the given arguments and project root
- * @param {string[]} args - Command line arguments
+ * Launch the kernel infrastructure as a CLI that executes commands
+ * defined in the plugin-directory manifest.
+ * @param {string[]} args - Command line arguments (same syntax as hosted CLI)
  * @param {string} projectRoot - The project root directory
  * @returns {Promise<void>}
  */
 export async function launch(args, projectRoot) {
-  const config = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8'));
-  const pluginLoader = new PluginLoader(config.pluginsDir);
-  const manifest = loadManifest(config.pluginsDir);
+  // 1. Load kernel-side config (only to know where the plugin dir is)
+  const pluginDir     = resolveSecurePath('./command-plugins', __dirname);
+  const manifest      = loadManifest(pluginDir);          // ← plugin-dir manifest
 
-  const run = async (plugin, method, ...params) => {
-    const fn = await pluginLoader.getPluginMethod(plugin, method);
-    if (!fn) {
-      console.error(`❌ ${plugin}.${method} not found or invalid`);
-      process.exit(1);
-    }
-    return fn(__dirname, projectRoot, ...params);
-  };
+  // 2. Build a CommandProcessor for that manifest
+  const { CommandProcessor } = await import(
+    new URL('./processor/CommandProcessor.js', import.meta.url).href
+  );
+  const processor = new CommandProcessor(pluginDir, manifest);
 
-  if (args.includes('--electron')) {
-    const servedUIDir      = resolveSecurePath(manifest.stateDefaults.servedUIDir, projectRoot);
-    const electronPreloadPath = resolveSecurePath(manifest.stateDefaults.electronPreloadPath, projectRoot);
-    return run('electron', 'start', servedUIDir, electronPreloadPath);
+  // 3. Kernel-specific state file (lives in project root)
+  const kernelStateFile = path.join(projectRoot, 'vertex-config.json');
+  if (fs.existsSync(kernelStateFile)) {
+    processor.stateManager.loadState(kernelStateFile);
+  } else {
+    // first-run: seed with manifest defaults
+    processor.stateManager.state = new Map(Object.entries(manifest.stateDefaults || {}));
   }
 
-  if (args.includes('--generate')) {
-    const userTemplateDir  = resolveSecurePath(manifest.stateDefaults.userTemplateDir, projectRoot);
-    const generatedUIDir   = resolveSecurePath(manifest.stateDefaults.generatedUIDir, projectRoot);
-    return run('generate', 'run', userTemplateDir, generatedUIDir);
-  }
+  // 4. Same CLI logic as before
+  const input = args.length ? args.join(' ') : 'help()';
+  const result = await processor.processCommand(input, kernelStateFile);
 
-  if (args.includes('--http')) {
-    const port        = manifest.stateDefaults.serverPort;
-    const servedUIDir = resolveSecurePath(manifest.stateDefaults.servedUIDir, projectRoot);
-    const apiEndpoint = manifest.stateDefaults.apiEndpoint;
-    return run('http', 'start', port, servedUIDir, apiEndpoint);
+  if (result.error) {
+    console.error(`❌ ${result.error}`);
+    process.exit(1);
   }
-
-  console.log('Kernel command-line interface');
-  console.log('Available commands:');
-  console.log('  --generate             Generate UI from contracts using EJS templates');
-  console.log('  --http                 Serve UI and API on specified port (default 8080)');
-  console.log('  --electron             Launch Electron application');
-  process.exit(0);
+  if (result.output) {
+    console.log(result.output);
+  }
+  if (result.exit) {
+    process.exit(0);
+  }
 }
 
-// Note: This file is not meant to be run directly. Use kernel.js in the project root.
+// Note: This file is not meant to be run directly. Use kernel-main.js in the project root.

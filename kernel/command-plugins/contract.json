@@ -8,7 +8,6 @@
     "electron": "./electron"
   },
   "stateDefaults": {
-    "pluginsDir": "./kernel-plugins",
     "contextFilePath": "./context/state.json",
     "replHistoryFilePath": "./context/repl-history.txt",
     "maxReplHistory": 100

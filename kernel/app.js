@@ -1,8 +1,8 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { loadManifest } from './contract.js';
-import fs from 'fs';
-import { PluginLoader } from './utils/PluginLoader.js';
+import { ResourceLoader } from './utils/ResourceLoader.js';
+import { resolveSecurePath } from './utils/path-resolver.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -14,14 +14,14 @@ const __dirname = path.dirname(__filename);
  * @returns {Promise<void>}
  */
 export async function launch(args, projectRoot) {
-  const config   = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8'));
-  const manifest = loadManifest(config.pluginsDir);
+  const pluginsDir = resolveSecurePath('./command-plugins', __dirname);
+  const manifest = loadManifest(pluginsDir);
 
   const defaultPluginsDir = path.join(__dirname, 'default-plugins');
-  const pluginLoader      = new PluginLoader(defaultPluginsDir);
+  const loader = new ResourceLoader(defaultPluginsDir);
 
   const run = async (plugin, method, ...params) => {
-    const fn = await pluginLoader.getPluginMethod(plugin, method);
+    const fn = await loader.getResourceMethod(plugin, method);
     if (!fn) {
       console.error(`❌ ${plugin}.${method} not found or invalid`);
       process.exit(1);
