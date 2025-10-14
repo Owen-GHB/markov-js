@@ -11,7 +11,7 @@
         "description": "Custom template directory (uses built-in if not provided)"
       },
       "generatedUIDir": {
-        "type": "string", 
+        "type": "string",
         "required": true,
         "runtimeFallback": "generatedUIDir",
         "description": "Output directory for generated UI files"

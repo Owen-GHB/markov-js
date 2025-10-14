@@ -7,9 +7,10 @@ const __dirname = path.dirname(__filename);
 const kernelPath = path.resolve(__dirname, '../../');
 
 export class PluginAdapter {
-    constructor(manifest, projectRoot) {
-        this.resourceLoader = new ResourceLoader(projectRoot);
+    constructor(commandRoot, projectRoot, manifest) {
+        this.resourceLoader = new ResourceLoader(commandRoot);
         this.manifest = manifest;
+        this.commandRoot = commandRoot;
         this.projectRoot = projectRoot;
     }
 
@@ -39,7 +40,7 @@ export class PluginAdapter {
      * Build method arguments based on command spec parameter order
      */
     async buildMethodArguments(args, commandSpec) {
-        const methodArgs = [kernelPath, this.projectRoot];
+        const methodArgs = [kernelPath, this.commandRoot, this.projectRoot];
         
         // Add parameters in the order they appear in the command spec
         if (commandSpec.parameters) {
@@ -49,7 +50,7 @@ export class PluginAdapter {
                 let value = args[paramName];
                 
                 // Resolve relative paths to absolute paths relative to projectRoot
-                if (this.shouldResolvePath(paramName, value, commandSpec.parameters[paramName])) {
+                if (this.shouldResolvePath(value)) {
                     value = path.resolve(process.cwd(), value);
                 }
                 
@@ -63,7 +64,7 @@ export class PluginAdapter {
     /**
      * Determine if a parameter value should be resolved as a path
      */
-    shouldResolvePath(paramName, value, paramSpec) {
+    shouldResolvePath(value) {
         if (!value || typeof value !== 'string') return false;
         
         // Resolve if it's a relative path (starts with ./ or ../)

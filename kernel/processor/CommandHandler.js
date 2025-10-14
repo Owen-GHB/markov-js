@@ -3,7 +3,7 @@ import { NativeAdapter } from './adapters/native.js';
 import { PluginAdapter } from './adapters/plugin.js';
 
 export class CommandHandler {
-	constructor(manifest, projectRoot) {
+	constructor(commandRoot, projectRoot, manifest) {
 		// Validate manifest parameter
 		if (!manifest || typeof manifest !== 'object') {
 			throw new Error('CommandHandler requires a manifest object');
@@ -18,8 +18,8 @@ export class CommandHandler {
 		this.projectRoot = projectRoot;
 		
 		// Create an instance of NativeAdapter
-		this.nativeAdapter = new NativeAdapter(manifest, projectRoot);
-		this.pluginAdapter = new PluginAdapter(manifest, projectRoot);
+		this.nativeAdapter = new NativeAdapter(commandRoot, projectRoot, manifest);
+		this.pluginAdapter = new PluginAdapter(commandRoot, projectRoot, manifest);
 	}
 
 	/**

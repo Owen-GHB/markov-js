@@ -1,12 +1,12 @@
 {
   "http": {
     "commandType": "kernel-plugin",
-    "methodName": "start", 
+    "methodName": "start",
     "description": "Start HTTP server serving UI and API",
     "parameters": {
       "serverPort": {
         "type": "integer",
-        "required": true, 
+        "required": true,
         "runtimeFallback": "serverPort",
         "description": "Port number for the server"
       },
@@ -19,7 +19,7 @@
       "apiEndpoint": {
         "type": "string",
         "required": true,
-        "runtimeFallback": "apiEndpoint", 
+        "runtimeFallback": "apiEndpoint",
         "description": "API endpoint path"
       }
     }

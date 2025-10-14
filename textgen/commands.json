@@ -3,6 +3,7 @@
     "name": "generate",
     "commandType": "native-method",
     "methodName": "generateText",
+    "combineArguments": true,
     "parameters": {
       "modelName": {
         "type": "string",
@@ -42,6 +43,7 @@
     "name": "train",
     "commandType": "native-method",
     "methodName": "trainModel",
+    "combineArguments": true,
     "parameters": {
       "file": {
         "type": "string",

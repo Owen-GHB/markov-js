@@ -1,20 +1,30 @@
-// processor/adapters/native.js
 import { ResourceLoader } from '../../utils/ResourceLoader.js';
 
 export class NativeAdapter {
-    constructor(manifest, projectRoot) {
+    constructor(commandRoot, projectRoot, manifest) {
         this.resourceLoader = new ResourceLoader(projectRoot);
         this.manifest = manifest;
+        this.commandRoot = commandRoot;
         this.projectRoot = projectRoot;
     }
 
     async handleNativeMethod(command, commandSpec) {
         const { args = {} } = command;
         const sourcePath = commandSpec.source || './';
+        const combineArguments = commandSpec.combineArguments === true;
 
         try {
             const method = await this.resourceLoader.getResourceMethod(sourcePath, commandSpec.methodName);
-            const result = await method(args);
+            let result;
+            
+            if (combineArguments) {
+                // pass args as single object
+                result = await method(args);
+            } else {
+                // destructure args into individual parameters
+                const methodArgs = this.buildMethodArguments(args, commandSpec);
+                result = await method(...methodArgs);
+            }
             
             return {
                 error: null,
@@ -27,5 +37,23 @@ export class NativeAdapter {
                 output: null,
             };
         }
+    }
+
+    /**
+     * Build method arguments by destructuring args object into parameter order
+     */
+    buildMethodArguments(args, commandSpec) {
+        const methodArgs = [];
+        
+        // Add parameters in the order they appear in the command spec
+        if (commandSpec.parameters) {
+            const paramNames = Object.keys(commandSpec.parameters);
+            
+            for (const paramName of paramNames) {
+                methodArgs.push(args[paramName]);
+            }
+        }
+        
+        return methodArgs;
     }
 }

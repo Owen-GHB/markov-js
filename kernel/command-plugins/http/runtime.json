@@ -2,12 +2,20 @@
   "http": {
     "sideEffects": {
       "setState": {
-        "servedUIDir": {"fromParam": "servedUIDir"},
-        "serverPort": {"fromParam": "serverPort"}, 
-        "apiEndpoint": {"fromParam": "apiEndpoint"},
+        "servedUIDir": {
+          "fromParam": "servedUIDir"
+        },
+        "serverPort": {
+          "fromParam": "serverPort"
+        },
+        "apiEndpoint": {
+          "fromParam": "apiEndpoint"
+        },
         "isServerRunning": true,
         "currentMode": "http",
-        "lastOperation": {"template": "started_http_on_port_{{serverPort}}"}
+        "lastOperation": {
+          "template": "started_http_on_port_{{serverPort}}"
+        }
       }
     },
     "successOutput": "🌐 HTTP server running!\n   UI: http://localhost:{{serverPort}}/\n   API: http://localhost:{{serverPort}}{{apiEndpoint}}\n   Serving: {{servedUIDir}}"

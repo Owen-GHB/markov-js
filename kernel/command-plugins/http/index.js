@@ -29,13 +29,13 @@ function getHttpInstance() {
  * @param {Object} commandProcessor - Command processor instance
  * @returns {Promise<void>}
  */
-export async function start(kernelPath, projectRoot, serverPort, servedUIDir, apiEndpoint) {
+export async function start(kernelPath, commandRoot, projectRoot, serverPort, servedUIDir, apiEndpoint) {
     const manifestUrl = pathToFileURL(path.join(kernelPath, 'contract.js')).href;
     const { manifestReader } = await import(manifestUrl);
     const manifest = manifestReader(projectRoot);
     const commandProcessorUrl = pathToFileURL(path.join(kernelPath, 'processor/CommandProcessor.js')).href;
     const { CommandProcessor } = await import(commandProcessorUrl);
-    const commandProcessor = new CommandProcessor(projectRoot, manifest);
+    const commandProcessor = new CommandProcessor(commandRoot, projectRoot, manifest);
     
     const httpServer = getHttpInstance();
     

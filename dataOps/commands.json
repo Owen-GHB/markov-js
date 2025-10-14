@@ -1,4 +1,4 @@
-{  
+{
   "delete": {
     "name": "delete",
     "commandType": "native-method",

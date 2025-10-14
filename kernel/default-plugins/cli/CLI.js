@@ -3,7 +3,7 @@ import path from 'path';
 import { pathToFileURL } from 'url';
 
 export class CLI {
-	constructor(kernelPath, projectRoot, contextFilePath) {
+	constructor(kernelPath, commandRoot, projectRoot, contextFilePath) {
 		if (!contextFilePath) {
 			throw new Error('CLI requires a contextFilePath property');
 		}
@@ -14,6 +14,7 @@ export class CLI {
 		this.processor = null;
 		this.contextFilePath = contextFilePath;
 		this.kernelPath = kernelPath;
+		this.commandRoot = commandRoot;
 		this.projectRoot = projectRoot;	
 	}
 
@@ -22,12 +23,13 @@ export class CLI {
 	 * @param {string[]} args - Command line arguments
 	 */
 	async run(args) {
-		const manifestUrl = pathToFileURL(path.join(this.kernelPath, 'contract.js')).href;
-		const { manifestReader } = await import(manifestUrl);
-		const manifest = manifestReader(this.projectRoot);
+		const manifestReaderUrl = pathToFileURL(path.join(this.kernelPath, 'contract.js')).href;
+		const { manifestReader } = await import(manifestReaderUrl);
+		const manifest = manifestReader(this.commandRoot);
 		const commandProcessorUrl = pathToFileURL(path.join(this.kernelPath, 'processor/CommandProcessor.js')).href;
 		const { CommandProcessor } = await import(commandProcessorUrl);
 		const commandProcessor = new CommandProcessor(
+			this.commandRoot,
 			this.projectRoot,
 			manifest
 		);

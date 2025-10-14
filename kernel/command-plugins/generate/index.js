@@ -22,7 +22,7 @@ function getGeneratorInstance() {
  * @param {string} projectRoot - Project root directory (defaults to cwd)
  * @returns {Promise<void>}
  */
-export async function run(kernelPath, projectRoot, userTemplateDir, generatedUIDir) {
+export async function run(kernelPath, commandRoot, projectRoot, userTemplateDir, generatedUIDir) {
     const manifestUrl = pathToFileURL(path.join(kernelPath, 'contract.js')).href;
 	const { manifestReader } = await import(manifestUrl);
 	const manifest = manifestReader(projectRoot);

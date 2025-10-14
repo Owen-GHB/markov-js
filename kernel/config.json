@@ -1,3 +1,4 @@
 {
-	"pluginsDir": "kernel/command-plugins"
+  "pluginsDir": "kernel/command-plugins",
+  "version": "0.0.0"
 }

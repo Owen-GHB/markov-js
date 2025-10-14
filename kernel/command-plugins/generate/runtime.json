@@ -2,11 +2,21 @@
   "generate": {
     "sideEffects": {
       "setState": {
-        "userTemplateDir": {"fromParam": "userTemplateDir"},
-        "generatedUIDir": {"fromParam": "generatedUIDir"},
-        "uiGenerationCount": {"template": "{{uiGenerationCount}} + 1"},
-        "lastTemplateUsed": {"template": "{{#userTemplateDir}}custom{{/userTemplateDir}}{{^userTemplateDir}}built-in{{/userTemplateDir}}"},
-        "lastOperation": {"template": "generated_ui_to_{{generatedUIDir}}"}
+        "userTemplateDir": {
+          "fromParam": "userTemplateDir"
+        },
+        "generatedUIDir": {
+          "fromParam": "generatedUIDir"
+        },
+        "uiGenerationCount": {
+          "template": "{{uiGenerationCount}} + 1"
+        },
+        "lastTemplateUsed": {
+          "template": "{{#userTemplateDir}}custom{{/userTemplateDir}}{{^userTemplateDir}}built-in{{/userTemplateDir}}"
+        },
+        "lastOperation": {
+          "template": "generated_ui_to_{{generatedUIDir}}"
+        }
       }
     },
     "successOutput": "🎨 UI generated successfully!\n   Output: {{generatedUIDir}}\n   Templates: {{#userTemplateDir}}{{userTemplateDir}}{{/userTemplateDir}}{{^userTemplateDir}}built-in{{/templateDir}}\n   Generation #{{uiGenerationCount}}"

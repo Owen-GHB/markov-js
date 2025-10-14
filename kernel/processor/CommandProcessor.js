@@ -6,7 +6,7 @@ import StateManager from './StateManager.js';
  * Consolidates shared command processing logic across all transports
  */
 export class CommandProcessor {
-	constructor(projectRoot, manifest) {
+	constructor(commandRoot, projectRoot, manifest) {
 		// Validate config parameter
 		if (!projectRoot) {
 			throw new Error('CommandProcessor requires a projectRoot parameter');
@@ -21,7 +21,7 @@ export class CommandProcessor {
 		this.stateManager = new StateManager(manifest);
 		this.parser = new CommandParser(manifest);
 		// Pass the full config to CommandHandler
-		this.handler = new CommandHandler(manifest, projectRoot);
+		this.handler = new CommandHandler(commandRoot, projectRoot, manifest);
 		this.state = this.stateManager.getStateMap();
 	}
 

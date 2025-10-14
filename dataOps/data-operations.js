@@ -90,9 +90,7 @@ export async function listCorpusFiles() {
  * @param {string} params.modelName - Model filename to delete
  * @returns {Promise<Object>} - The result of the deletion
  */
-export async function deleteModelFile(params) {
-    const { modelName } = params || {};
-
+export async function deleteModelFile(modelName) {
     if (!modelName) {
         throw new Error('Model name is required');
     }

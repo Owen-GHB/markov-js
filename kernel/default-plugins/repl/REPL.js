@@ -13,18 +13,20 @@ export class REPL {
 		this.historyFilePath = null;
 	}
 
-	async initialize(kernelPath, projectRoot, contextFilePath, historyFilePath, maxHistory) {
+	async initialize(kernelPath, commandRoot, projectRoot, contextFilePath, historyFilePath, maxHistory) {
 		this.kernelPath = kernelPath;
+		this.commandRoot = commandRoot;
 		this.projectRoot = projectRoot;
 		this.contextFilePath = contextFilePath;
 		this.maxHistory = maxHistory;
 		this.historyFilePath = historyFilePath;
 		const manifestUrl = pathToFileURL(path.join(this.kernelPath, 'contract.js')).href;
 		const { manifestReader } = await import(manifestUrl);
-		const manifest = manifestReader(this.projectRoot);
+		const manifest = manifestReader(this.commandRoot);
 		const commandProcessorUrl = pathToFileURL(path.join(this.kernelPath, 'processor/CommandProcessor.js')).href;
 		const { CommandProcessor } = await import(commandProcessorUrl);
 		const commandProcessor = new CommandProcessor(
+			this.commandRoot,
 			this.projectRoot,
 			manifest
 		);
@@ -33,7 +35,7 @@ export class REPL {
 		this.loadHistory();
 	}
 
-	async start(kernelPath, projectRoot, contextFilePath, historyFilePath, maxHistory) {
+	async start(kernelPath, commandRoot, projectRoot, contextFilePath, historyFilePath, maxHistory) {
 		// Validate parameters
 		if (contextFilePath && typeof contextFilePath !== 'string') {
 			throw new Error('contextFilePath parameter must be a string if provided');
@@ -52,7 +54,7 @@ export class REPL {
 		}
 
 		// Initialize with provided path and config values at the beginning of start
-		await this.initialize(kernelPath, projectRoot, contextFilePath, historyFilePath, maxHistory);
+		await this.initialize(kernelPath, commandRoot, projectRoot, contextFilePath, historyFilePath, maxHistory);
 
 		// Initialize REPL instance
 		this.rl = readline.createInterface({

@@ -1,3 +1,4 @@
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { loadManifest } from './contract.js';
@@ -45,24 +46,40 @@ export async function launch(args, projectRoot) {
  * @returns {Promise<void>}
  */
 async function executeCommandPath(args, projectRoot, kernelCommandRoot, isKernelMode) {
-  // Load manifest from the kernel command root
+  // Load manifest from the kernel command root for command definitions
   const manifest = loadManifest(kernelCommandRoot);
 
   // Use default plugins (CLI/REPL)
   const defaultPluginsDir = path.join(__dirname, 'default-plugins');
   const loader = new ResourceLoader(defaultPluginsDir);
 
-  // CRITICAL: Determine context
+  // CRITICAL: Determine context with user config first, kernel defaults as fallback
   let contextFilePath;
   let commandRoot;
+  let replHistoryFilePath;
+  let maxHistory;
+  
   if (isKernelMode) {
     // Kernel mode: use vertex-config.json in the user's project root
     contextFilePath = path.join(projectRoot, 'vertex-config.json');
     commandRoot = kernelCommandRoot;
+    
+    // For REPL settings, check user config first, then kernel manifest defaults
+    const userConfig = loadUserConfig(contextFilePath);
+    replHistoryFilePath = userConfig.replHistoryFilePath || manifest.stateDefaults.replHistoryFilePath;
+    maxHistory = userConfig.maxHistory || manifest.stateDefaults.maxHistory;
   } else {
-    // Application mode: use the path from manifest (relative to kernelCommandRoot)
-    contextFilePath = path.resolve(kernelCommandRoot, manifest.stateDefaults.contextFilePath);
+    // Application mode: user's project is command root
     commandRoot = projectRoot;
+    
+    // Load user's config with fallback to kernel manifest
+    const userConfigPath = path.join(projectRoot, 'vertex-config.json');
+    const userConfig = loadUserConfig(userConfigPath);
+    
+    contextFilePath = userConfig.contextFilePath || 
+                     path.resolve(kernelCommandRoot, manifest.stateDefaults.contextFilePath);
+    replHistoryFilePath = userConfig.replHistoryFilePath || manifest.stateDefaults.replHistoryFilePath;
+    maxHistory = userConfig.maxHistory || manifest.stateDefaults.maxHistory;
   }
 
   const run = async (plugin, method, ...params) => {
@@ -72,22 +89,37 @@ async function executeCommandPath(args, projectRoot, kernelCommandRoot, isKernel
       process.exit(1);
     }
     // KEY: Pass commandRoot so CLI/REPL load commands from the right place
-    return fn(__dirname, commandRoot, ...params);
+    return fn(__dirname, commandRoot, projectRoot, ...params);
   };
 
   if (args.length === 0) {
-    // REPL mode
+    // REPL mode with proper config hierarchy
     return run(
       'repl',
       'start',
       contextFilePath,
-      manifest.stateDefaults.replHistoryFilePath,
-      manifest.stateDefaults.maxHistory
+      replHistoryFilePath,
+      maxHistory
     );
   }
 
   // CLI mode
-  return run('cli', 'run', contextFilePath, args);  // Use the determined context file path
+  return run('cli', 'run', contextFilePath, args);
+}
+
+/**
+ * Load user configuration with graceful fallback to empty object
+ */
+function loadUserConfig(configPath) {
+  try {
+    if (fs.existsSync(configPath)) {
+      const configData = fs.readFileSync(configPath, 'utf8');
+      return JSON.parse(configData);
+    }
+  } catch (error) {
+    console.warn(`⚠️ Could not load user config from ${configPath}:`, error.message);
+  }
+  return {};
 }
 
 /**

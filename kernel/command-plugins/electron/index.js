@@ -14,7 +14,7 @@ const __dirname = path.dirname(__filename);
  * @param {string} electronPreloadPath - Path to electron preload script
  * @returns {Promise<void>}
  */
-export async function start(kernelPath, projectRoot, servedui, electronPreloadPath) {
+export async function start(kernelPath, commandRoot, projectRoot, servedui, electronPreloadPath) {
     // Since Electron needs to be launched as a separate process, we spawn electron using npx
     // which will run electron-main.js. The electron-main.js will now use dynamic kernel loading.
     return import('child_process')
@@ -31,6 +31,8 @@ export async function start(kernelPath, projectRoot, servedui, electronPreloadPa
                 electronMainPath,
                 '--project-root',
                 projectRoot,
+                '--command-root',
+                commandRoot,
                 '--kernel-path',
                 kernelPath,
             ];

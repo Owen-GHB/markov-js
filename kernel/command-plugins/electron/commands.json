@@ -7,7 +7,7 @@
       "servedui": {
         "type": "string",
         "required": true,
-        "runtimeFallback": "servedUIDir", 
+        "runtimeFallback": "servedUIDir",
         "description": "UI directory to load in Electron window"
       },
       "electronPreloadPath": {

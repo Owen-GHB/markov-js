@@ -1,5 +1,5 @@
 {
-  "name": "vertex-kernel",
+  "name": "vertex-plugins",
   "version": "0.0.0", 
   "description": "Universal Command Engine - Plugin Ecosystem",
   "sources": {

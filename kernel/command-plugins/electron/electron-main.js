@@ -16,13 +16,14 @@ for (let i = 0; i < args.length; i += 2) {
 }
 
 const projectRoot = argMap['project-root'];
+const commandRoot = argMap['command-root'];
 const kernelPath = argMap['kernel-path'];
 const servedui = argMap['servedui'];
 const electronPreloadPath = argMap['electron-preload-path'];
 
-if (!projectRoot || !kernelPath) {
+if (!projectRoot || !kernelPath || !commandRoot) {
     console.error(
-        '❌ Missing required arguments: --project-root and --kernel-path',
+        '❌ Missing required arguments: --project-root, --command-root and --kernel-path',
     );
     process.exit(1);
 }
@@ -36,6 +37,7 @@ if (!projectRoot || !kernelPath) {
 		const commandProcessorUrl = pathToFileURL(path.join(kernelPath, 'processor/CommandProcessor.js')).href;
 		const { CommandProcessor } = await import(commandProcessorUrl);
 		const commandProcessor = new CommandProcessor(
+            commandRoot,
 			projectRoot,
 			manifest
 		);

@@ -14,7 +14,7 @@
         "description": "Value to set (auto-converted from string if needed)"
       },
       "persist": {
-        "type": "boolean", 
+        "type": "boolean",
         "required": false,
         "default": true,
         "description": "Whether to persist the change to context file"

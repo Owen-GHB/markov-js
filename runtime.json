@@ -7,7 +7,7 @@
         }
       }
     },
-    "successOutput": "\u00e2\u0153\u2026 Using model: {{modelName}}",
+    "successOutput": "âœ… Using model: {{modelName}}",
     "parameters": {
       "modelName": {
         "description": "Name of the model to set as current",

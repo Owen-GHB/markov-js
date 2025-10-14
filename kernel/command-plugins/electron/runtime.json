@@ -2,11 +2,17 @@
   "electron": {
     "sideEffects": {
       "setState": {
-        "servedUIDir": {"fromParam": "servedui"},
-        "electronPreloadPath": {"fromParam": "electronPreloadPath"},
-        "isElectronRunning": true, 
+        "servedUIDir": {
+          "fromParam": "servedui"
+        },
+        "electronPreloadPath": {
+          "fromParam": "electronPreloadPath"
+        },
+        "isElectronRunning": true,
         "currentMode": "electron",
-        "lastOperation": {"template": "launched_electron_with_{{servedui}}"}
+        "lastOperation": {
+          "template": "launched_electron_with_{{servedui}}"
+        }
       }
     },
     "successOutput": "🖥️ Electron desktop app launched!\n   UI: {{servedui}}\n   Preload: {{electronPreloadPath}}"
