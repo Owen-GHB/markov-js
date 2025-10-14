@@ -5,8 +5,7 @@
   "sources": {
     "generate": "./generate",
     "http": "./http",
-    "electron": "./electron",
-    "scan": "./scan"
+    "electron": "./electron"
   },
   "stateDefaults": {
     "contextFilePath": "./context/state.json",

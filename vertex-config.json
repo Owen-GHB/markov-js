@@ -8,15 +8,12 @@
   "lastTemplateUsed": "{{#userTemplateDir}}custom{{/userTemplateDir}}{{^userTemplateDir}}built-in{{/userTemplateDir}}",
   "servedUIDir": "./generated-ui",
   "apiEndpoint": "/api",
-  "serverPort": 8000,
+  "serverPort": 8080,
   "isServerRunning": false,
   "totalRequests": 0,
   "electronPreloadPath": "./electron-preload.js",
   "windowWidth": 1200,
   "windowHeight": 800,
   "showDevTools": true,
-  "isElectronRunning": false,
-  "scannerOutputFile": "./context/scan.md",
-  "lastScanDate": "",
-  "scanIssueCount": 0
+  "isElectronRunning": false
 }

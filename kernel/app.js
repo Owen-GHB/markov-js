@@ -53,7 +53,7 @@ async function executeCommandPath(args, projectRoot, kernelCommandRoot, isKernel
   const defaultPluginsDir = path.join(__dirname, 'default-plugins');
   const loader = new ResourceLoader(defaultPluginsDir);
 
-  // CRITICAL: Determine context with user config first, kernel defaults as fallback
+  // Determine context with user config first, kernel defaults as fallback
   let contextFilePath;
   let commandRoot;
   let replHistoryFilePath;
@@ -88,7 +88,7 @@ async function executeCommandPath(args, projectRoot, kernelCommandRoot, isKernel
       console.error(`❌ ${plugin}.${method} not found or invalid`);
       process.exit(1);
     }
-    // KEY: Pass commandRoot so CLI/REPL load commands from the right place
+    // Pass commandRoot so CLI/REPL load commands from the right place
     return fn(__dirname, commandRoot, projectRoot, ...params);
   };
 
