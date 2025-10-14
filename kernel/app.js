@@ -15,7 +15,7 @@ const __dirname = path.dirname(__filename);
  */
 export async function launch(args, projectRoot) {
 	const config = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8'));
-	const manifest = loadManifest(config.paths.pluginsDir); // load kernel's own manifest
+	const manifest = loadManifest(config.pluginsDir); // load kernel's own manifest
 
 	// Create plugin loader once and get the repl and cli plugins
 	const defaultPluginsDir = path.join(__dirname, 'default-plugins');

@@ -1,5 +1,3 @@
 {
-	"paths": {
-		"pluginsDir": "kernel-plugins"
-	}
+	"pluginsDir": "kernel-plugins"
 }

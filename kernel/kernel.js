@@ -17,8 +17,8 @@ const __dirname = path.dirname(__filename);
 export async function launch(args, projectRoot) {
 	const config = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json'), 'utf8'));
 	// Create plugin loader once for all plugin operations
-	const pluginLoader = new PluginLoader(config.paths.pluginsDir);
-	const manifest = loadManifest(config.paths.pluginsDir); // load kernel's own manifest
+	const pluginLoader = new PluginLoader(config.pluginsDir);
+	const manifest = loadManifest(config.pluginsDir); // load kernel's own manifest
 
 	// Check if we should run in Electron
 	if (args.includes('--electron')) {

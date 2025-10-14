@@ -1,6 +1,0 @@
-{
-	"paths": {
-		"userTemplateDir": "ejs-templates",
-		"generatedUIDir": "generated-ui"
-	}
-}

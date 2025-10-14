@@ -1,6 +1,0 @@
-{
-	"paths": {
-		"servedUIDir": "generated-ui",
-		"electronPreloadPath": "electron-preload.js"
-	}
-}
