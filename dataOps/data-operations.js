@@ -138,8 +138,6 @@ function formatFileSize(bytes) {
  * @returns {Promise<Object>} - The result of the upload
  */
 export async function uploadCorpusFile(file, filename) {
-    console.log('Uploading file:', filename || (file && file.name));
-    console.log('File object:', file);
     if (!file) {
         throw new Error('File is required');
     }
