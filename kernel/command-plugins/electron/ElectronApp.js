@@ -34,7 +34,8 @@ class ElectronUIManager {
  * Handles commands for the Electron application via IPC
  */
 class ElectronCommandHandler {
-	constructor(commandProcessor) {
+	constructor(commandProcessor, commandParser) {
+		this.commandParser = commandParser;
 		this.commandProcessor = commandProcessor;
 	}
 
@@ -49,7 +50,8 @@ class ElectronCommandHandler {
 			// We'll pass it through the processor to handle state management properly
 			// Convert command object to expected format for processCommand if needed
 			const commandString = JSON.stringify(command);
-			const result = await this.commandProcessor.processCommand(commandString);
+			const parsedCommand = this.commandParser.parse(commandString);
+			const result = await this.commandProcessor.processParsedCommand(parsedCommand);
 			return result;
 		} catch (error) {
 			return { error: error.message, output: null };

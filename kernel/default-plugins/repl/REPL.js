@@ -22,14 +22,15 @@ export class REPL {
 		this.maxHistory = maxHistory;
 		this.historyFilePath = historyFilePath;
 		const exportsUrl = pathToFileURL(path.join(kernelPath, 'exports.js')).href;
-		const { manifestReader, CommandProcessor } = await import(exportsUrl);
+		const { manifestReader, CommandProcessor, StateManager, CommandParser } = await import(exportsUrl);
 		const manifest = manifestReader(this.commandRoot);
-		const commandProcessor = new CommandProcessor(
+		this.processor = new CommandProcessor(
 			this.commandRoot,
 			this.projectRoot,
 			manifest
 		);
-		this.processor = commandProcessor;
+		this.stateManager = new StateManager(manifest);
+		this.commandParser = new CommandParser(manifest);
 		if (contextFilePath) this.processor.stateManager.loadState(contextFilePath);
 		this.loadHistory();
 	}
@@ -119,13 +120,19 @@ export class REPL {
 			}
 
 			// Process command using the shared processor
-			const result = await this.processor.processCommand(
-				input,
+			const parsedCommand = this.commandParser.parse(input);
+			const result = await this.processor.processParsedCommand(
+				parsedCommand,
 				this.contextFilePath,
 			);
 
-			if (result.error) console.error(`❌ ${result.error}`);
-			if (result.output) console.log(formatResult(result.output));
+			if (result.error) {
+				console.error(`❌ ${result.error}`);
+			}
+
+			if (result.output) {
+				console.log(formatResult(result.output));
+			}
 
 			// Check if the command requested exit
 			if (result.exit) {

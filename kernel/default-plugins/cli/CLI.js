@@ -13,6 +13,7 @@ export class CLI {
 			throw new Error('CLI requires a kernelPath property');
 		}
 		this.processor = null;
+		this.stateManager = null;
 		this.contextFilePath = contextFilePath;
 		this.kernelPath = kernelPath;
 		this.commandRoot = commandRoot;
@@ -25,14 +26,22 @@ export class CLI {
 	 */
 	async run(args) {
 		const exportsUrl = pathToFileURL(path.join(this.kernelPath, 'exports.js')).href;
-		const { manifestReader, CommandProcessor, HelpHandler, formatResult } = await import(exportsUrl);
+		const { 
+			manifestReader, 
+			CommandProcessor, 
+			HelpHandler, 
+			formatResult, 
+			StateManager,
+			CommandParser 
+		} = await import(exportsUrl);
 		const manifest = manifestReader(this.commandRoot);
-		const commandProcessor = new CommandProcessor(
+		this.parser = new CommandParser(manifest);
+		this.processor = new CommandProcessor(
 			this.commandRoot,
 			this.projectRoot,
 			manifest
 		);
-		this.processor = commandProcessor;
+		this.stateManager = new StateManager(manifest);
 		if (this.contextFilePath) this.processor.stateManager.loadState(this.contextFilePath);
 
 		if (args.length === 0) {
@@ -68,15 +77,14 @@ export class CLI {
 		}
 
 		// Process the command using the shared processor
-		const result = await this.processor.processCommand(
-			input,
+		const parsedCommand = this.parser.parse(input);
+		const result = await this.processor.processParsedCommand(
+			parsedCommand,
 			this.contextFilePath,
 		);
 
 		if (result.error) {
 			console.error(`❌ ${result.error}`);
-			// Show help on error using HelpHandler
-			console.log(HelpHandler.formatGeneralHelp(manifest));
 			process.exit(1);
 		}
 

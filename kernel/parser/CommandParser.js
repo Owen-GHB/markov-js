@@ -32,7 +32,7 @@ export class CommandParser {
      * @param {Object} context - Optional context with runtime state
      * @returns {{error: string|null, command: Object|null}}
      */
-    parse(input, context = {}) {
+    parse(input) {
         if (!input || typeof input !== 'string') {
             return {
                 error: 'Invalid input: must be a non-empty string',
@@ -68,20 +68,20 @@ export class CommandParser {
                     Object.entries(spec.parameters || {}).every(([_, p]) => !p.required)
                 )
             ) {
-                return this.parseCliStyle(cliMatch[1], cliMatch[2], context);
+                return this.parseCliStyle(cliMatch[1], cliMatch[2]);
             }
         }
 
         // Try object style first (backward compatible)
         const objectMatch = trimmed.match(this.patterns.objectCall);
         if (objectMatch) {
-            return parseObjectStyle(objectMatch, context, this.manifest);
+            return parseObjectStyle(objectMatch, this.manifest);
         }
 
         // Try function style
         const funcMatch = trimmed.match(this.patterns.funcCall);
         if (funcMatch) {
-            return parseFunctionStyle(funcMatch, context, this.manifest);
+            return parseFunctionStyle(funcMatch, this.manifest);
         }
 
         // Try simple command
@@ -89,7 +89,7 @@ export class CommandParser {
         if (simpleMatch) {
             const funcCall = `${trimmed}()`;
             const match = funcCall.match(this.patterns.funcCall);
-            if (match) return parseFunctionStyle(match, context, this.manifest);
+            if (match) return parseFunctionStyle(match, this.manifest);
         }
 
         return {
@@ -98,7 +98,7 @@ export class CommandParser {
         };
     }
 
-    parseCliStyle(command, argsString, context = {}) {
+    parseCliStyle(command, argsString) {
         const spec = this.manifest.commands.find(
             (c) => c.name.toLowerCase() === command.toLowerCase(),
         );
@@ -136,6 +136,6 @@ export class CommandParser {
         const funcCall = `${command}(${[...positionalPairs, ...named].join(',')})`; // Remove space after comma
         const match = funcCall.match(this.patterns.funcCall);
 
-        return parseFunctionStyle(match, context, this.manifest);
+        return parseFunctionStyle(match, this.manifest);
     }
 }

@@ -8,7 +8,7 @@ export class HTTPServer {
 		this.commandProcessor = null; // Will be initialized in start method
 	}
 
-	start(port, servedUIDir, apiEndpoint, commandProcessor) {
+	start(port, servedUIDir, apiEndpoint, commandProcessor, commandParser) {
 		// Validate parameters
 		if (typeof port !== 'number' || port <= 0) {
 			throw new Error('port parameter must be a positive number');
@@ -33,6 +33,7 @@ export class HTTPServer {
 		this.staticDir = servedUIDir;
 		this.apiEndpoint = apiEndpoint;
 		this.commandProcessor = commandProcessor;
+		this.commandParser = commandParser;
 
 		return new Promise((resolve, reject) => {
 			const server = http.createServer(async (req, res) => {
@@ -148,7 +149,8 @@ export class HTTPServer {
 	async executeCommandAndRespond(commandString, res) {
 		try {
 			// Process command using the shared processor
-			const result = await this.commandProcessor.processCommand(commandString);
+			parsedCommand = this.commandParser.parse(commandString);
+			const result = await this.commandProcessor.processParsedCommand(parsedCommand);
 			return this.sendResponse(res, result);
 		} catch (err) {
 			console.error('Command execution error:', err);

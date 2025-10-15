@@ -31,14 +31,15 @@ function getHttpInstance() {
  */
 export async function start(kernelPath, commandRoot, projectRoot, serverPort, servedUIDir, apiEndpoint) {
     const exportsUrl = pathToFileURL(path.join(kernelPath, 'exports.js')).href;
-    const { manifestReader, CommandProcessor } = await import(exportsUrl);
+    const { manifestReader, CommandProcessor, CommandParser} = await import(exportsUrl);
     const manifest = manifestReader(projectRoot);
     const commandProcessor = new CommandProcessor(commandRoot, projectRoot, manifest);
+    const commandParser = new CommandParser(manifest);
     
     const httpServer = getHttpInstance();
     
     // Start the server but don't return the server object
-    await httpServer.start(serverPort, servedUIDir, apiEndpoint, commandProcessor);
+    await httpServer.start(serverPort, servedUIDir, apiEndpoint, commandProcessor, commandParser);
     
     // Return a clean success message instead of the server object
     return `HTTP server started on port ${serverPort}`;

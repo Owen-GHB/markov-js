@@ -1,8 +1,7 @@
 // File: processor/CommandProcessor.js
 
-import { CommandParser } from './parser/CommandParser.js';
 import { CommandHandler } from './handler/CommandHandler.js';
-import StateManager from './StateManager.js';
+import { StateManager } from './StateManager.js';
 import { Validator } from './normalizer/Validator.js';
 import { Normalizer } from './normalizer/Normalizer.js';
 
@@ -23,41 +22,9 @@ export class CommandProcessor {
 
 		this.manifest = manifest;
 		this.stateManager = new StateManager(manifest);
-		this.parser = new CommandParser(manifest);
 		// Pass the full config to CommandHandler
 		this.handler = new CommandHandler(commandRoot, projectRoot, manifest);
 		this.state = this.stateManager.getStateMap();
-	}
-
-	/**
-	 * Process a command through the complete pipeline
-	 * @param {string} input - The command input string (can be JSON or string format)
-	 * @param {string|null} contextFilePath - Path to context file for state management (default: null, uses default state)
-	 * @returns {Promise<Object>} - The result of command processing
-	 */
-	async processCommand(input, contextFilePath = null) {
-		try {
-			// Create context for parsing
-			const context = {
-				state: this.state,
-				manifest: this.manifest,
-			};
-
-			// STEP 1: Parse the command
-			const { error, command } = this.parser.parse(input, context);
-			if (error) {
-				return { error, output: null };
-			}
-
-			// STEP 2: Process the parsed command through full pipeline
-			return await this.processParsedCommand(command, contextFilePath);
-
-		} catch (error) {
-			return {
-				error: `Command processing error: ${error.message}`,
-				output: null,
-			};
-		}
 	}
 
 	/**

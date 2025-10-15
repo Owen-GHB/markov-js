@@ -1,6 +1,6 @@
 import { ParserUtils } from './Utils.js';
 
-export function parseFunctionStyle([, name, argsString], context = {}, manifest) {
+export function parseFunctionStyle([, name, argsString], manifest) {
     const commandName = name.toLowerCase();
 
     // Find the command in manifest

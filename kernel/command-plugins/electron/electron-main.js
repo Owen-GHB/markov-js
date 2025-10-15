@@ -32,7 +32,7 @@ if (!projectRoot || !kernelPath || !commandRoot) {
 (async () => {
     try {
         const exportsUrl = pathToFileURL(path.join(kernelPath, 'exports.js')).href;
-		const { manifestReader, CommandProcessor } = await import(exportsUrl);
+		const { manifestReader, CommandProcessor, CommandParser } = await import(exportsUrl);
         const manifest = manifestReader(projectRoot);
 		const commandProcessor = new CommandProcessor(
             commandRoot,
@@ -43,7 +43,7 @@ if (!projectRoot || !kernelPath || !commandRoot) {
         // Directly instantiate and start ElectronApp with the dynamically created components
         const electronApp = new ElectronApp();
 
-        await electronApp.start(servedui, electronPreloadPath, commandProcessor);
+        await electronApp.start(servedui, electronPreloadPath, commandProcessor, CommandParser);
     } catch (error) {
         console.error('❌ Error in Electron main process:', error.message);
         process.exit(1);
