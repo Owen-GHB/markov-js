@@ -64,7 +64,6 @@ export class CommandProcessor {
 			if (!result.error) {
 				this.stateManager.applySideEffects(normalizedCommand, commandSpec);
 			}
-
 			return result;
 
 		} catch (error) {

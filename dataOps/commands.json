@@ -21,5 +21,22 @@
     "commandType": "native-method",
     "methodName": "listAvailableModels",
     "parameters": {}
+  },
+  "uploadFile": {
+    "name": "uploadFile",
+    "commandType": "native-method",
+    "methodName": "uploadCorpusFile",
+    "parameters": {
+      "file": {
+        "type": "blob",
+        "required": true,
+        "description": "Text file to upload to corpus"
+      },
+      "filename": {
+        "type": "string",
+        "required": false,
+        "description": "Optional custom filename (uses original name if not provided)"
+      }
+    }
   }
 }

@@ -48,16 +48,7 @@ class ElectronCommandHandler {
 		try {
 			// The command from UI is already parsed as an object
 			// We'll pass it through the processor to handle state management properly
-			// Convert command object to expected format for processCommand if needed
-			const commandString = JSON.stringify(command);
-			const parsedCommand = this.commandParser.parse(commandString);
-			let result;
-			if (parsedCommand.error) {
-				result = parsedCommand;
-			} else {
-				const command = parsedCommand.command;
-				result = await this.commandProcessor.processCommand(command);
-			}
+			let result = await this.commandProcessor.processStatefulCommand(command);
 			return result;
 		} catch (error) {
 			return { error: error.message, output: null };

@@ -24,5 +24,21 @@
     "examples": [
       "listModels()"
     ]
+  },
+  "uploadFile": {
+    "description": "Upload a text file to the corpus directory",
+    "syntax": "uploadFile(file, [filename])",
+    "examples": [
+      "uploadFile(fileObject)",
+      "uploadFile(fileObject, \"my_corpus.txt\")"
+    ],
+    "parameters": {
+      "file": {
+        "description": "Text file to upload (from file picker or upload)"
+      },
+      "filename": {
+        "description": "Optional custom filename (uses original name if not provided)"
+      }
+    }
   }
 }

@@ -151,38 +151,38 @@
         
         try {
             if (window.electronAPI) {
-                // Convert FormData to a format Electron can handle
-                const commandData = {
-                    name: commandName,
-                    args: args
+        // Convert FormData to a format Electron can handle
+        const commandData = {
+            name: commandName,
+            args: { ...args } // Start with existing args
+        };
+
+        // Handle file data for Electron - put files directly into args
+        for (const [key, file] of files.entries()) {
+            if (key !== 'command') {
+                const arrayBuffer = await file.arrayBuffer();
+                // Convert Array data to Buffer-compatible format
+                const fileData = new Uint8Array(arrayBuffer);
+                
+                // Create blob object in the expected format
+                commandData.args[key] = {
+                    type: 'blob',
+                    name: file.name,
+                    mimeType: file.type,
+                    data: Array.from(fileData), // Convert to regular array for JSON serialization
+                    size: file.size,
+                    encoding: 'binary'
                 };
-                
-                // Handle file data for Electron
-                const fileEntries = [];
-                for (const [key, file] of files.entries()) {
-                    if (key !== 'command') {
-                        const arrayBuffer = await file.arrayBuffer();
-                        fileEntries.push({
-                            paramName: key,
-                            fileName: file.name,
-                            fileType: file.type,
-                            fileSize: file.size,
-                            data: Array.from(new Uint8Array(arrayBuffer))
-                        });
-                    }
-                }
-                
-                if (fileEntries.length > 0) {
-                    commandData.files = fileEntries;
-                }
-                
-                const result = await window.electronAPI.executeCommand(commandData);
-                
-                // Update state based on side effects
-                state = updateState(state, { name: commandName, args: args }, result, cmdManifest);
-                
-                // Show results
-                showResults(result, result.error ? 'error' : 'success');
+            }
+        }
+
+        const result = await window.electronAPI.executeCommand(commandData);
+
+        // Update state based on side effects
+        state = updateState(state, { name: commandName, args: commandData.args }, result, cmdManifest);
+
+        // Show results
+        showResults(result, result.error ? 'error' : 'success');
             } else {
                 // HTTP fallback (existing behavior)
                 const response = await fetch('/api', {
@@ -259,8 +259,6 @@
             name: commandName,
             args: args
         };
-        
-        console.log('Executing command:', command);
         
         try {
             if (window.electronAPI) {

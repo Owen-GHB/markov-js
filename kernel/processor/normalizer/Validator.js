@@ -275,6 +275,17 @@ export class Validator {
     return { error: null, value: parsedValue };
   }
 
+  /** 
+   * Normalize blob input from various formats
+   */
+  static normaliseBlobInput(input){
+    if(Buffer.isBuffer(input))                return input;
+    if(Array.isArray(input))                  return Buffer.from(input);
+    if(typeof input==='string'&&isBase64(input))return Buffer.from(input,'base64');
+    // fallback for future encodings
+    throw new Error('Unsupported blob encoding');
+  }
+
   /**
    * Normalize blob input from various formats
    */
@@ -310,6 +321,57 @@ export class Validator {
         path: input,
         name: input.split(/[\\/]/).pop()
       };
+    }
+
+    // Handle Buffer objects (from HTTP multipart)
+    if (input && typeof input === 'object' && input.data && input.data.type === 'Buffer' && Array.isArray(input.data.data)) {
+      return {
+        ...input,
+        data: Buffer.from(input.data.data),
+        encoding: input.encoding || 'binary',
+        size: input.size || input.data.data.length
+      };
+    }
+    
+    // Handle array input (common from multipart form data)
+    if (Array.isArray(input)) {
+      return {
+        type: 'blob',
+        data: Buffer.from(input),
+        encoding: 'binary',
+        size: input.length
+      };
+    }
+    
+    // Handle case where input is already an object but data is an array
+    if (input && typeof input === 'object' && Array.isArray(input.data)) {
+      return {
+        ...input,
+        data: Buffer.from(input.data),
+        encoding: input.encoding || 'binary',
+        size: input.size || input.data.length
+      };
+    }
+    
+    // Handle case where input is already an object but needs data conversion
+    if (input && typeof input === 'object' && input.data) {
+      // If data is a string, convert to buffer
+      if (typeof input.data === 'string') {
+        return {
+          ...input,
+          data: Buffer.from(input.data, input.encoding || 'utf8'),
+          encoding: input.encoding || 'utf8',
+          size: input.size || input.data.length
+        };
+      }
+      // If data is already a buffer, ensure encoding is set
+      if (Buffer.isBuffer(input.data)) {
+        return {
+          ...input,
+          encoding: input.encoding || 'binary',
+          size: input.size || input.data.length
+        };
+      }
     }
     
     // Already processed or other type

@@ -18,5 +18,13 @@
  * @returns {Promise<Object>} - The list of corpus files
  */
 
-// File operations functions
+/**
+ * Upload a text file to the corpus
+ * @function uploadCorpusFile
+ * @param {Object} params - The parameters for upload
+ * @param {Object} params.file - The file blob to upload
+ * @param {string} params.filename - Optional custom filename
+ * @returns {Promise<Object>} - The result of the upload
+ */
+
 export * from './data-operations.js';
