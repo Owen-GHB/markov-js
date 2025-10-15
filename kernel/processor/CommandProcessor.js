@@ -33,12 +33,10 @@ export class CommandProcessor {
 	 * @param {string|null} contextFilePath - Path to context file for state management (default: null, uses default state)
 	 * @returns {Promise<Object>} - The result of command processing
 	 */
-	async processParsedCommand(command, contextFilePath = null) {
+	async processStatefulCommand(command) {
 		try {
 			// Get command specification
-			const commandSpec = this.manifest.commands.find(
-				(c) => c.name === command.name,
-			);
+			const commandSpec = this.manifest.commands.find((c) => c.name === command.name);
 
 			if (!commandSpec) {
 				return {
@@ -53,41 +51,48 @@ export class CommandProcessor {
 				manifest: this.manifest,
 			};
 
-			// STEP 1: Normalize parameters (provide fallbacks/defaults first)
-			const normalizationResult = Normalizer.normalizeAll(command.args, parameters, context);
-			if (normalizationResult.error) {
-				return { error: normalizationResult.error, output: null };
-			}
-
-			// STEP 2: Validate parameters (check normalized values)
-			const validationResult = Validator.validateAll(command.name, normalizationResult.args, parameters);
-			if (validationResult.error) {
-				return { error: validationResult.error, output: null };
-			}
-
-			// Update command with normalized+validated args
-			const processedCommand = {
+			// Normalize parameters (provide fallbacks/defaults first)
+			const normalizedArgs = Normalizer.normalizeAll(command.args, parameters, context);
+			const normalizedCommand = {
 				...command,
-				args: validationResult.args,
+				args: normalizedArgs,
 			};
 
-			// STEP 3: Execute the command
-			const result = await this.handler.handleCommand(processedCommand);
+			const result = await this.processCommand(normalizedCommand);
 
-			// Apply side effects and save state if command was successful
-			if (!result.error && contextFilePath !== null) {
-				this.stateManager.applySideEffects(processedCommand, commandSpec);
-				this.stateManager.saveState(contextFilePath);
+			// Apply side effects if command was successful
+			if (!result.error) {
+				this.stateManager.applySideEffects(normalizedCommand, commandSpec);
 			}
 
 			return result;
 
 		} catch (error) {
 			return {
-				error: `Command processing error: ${error.message}`,
+				error: error,
 				output: null,
 			};
 		}
+	}
+
+	/**
+	 * Process a command without state management
+	 * @param {Object} command - The parsed command object
+	 * @returns {Promise<Object>} - The result of command processing
+	 */
+	async processCommand(command) {
+		const commandSpec = this.manifest.commands.find((c) => c.name === command.name);
+		const parameters = commandSpec.parameters || {};
+		const validatedArgs = Validator.validateAll(command.name, command.args, parameters);
+		if (validatedArgs.error) {
+			return { error: validatedArgs.error, output: null };
+		}
+		const processedCommand = {
+			...command,
+			args: validatedArgs.args,
+		};
+		const result = await this.handler.handleCommand(processedCommand);
+		return result;
 	}
 
 	/**

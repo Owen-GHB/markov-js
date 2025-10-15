@@ -3,7 +3,7 @@
 // Client-side JavaScript for EJS-generated UI
 (function() {
     'use strict';
-    
+
     // Initialize state from global defaults
     let state = <%- JSON.stringify(initialState, null, 2) %>;
     
@@ -150,18 +150,54 @@
         }));
         
         try {
-            const response = await fetch('/api', {
-                method: 'POST',
-                body: files
-            });
-            
-            const result = await response.json();
-            
-            // Update state based on side effects
-            state = updateState(state, { name: commandName, args: args }, result, cmdManifest);
-            
-            // Show results
-            showResults(result, result.error ? 'error' : 'success');
+            if (window.electronAPI) {
+                // Convert FormData to a format Electron can handle
+                const commandData = {
+                    name: commandName,
+                    args: args
+                };
+                
+                // Handle file data for Electron
+                const fileEntries = [];
+                for (const [key, file] of files.entries()) {
+                    if (key !== 'command') {
+                        const arrayBuffer = await file.arrayBuffer();
+                        fileEntries.push({
+                            paramName: key,
+                            fileName: file.name,
+                            fileType: file.type,
+                            fileSize: file.size,
+                            data: Array.from(new Uint8Array(arrayBuffer))
+                        });
+                    }
+                }
+                
+                if (fileEntries.length > 0) {
+                    commandData.files = fileEntries;
+                }
+                
+                const result = await window.electronAPI.executeCommand(commandData);
+                
+                // Update state based on side effects
+                state = updateState(state, { name: commandName, args: args }, result, cmdManifest);
+                
+                // Show results
+                showResults(result, result.error ? 'error' : 'success');
+            } else {
+                // HTTP fallback (existing behavior)
+                const response = await fetch('/api', {
+                    method: 'POST',
+                    body: files
+                });
+                
+                const result = await response.json();
+                
+                // Update state based on side effects
+                state = updateState(state, { name: commandName, args: args }, result, cmdManifest);
+                
+                // Show results
+                showResults(result, result.error ? 'error' : 'success');
+            }
         } catch (error) {
             showResults({ error: 'Network Error: ' + error.message }, 'error');
         }
@@ -227,15 +263,25 @@
         console.log('Executing command:', command);
         
         try {
-            // Execute the command via GET request
-            const response = await fetch('/api?command=' + encodeURIComponent(JSON.stringify(command)));
-            const result = await response.json();
-            
-            // Update state based on side effects
-            state = updateState(state, command, result, cmdManifest);
-            
-            // Show results
-            showResults(result, result.error ? 'error' : 'success');
+            if (window.electronAPI) {
+                const result = await window.electronAPI.executeCommand(command);
+                
+                // Update state based on side effects
+                state = updateState(state, command, result, cmdManifest);
+                
+                // Show results
+                showResults(result, result.error ? 'error' : 'success');
+            } else {
+                // HTTP fallback (existing behavior)
+                const response = await fetch('/api?command=' + encodeURIComponent(JSON.stringify(command)));
+                const result = await response.json();
+                
+                // Update state based on side effects
+                state = updateState(state, command, result, cmdManifest);
+                
+                // Show results
+                showResults(result, result.error ? 'error' : 'success');
+            }
         } catch (error) {
             showResults({ error: 'Network Error: ' + error.message }, 'error');
         }

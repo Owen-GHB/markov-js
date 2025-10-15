@@ -12,7 +12,7 @@ export class Normalizer {
     // Step 2: Apply default values
     this.applyDefaultValues(normalized, parameters);
     
-    return { error: null, args: normalized };
+    return normalized;
   }
 
   static applyRuntimeFallbacks(args, parameters, context) {

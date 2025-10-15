@@ -39,11 +39,12 @@ if (!projectRoot || !kernelPath || !commandRoot) {
 			projectRoot,
 			manifest
 		);
+        const commandParser = new CommandParser(manifest);
 
         // Directly instantiate and start ElectronApp with the dynamically created components
         const electronApp = new ElectronApp();
 
-        await electronApp.start(servedui, electronPreloadPath, commandProcessor, CommandParser);
+        await electronApp.start(servedui, electronPreloadPath, commandProcessor, commandParser);
     } catch (error) {
         console.error('❌ Error in Electron main process:', error.message);
         process.exit(1);

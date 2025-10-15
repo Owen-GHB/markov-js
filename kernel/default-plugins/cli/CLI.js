@@ -13,7 +13,6 @@ export class CLI {
 			throw new Error('CLI requires a kernelPath property');
 		}
 		this.processor = null;
-		this.stateManager = null;
 		this.contextFilePath = contextFilePath;
 		this.kernelPath = kernelPath;
 		this.commandRoot = commandRoot;
@@ -31,7 +30,6 @@ export class CLI {
 			CommandProcessor, 
 			HelpHandler, 
 			formatResult, 
-			StateManager,
 			CommandParser 
 		} = await import(exportsUrl);
 		const manifest = manifestReader(this.commandRoot);
@@ -41,7 +39,6 @@ export class CLI {
 			this.projectRoot,
 			manifest
 		);
-		this.stateManager = new StateManager(manifest);
 		if (this.contextFilePath) this.processor.stateManager.loadState(this.contextFilePath);
 
 		if (args.length === 0) {
@@ -78,10 +75,13 @@ export class CLI {
 
 		// Process the command using the shared processor
 		const parsedCommand = this.parser.parse(input);
-		const result = await this.processor.processParsedCommand(
-			parsedCommand,
-			this.contextFilePath,
-		);
+		let result;
+		if (parsedCommand.error) {
+			result = parsedCommand;
+		} else {
+			const command = parsedCommand.command;
+			result = await this.processor.processStatefulCommand(command);
+		}
 
 		if (result.error) {
 			console.error(`❌ ${result.error}`);
@@ -89,6 +89,7 @@ export class CLI {
 		}
 
 		if (result.output) {
+			this.processor.stateManager.saveState(this.contextFilePath);
 			console.log(formatResult(result.output));
 		}
 

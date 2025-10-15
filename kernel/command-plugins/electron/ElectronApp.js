@@ -51,7 +51,13 @@ class ElectronCommandHandler {
 			// Convert command object to expected format for processCommand if needed
 			const commandString = JSON.stringify(command);
 			const parsedCommand = this.commandParser.parse(commandString);
-			const result = await this.commandProcessor.processParsedCommand(parsedCommand);
+			let result;
+			if (parsedCommand.error) {
+				result = parsedCommand;
+			} else {
+				const command = parsedCommand.command;
+				result = await this.commandProcessor.processCommand(command);
+			}
 			return result;
 		} catch (error) {
 			return { error: error.message, output: null };
@@ -129,7 +135,7 @@ export class ElectronApp {
 		});
 	}
 
-	async start(servedUIDir, electronPreloadPath, commandProcessor) {
+	async start(servedUIDir, electronPreloadPath, commandProcessor, commandParser) {
 		// Validate parameters
 		if (!servedUIDir) {
 			console.error('❌ servedUIDir path must be provided');
@@ -148,7 +154,7 @@ export class ElectronApp {
 		this.paths = {servedUIDir, electronPreloadPath};
 
 		// Initialize command handler
-		this.commandHandler = new ElectronCommandHandler(commandProcessor);
+		this.commandHandler = new ElectronCommandHandler(commandProcessor, commandParser);
 
 		// Update the preload path in webPreferences
 		this.windowOptions.webPreferences.preload = electronPreloadPath;
