@@ -22,13 +22,13 @@ export async function launch(args, projectRoot) {
   }
 
   // Determine execution path
-  const vertexIndex = args.indexOf('--vertex');
-  const isKernelMode = vertexIndex !== -1;
+  const kernelIndex = args.indexOf('--kernel');
+  const isKernelMode = kernelIndex !== -1;
   const kernelCommandRoot = path.resolve(__dirname, 'command-plugins');
   
   if (isKernelMode) {
     // Kernel commands: use kernel's command-plugins as "command root"
-    const kernelArgs = args.slice(vertexIndex + 1);
+    const kernelArgs = args.slice(kernelIndex + 1);
     
     return await executeCommandPath(kernelArgs, projectRoot, kernelCommandRoot, true);
   } else {
@@ -127,23 +127,23 @@ function loadUserConfig(configPath) {
  */
 function showMetaHelp() {
   console.log(`
-🧠 Vertex Framework - Universal Command Engine
+🧠 Vertex Application Host
 ===============================================
 
 USAGE:
   [your-entrypoint.js] [app-commands...]           # Run application commands
-  [your-entrypoint.js] --vertex [kernel-commands...] # Run kernel commands
+  [your-entrypoint.js] --kernel [kernel-commands...] # Run kernel commands
   [your-entrypoint.js] --help                      # Show this help
 
 EXAMPLES:
-  [your-entrypoint.js] --vertex help               # Kernel help
+  [your-entrypoint.js] --kernel help               # Kernel help
   [your-entrypoint.js] help                        # Application help
 
 META-HELP:
   • Application commands operate on the hosted application
   • Kernel commands manage the Vertex application hosting kernel
   • Use 'help' for application command help
-  • Use '--vertex help' for kernel command help
+  • Use '--kernel help' for kernel command help
   `);
 }
 
