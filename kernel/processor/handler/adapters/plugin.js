@@ -4,7 +4,7 @@ import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const kernelPath = path.resolve(__dirname, '../../');
+const kernelPath = path.resolve(__dirname, '../../../');
 
 export class PluginAdapter {
     constructor(commandRoot, projectRoot, manifest) {

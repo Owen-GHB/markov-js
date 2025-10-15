@@ -33,10 +33,9 @@ export class CommandProcessor {
 	 * Process a command through the complete pipeline
 	 * @param {string} input - The command input string (can be JSON or string format)
 	 * @param {string|null} contextFilePath - Path to context file for state management (default: null, uses default state)
-	 * @param {boolean} formatToString - Whether to format the result to a string (default: true)
 	 * @returns {Promise<Object>} - The result of command processing
 	 */
-	async processCommand(input, contextFilePath = null, formatToString = true) {
+	async processCommand(input, contextFilePath = null) {
 		try {
 			// Create context for parsing
 			const context = {
@@ -51,7 +50,7 @@ export class CommandProcessor {
 			}
 
 			// STEP 2: Process the parsed command through full pipeline
-			return await this.processParsedCommand(command, contextFilePath, formatToString);
+			return await this.processParsedCommand(command, contextFilePath);
 
 		} catch (error) {
 			return {
@@ -65,10 +64,9 @@ export class CommandProcessor {
 	 * Process a command and apply side effects manually
 	 * @param {Object} command - The parsed command object
 	 * @param {string|null} contextFilePath - Path to context file for state management (default: null, uses default state)
-	 * @param {boolean} formatToString - Whether to format the result to a string (default: true)
 	 * @returns {Promise<Object>} - The result of command processing
 	 */
-	async processParsedCommand(command, contextFilePath = null, formatToString = true) {
+	async processParsedCommand(command, contextFilePath = null) {
 		try {
 			// Get command specification
 			const commandSpec = this.manifest.commands.find(
@@ -126,34 +124,10 @@ export class CommandProcessor {
 	}
 
 	/**
-	 * Get the current state
-	 * @returns {Map} - The current state map
-	 */
-	getState() {
-		return this.state;
-	}
-
-	/**
 	 * Get the manifest
 	 * @returns {Object} - The application manifest
 	 */
 	getManifest() {
 		return this.manifest;
-	}
-
-	/**
-	 * Get the parser instance
-	 * @returns {CommandParser} - The command parser
-	 */
-	getParser() {
-		return this.parser;
-	}
-
-	/**
-	 * Get the handler instance
-	 * @returns {CommandHandler} - The command handler
-	 */
-	getHandler() {
-		return this.handler;
 	}
 }

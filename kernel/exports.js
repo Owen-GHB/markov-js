@@ -6,6 +6,9 @@ export { manifestReader } from './loaders/manifestLoader.js';
 // Re-export CommandProcessor  
 export { CommandProcessor } from './processor/CommandProcessor.js';
 
+// Re-export StateManager
+export { StateManager } from './processor/StateManager.js';
+
 // Re-export Format utilities
 export { formatResult } from './utils/format.js';
 export { HelpHandler } from './utils/help.js';
