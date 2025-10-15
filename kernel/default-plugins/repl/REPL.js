@@ -24,9 +24,8 @@ export class REPL {
 		this.maxHistory = maxHistory;
 		this.historyFilePath = historyFilePath;
 		const exportsUrl = pathToFileURL(path.join(kernelPath, 'exports.js')).href;
-		const { manifestReader } = await import(exportsUrl);
+		const { manifestReader, CommandProcessor } = await import(exportsUrl);
 		const manifest = manifestReader(this.commandRoot);
-		const { CommandProcessor } = await import(exportsUrl);
 		const commandProcessor = new CommandProcessor(
 			this.commandRoot,
 			this.projectRoot,
@@ -148,7 +147,6 @@ export class REPL {
 		});
 	}
 
-	/* ---------- unchanged helpers ---------- */
 	commandCompleter(line) {
 		// Include built-in commands in completion
 		const commands = [

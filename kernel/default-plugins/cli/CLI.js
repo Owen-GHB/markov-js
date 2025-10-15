@@ -27,9 +27,8 @@ export class CLI {
 	 */
 	async run(args) {
 		const exportsUrl = pathToFileURL(path.join(kernelPath, 'exports.js')).href;
-		const { manifestReader } = await import(exportsUrl);
+		const { manifestReader, CommandProcessor } = await import(exportsUrl);
 		const manifest = manifestReader(this.commandRoot);
-		const { CommandProcessor } = await import(exportsUrl);
 		const commandProcessor = new CommandProcessor(
 			this.commandRoot,
 			this.projectRoot,
@@ -91,16 +90,6 @@ export class CLI {
 		if (result.exit) {
 			process.exit(0);
 		}
-	}
-
-	/**
-	 * Show help information using HelpHandler
-	 */
-	async showHelp() {
-		const manifestReaderUrl = pathToFileURL(path.join(this.kernelPath, 'utils/manifestLoader.js')).href;
-		const { manifestReader } = await import(manifestReaderUrl);
-		const manifest = manifestReader(this.commandRoot);
-		console.log(HelpHandler.formatGeneralHelp(manifest));
 	}
 }
 
