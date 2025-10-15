@@ -23,8 +23,8 @@ function getGeneratorInstance() {
  * @returns {Promise<void>}
  */
 export async function run(kernelPath, commandRoot, projectRoot, userTemplateDir, generatedUIDir) {
-    const manifestUrl = pathToFileURL(path.join(kernelPath, 'utils/manifestLoader.js')).href;
-	const { manifestReader } = await import(manifestUrl);
+    const exportsUrl = pathToFileURL(path.join(kernelPath, 'exports.js')).href;
+	const { manifestReader } = await import(exportsUrl);
 	const manifest = manifestReader(projectRoot);
     
     const generator = getGeneratorInstance();

@@ -1,8 +1,11 @@
+// File: default-plugins/repl/REPL.js
+
 import readline from 'readline';
 import fs from 'fs';
 import path from 'path';
 import { pathToFileURL } from 'url';
 import { formatResult } from '../shared/format.js';
+import { HelpHandler } from '../shared/help.js';
 
 export class REPL {
 	constructor() {
@@ -20,11 +23,10 @@ export class REPL {
 		this.contextFilePath = contextFilePath;
 		this.maxHistory = maxHistory;
 		this.historyFilePath = historyFilePath;
-		const manifestUrl = pathToFileURL(path.join(this.kernelPath, 'utils/manifestLoader.js')).href;
-		const { manifestReader } = await import(manifestUrl);
+		const exportsUrl = pathToFileURL(path.join(kernelPath, 'exports.js')).href;
+		const { manifestReader } = await import(exportsUrl);
 		const manifest = manifestReader(this.commandRoot);
-		const commandProcessorUrl = pathToFileURL(path.join(this.kernelPath, 'processor/CommandProcessor.js')).href;
-		const { CommandProcessor } = await import(commandProcessorUrl);
+		const { CommandProcessor } = await import(exportsUrl);
 		const commandProcessor = new CommandProcessor(
 			this.commandRoot,
 			this.projectRoot,
@@ -75,7 +77,7 @@ export class REPL {
 			'='.repeat(Math.max(this.processor.getManifest().name.length + 2, 40)),
 		);
 		console.log(
-			'Type \"help()\" for available commands or \"exit()\" to quit.',
+			'Type "help()" for available commands or "exit()" to quit.',
 		);
 		console.log('');
 
@@ -93,6 +95,30 @@ export class REPL {
 
 			// Add command to history
 			this.addToHistory(input);
+
+			// Handle help command using HelpHandler
+			if (HelpHandler.isHelpCommand(input)) {
+				const helpArgs = HelpHandler.getHelpCommandArgs(input);
+				if (helpArgs.command) {
+					const cmd = this.processor.getManifest().commands.find(c => c.name === helpArgs.command);
+					if (!cmd) {
+						console.error(`❌ Unknown command: ${helpArgs.command}`);
+					} else {
+						console.log(HelpHandler.formatCommandHelp(cmd));
+					}
+				} else {
+					console.log(HelpHandler.formatGeneralHelp(this.processor.getManifest()));
+				}
+				this.rl.prompt();
+				return;
+			}
+
+			// Handle exit command
+			if (HelpHandler.isExitCommand(input)) {
+				console.log('Goodbye!');
+				this.rl.close();
+				return;
+			}
 
 			// Process command using the shared processor
 			const result = await this.processor.processCommand(
@@ -117,7 +143,7 @@ export class REPL {
 		});
 
 		process.on('SIGINT', () => {
-			console.log('\\nUse \\\\\"exit\\\\" or Ctrl+D to quit.');
+			console.log('\nUse "exit" or Ctrl+D to quit.');
 			this.rl.prompt();
 		});
 	}

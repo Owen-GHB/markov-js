@@ -1,3 +1,5 @@
+// File: processor/CommandProcessor.js
+
 import { CommandParser } from './CommandParser.js';
 import { CommandHandler } from './CommandHandler.js';
 import StateManager from './StateManager.js';
@@ -34,235 +36,29 @@ export class CommandProcessor {
 	 * @param {boolean} formatToString - Whether to format the result to a string (default: true)
 	 * @returns {Promise<Object>} - The result of command processing
 	 */
-    async processCommand(input, contextFilePath = null, formatToString = true) {
-        try {
-            const trimmedInput = input.trim().toLowerCase();
+	async processCommand(input, contextFilePath = null, formatToString = true) {
+		try {
+			// Create context for parsing
+			const context = {
+				state: this.state,
+				manifest: this.manifest,
+			};
 
-            // Handle special built-in commands (help/exit)
-            if (this.isHelpCommand(trimmedInput, input)) {
-                return await this.handleHelpCommand(trimmedInput, input);
-            }
-
-            if (trimmedInput === 'exit' || trimmedInput === 'exit()') {
-                return await this.handleExitCommand();
-            }
-
-            // Create context for parsing
-            const context = {
-                state: this.state,
-                manifest: this.manifest,
-            };
-
-            // STEP 1: Parse the command
-            const { error, command } = this.parser.parse(input, context);
-            if (error) {
-                return { error, output: null };
-            }
-
-            // STEP 2: Process the parsed command through full pipeline
-            return await this.processParsedCommand(command, contextFilePath, formatToString);
-
-        } catch (error) {
-            return {
-                error: `Command processing error: ${error.message}`,
-                output: null,
-            };
-        }
-    }
-
-    // Helper methods for special commands
-    isHelpCommand(trimmedInput, originalInput) {
-        return trimmedInput === 'help' || 
-               trimmedInput === 'help()' || 
-               (trimmedInput.startsWith('help(') && 
-                originalInput.includes('(') && 
-                originalInput.includes(')'));
-    }
-
-    async handleHelpCommand(trimmedInput, originalInput) {
-        let args = {};
-        if (trimmedInput.startsWith('help(')) {
-            const paramMatch = originalInput.match(
-                /help\(\s*["']?([^"'\s)]+)["']?\s*\)/i,
-            );
-            if (paramMatch && paramMatch[1]) {
-                args = { command: paramMatch[1] };
-            }
-        }
-
-        const context = {
-            state: this.state,
-            manifest: this.manifest,
-        };
-
-        return await this.handleHelpCommandLogic(args, context);
-    }
-
-	/**
-	 * Handle the help command logic inline
-	 * @param {Object} args - Arguments for the help command
-	 * @param {Object} context - Execution context
-	 * @returns {Object} - Result of the help command
-	 */
-	async handleHelpCommandLogic(args, context) {
-		const { manifest } = context;
-		const { command: specificCommand } = args;
-
-		if (specificCommand) {
-			// Show help for specific command
-			const cmd = manifest.commands.find((c) => c.name === specificCommand);
-			if (!cmd) {
-				return { error: `Unknown command: ${specificCommand}` };
+			// STEP 1: Parse the command
+			const { error, command } = this.parser.parse(input, context);
+			if (error) {
+				return { error, output: null };
 			}
 
-			return { output: this.formatCommandHelp(cmd) };
-		} else {
-			// Show general help
-			return { output: this.formatGeneralHelp(manifest) };
+			// STEP 2: Process the parsed command through full pipeline
+			return await this.processParsedCommand(command, contextFilePath, formatToString);
+
+		} catch (error) {
+			return {
+				error: `Command processing error: ${error.message}`,
+				output: null,
+			};
 		}
-	}
-
-	/**
-	 * Format general help text
-	 * @param {Object} manifest - The application manifest
-	 * @returns {string} Formatted help text
-	 */
-	formatGeneralHelp(manifest) {
-		let helpText = `🔗 ${manifest.name} - ${manifest.description}\n`;
-		helpText += '='.repeat(Math.max(manifest.name.length + 2, 40)) + '\n\n';
-		helpText += 'Available commands:\n';
-
-		// Sort commands alphabetically
-		const sortedCommands = [...manifest.commands].sort((a, b) =>
-			a.name.localeCompare(b.name),
-		);
-
-		for (const cmd of sortedCommands) {
-			helpText += `${cmd.name}${this.formatParamsSignature(cmd)} - ${cmd.description}\n`;
-		}
-
-		helpText += '\nhelp([command]) - Show help information\n';
-		helpText += 'exit() - Exit the program\n';
-		helpText += '\nCommand Syntax:\n';
-		helpText += '• Function style: command(param1, param2, key=value)\n';
-		helpText += '• Object style: command({param1: value, key: value})\n';
-		helpText += '• Simple style: command\n';
-
-		return helpText;
-	}
-
-	/**
-	 * Format help for a specific command
-	 * @param {Object} cmd - The command manifest
-	 * @returns {string} Formatted command help
-	 */
-	formatCommandHelp(cmd) {
-		let helpText = `🔗 ${cmd.name}${this.formatParamsSignature(cmd)}\n`;
-		helpText += '   ' + cmd.description + '\n\n';
-
-		const requiredParams = cmd.parameters
-			? Object.entries(cmd.parameters)
-					.filter(([_, p]) => p.required)
-					.map(([name, param]) => ({ name, ...param }))
-			: [];
-		const optionalParams = cmd.parameters
-			? Object.entries(cmd.parameters)
-					.filter(([_, p]) => !p.required)
-					.map(([name, param]) => ({ name, ...param }))
-			: [];
-
-		if (requiredParams.length > 0) {
-			helpText += '   Required:\n';
-			for (const param of requiredParams) {
-				helpText += `       ${param.name} - ${param.description}\n`;
-			}
-			helpText += '\n';
-		}
-
-		if (optionalParams.length > 0) {
-			helpText += '   Options (key=value):\n';
-			for (const param of optionalParams) {
-				const defaultValue =
-					param.default !== undefined ? ` (default: ${param.default})` : '';
-				const constraints = this.formatParamConstraints(param);
-				const constraintText = constraints ? ` ${constraints}` : '';
-				helpText += `       ${param.name}=${param.type}${defaultValue}${constraintText} - ${param.description}\n`;
-			}
-			helpText += '\n';
-		}
-
-		if (cmd.examples && cmd.examples.length > 0) {
-			helpText += '   Examples:\n';
-			for (const example of cmd.examples) {
-				helpText += `       ${example}\n`;
-			}
-		}
-
-		return helpText;
-	}
-
-	/**
-	 * Format parameter signature for a command
-	 * @param {Object} cmd - The command manifest
-	 * @returns {string} Formatted parameter signature
-	 */
-	formatParamsSignature(cmd) {
-		if (!cmd.parameters || Object.keys(cmd.parameters).length === 0) {
-			return '()';
-		}
-
-		const required = Object.entries(cmd.parameters)
-			.filter(([_, p]) => p.required)
-			.map(([name, param]) => ({ name, ...param }));
-		const optional = Object.entries(cmd.parameters)
-			.filter(([_, p]) => !p.required)
-			.map(([name, param]) => ({ name, ...param }));
-
-		const requiredStr = required.map((p) => p.name).join(', ');
-		const optionalStr = optional.map((p) => `[${p.name}]`).join(', ');
-
-		let paramsStr = '';
-		if (required.length > 0 && optional.length > 0) {
-			paramsStr = `${requiredStr}, ${optionalStr}`;
-		} else if (required.length > 0) {
-			paramsStr = requiredStr;
-		} else if (optional.length > 0) {
-			paramsStr = optionalStr;
-		}
-
-		return `(${paramsStr})`;
-	}
-
-	/**
-	 * Format parameter constraints for display
-	 * @param {Object} param - The parameter manifest
-	 * @returns {string} Formatted constraints
-	 */
-	formatParamConstraints(param) {
-		const constraints = [];
-
-		if (param.min !== undefined) {
-			constraints.push(`min: ${param.min}`);
-		}
-		if (param.max !== undefined) {
-			constraints.push(`max: ${param.max}`);
-		}
-		if (param.enum) {
-			constraints.push(`one of: [${param.enum.join(', ')}]`);
-		}
-
-		return constraints.length > 0 ? `(${constraints.join(', ')})` : '';
-	}
-
-	/**
-	 * Handle the exit command (no special logic needed, just return exit indication)
-	 * @returns {Object} - Result of the exit command
-	 */
-	async handleExitCommand() {
-		return {
-			output: 'Goodbye!',
-			exit: true,
-		};
 	}
 
 	/**

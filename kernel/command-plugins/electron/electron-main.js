@@ -31,11 +31,9 @@ if (!projectRoot || !kernelPath || !commandRoot) {
 // Create and start the Electron application by dynamically loading kernel modules
 (async () => {
     try {
-        const manifestUrl = pathToFileURL(path.join(kernelPath, 'utils/manifestLoader.js')).href;
-		const { manifestReader } = await import(manifestUrl);
-		const manifest = manifestReader(projectRoot);
-		const commandProcessorUrl = pathToFileURL(path.join(kernelPath, 'processor/CommandProcessor.js')).href;
-		const { CommandProcessor } = await import(commandProcessorUrl);
+        const exportsUrl = pathToFileURL(path.join(kernelPath, 'exports.js')).href;
+		const { manifestReader, CommandProcessor } = await import(exportsUrl);
+        const manifest = manifestReader(projectRoot);
 		const commandProcessor = new CommandProcessor(
             commandRoot,
 			projectRoot,

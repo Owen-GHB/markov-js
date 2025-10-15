@@ -1,4 +1,7 @@
+// File: default-plugins/cli/CLI.js
+
 import { formatResult } from '../shared/format.js';
+import { HelpHandler } from '../shared/help.js';
 import path from 'path';
 import { pathToFileURL } from 'url';
 
@@ -23,11 +26,10 @@ export class CLI {
 	 * @param {string[]} args - Command line arguments
 	 */
 	async run(args) {
-		const manifestReaderUrl = pathToFileURL(path.join(this.kernelPath, 'utils/manifestLoader.js')).href;
-		const { manifestReader } = await import(manifestReaderUrl);
+		const exportsUrl = pathToFileURL(path.join(kernelPath, 'exports.js')).href;
+		const { manifestReader } = await import(exportsUrl);
 		const manifest = manifestReader(this.commandRoot);
-		const commandProcessorUrl = pathToFileURL(path.join(this.kernelPath, 'processor/CommandProcessor.js')).href;
-		const { CommandProcessor } = await import(commandProcessorUrl);
+		const { CommandProcessor } = await import(exportsUrl);
 		const commandProcessor = new CommandProcessor(
 			this.commandRoot,
 			this.projectRoot,
@@ -37,25 +39,36 @@ export class CLI {
 		if (this.contextFilePath) this.processor.stateManager.loadState(this.contextFilePath);
 
 		if (args.length === 0) {
-			// Show help when no arguments provided by processing the help command
-			const result = await this.processor.processCommand(
-				'help()',
-				this.contextFilePath,
-			);
-
-			if (result.error) {
-				console.error(`❌ ${result.error}`);
-				process.exit(1);
-			}
-
-			if (result.output) {
-				console.log(formatResult(result.output));
-			}
+			// Show help when no arguments provided using HelpHandler
+			console.log(HelpHandler.formatGeneralHelp(manifest));
 			process.exit(0);
 		}
 
 		// Join all arguments into a single command string for parsing
 		const input = args.join(' ');
+
+		// Handle help command using HelpHandler
+		if (HelpHandler.isHelpCommand(input)) {
+			const helpArgs = HelpHandler.getHelpCommandArgs(input);
+			if (helpArgs.command) {
+				const cmd = manifest.commands.find(c => c.name === helpArgs.command);
+				if (!cmd) {
+					console.error(`❌ Unknown command: ${helpArgs.command}`);
+					console.log(HelpHandler.formatGeneralHelp(manifest));
+					process.exit(1);
+				}
+				console.log(HelpHandler.formatCommandHelp(cmd));
+			} else {
+				console.log(HelpHandler.formatGeneralHelp(manifest));
+			}
+			process.exit(0);
+		}
+
+		// Handle exit command
+		if (HelpHandler.isExitCommand(input)) {
+			console.log('Goodbye!');
+			process.exit(0);
+		}
 
 		// Process the command using the shared processor
 		const result = await this.processor.processCommand(
@@ -65,14 +78,8 @@ export class CLI {
 
 		if (result.error) {
 			console.error(`❌ ${result.error}`);
-			// Show help on error
-			const helpResult = await this.processor.processCommand(
-				'help()',
-				this.contextFilePath,
-			);
-			if (helpResult.output) {
-				console.log(formatResult(helpResult.output));
-			}
+			// Show help on error using HelpHandler
+			console.log(HelpHandler.formatGeneralHelp(manifest));
 			process.exit(1);
 		}
 
@@ -87,16 +94,13 @@ export class CLI {
 	}
 
 	/**
-	 * Show help information
+	 * Show help information using HelpHandler
 	 */
 	async showHelp() {
-		const result = await this.processor.processCommand(
-			'help()',
-			this.contextFilePath,
-		);
-		if (result.output) {
-			console.log(formatResult(result.output));
-		}
+		const manifestReaderUrl = pathToFileURL(path.join(this.kernelPath, 'utils/manifestLoader.js')).href;
+		const { manifestReader } = await import(manifestReaderUrl);
+		const manifest = manifestReader(this.commandRoot);
+		console.log(HelpHandler.formatGeneralHelp(manifest));
 	}
 }
 
