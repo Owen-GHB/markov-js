@@ -1,14 +1,7 @@
-import { ParserUtils } from './Utils.js';
-import { ParameterValidator } from './ParameterValidator.js';
-import { ParameterNormalizer } from './ParameterNormalizer.js';
+// File: processor/parsers/Functional.js
 
-/**
- * Parse a command in function style
- * @param {string[]} match - Destructured match from regex
- * @param {Object} context - Optional context with runtime state
- * @param {Object} manifest - The application manifest
- * @returns {{error: string|null, command: Object|null}}
- */
+import { ParserUtils } from './Utils.js';
+
 export function parseFunctionStyle([, name, argsString], context = {}, manifest) {
     const commandName = name.toLowerCase();
 
@@ -37,7 +30,7 @@ export function parseFunctionStyle([, name, argsString], context = {}, manifest)
 
     let positionalIndex = 0;
 
-    // Process arguments - preserving original parsing logic
+    // Process arguments - raw parsing only
     for (const argPair of argPairs) {
         if (argPair.includes('=')) {
             // Named parameter: key=value
@@ -76,17 +69,11 @@ export function parseFunctionStyle([, name, argsString], context = {}, manifest)
         }
     }
 
-    // Use the new ParameterNormalizer for validation and normalization
-    const validationResult = ParameterNormalizer.processParameters(commandName, args, parameters, context);
-    if (validationResult.error) {
-        return { error: validationResult.error, command: null };
-    }
-
     return {
         error: null,
         command: {
             name: command.name,
-            args: validationResult.args,
+            args: args, // Raw parsed args - no validation/normalization
         },
     };
 }

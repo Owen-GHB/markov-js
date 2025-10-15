@@ -1,6 +1,8 @@
 import { CommandParser } from './CommandParser.js';
 import { CommandHandler } from './CommandHandler.js';
 import StateManager from './StateManager.js';
+import { Validator } from './parsers/Validator.js';
+import { Normalizer } from './parsers/Normalizer.js';
 
 /**
  * Consolidates shared command processing logic across all transports
@@ -32,84 +34,69 @@ export class CommandProcessor {
 	 * @param {boolean} formatToString - Whether to format the result to a string (default: true)
 	 * @returns {Promise<Object>} - The result of command processing
 	 */
-	async processCommand(input, contextFilePath = null, formatToString = true) {
-		try {
-			const trimmedInput = input.trim().toLowerCase();
+    async processCommand(input, contextFilePath = null, formatToString = true) {
+        try {
+            const trimmedInput = input.trim().toLowerCase();
 
-			// Handle special built-in commands before parsing
-			if (
-				trimmedInput === 'help' ||
-				trimmedInput === 'help()' ||
-				trimmedInput.startsWith('help(')
-			) {
-				// Create a help command object
-				let args = {};
-				if (
-					trimmedInput.startsWith('help(') &&
-					input.includes('(') &&
-					input.includes(')')
-				) {
-					// Extract any specific command from help(command)
-					const paramMatch = input.match(
-						/help\\(\\s*["']?([^"')\\s]+)["']?\\s*\\)/i,
-					);
-					if (paramMatch && paramMatch[1]) {
-						args = { command: paramMatch[1] };
-					}
-				}
+            // Handle special built-in commands (help/exit)
+            if (this.isHelpCommand(trimmedInput, input)) {
+                return await this.handleHelpCommand(trimmedInput, input);
+            }
 
-				const context = {
-					state: this.state,
-					manifest: this.manifest,
-				};
+            if (trimmedInput === 'exit' || trimmedInput === 'exit()') {
+                return await this.handleExitCommand();
+            }
 
-				const result = await this.handleHelpCommand(args, context);
-				return result;
-			}
+            // Create context for parsing
+            const context = {
+                state: this.state,
+                manifest: this.manifest,
+            };
 
-			if (trimmedInput === 'exit' || trimmedInput === 'exit()') {
-				const result = await this.handleExitCommand();
-				// Exit command returns a special result for transports to handle
-				return {
-					output: 'Goodbye!',
-					exit: true,
-				};
-			}
+            // STEP 1: Parse the command
+            const { error, command } = this.parser.parse(input, context);
+            if (error) {
+                return { error, output: null };
+            }
 
-			// For all other commands, create context and parse normally
-			const context = {
-				state: this.state,
-				manifest: this.manifest,
-			};
+            // STEP 2: Process the parsed command through full pipeline
+            return await this.processParsedCommand(command, contextFilePath, formatToString);
 
-			// Parse the command using the unified parser
-			const { error, command } = this.parser.parse(input, context);
+        } catch (error) {
+            return {
+                error: `Command processing error: ${error.message}`,
+                output: null,
+            };
+        }
+    }
 
-			if (error) {
-				return { error, output: null };
-			}
+    // Helper methods for special commands
+    isHelpCommand(trimmedInput, originalInput) {
+        return trimmedInput === 'help' || 
+               trimmedInput === 'help()' || 
+               (trimmedInput.startsWith('help(') && 
+                originalInput.includes('(') && 
+                originalInput.includes(')'));
+    }
 
-			// Execute the command through the handler
-			const result = await this.handler.handleCommand(command);
+    async handleHelpCommand(trimmedInput, originalInput) {
+        let args = {};
+        if (trimmedInput.startsWith('help(')) {
+            const paramMatch = originalInput.match(
+                /help\(\s*["']?([^"'\s)]+)["']?\s*\)/i,
+            );
+            if (paramMatch && paramMatch[1]) {
+                args = { command: paramMatch[1] };
+            }
+        }
 
-			// Apply side effects and save state if command was successful and context file path is provided
-			if (!result.error && contextFilePath !== null) {
-				const commandSpec = this.manifest.commands.find(
-					(c) => c.name === command.name,
-				);
-				if (commandSpec) {
-					this.stateManager.applySideEffects(command, commandSpec);
-					this.stateManager.saveState(contextFilePath);
-				}
-			}
-			return result;
-		} catch (error) {
-			return {
-				error: `Command processing error: ${error.message}`,
-				output: null,
-			};
-		}
-	}
+        const context = {
+            state: this.state,
+            manifest: this.manifest,
+        };
+
+        return await this.handleHelpCommandLogic(args, context);
+    }
 
 	/**
 	 * Handle the help command logic inline
@@ -117,7 +104,7 @@ export class CommandProcessor {
 	 * @param {Object} context - Execution context
 	 * @returns {Object} - Result of the help command
 	 */
-	async handleHelpCommand(args, context) {
+	async handleHelpCommandLogic(args, context) {
 		const { manifest } = context;
 		const { command: specificCommand } = args;
 
@@ -285,29 +272,55 @@ export class CommandProcessor {
 	 * @param {boolean} formatToString - Whether to format the result to a string (default: true)
 	 * @returns {Promise<Object>} - The result of command processing
 	 */
-	async processParsedCommand(
-		command,
-		contextFilePath = null,
-		formatToString = true,
-	) {
+	async processParsedCommand(command, contextFilePath = null, formatToString = true) {
 		try {
-			// Execute the command through the handler
-			const result = await this.handler.handleCommand(command);
+			// Get command specification
+			const commandSpec = this.manifest.commands.find(
+				(c) => c.name === command.name,
+			);
 
-			// Apply side effects and save state if command was successful and context file path is provided
-			if (!result.error && contextFilePath !== null) {
-				const commandSpec = this.manifest.commands.find(
-					(c) => c.name === command.name,
-				);
-				if (commandSpec) {
-					this.stateManager.applySideEffects(command, commandSpec);
-					this.stateManager.saveState(contextFilePath);
-				}
+			if (!commandSpec) {
+				return {
+					error: `Unknown command: ${command.name}`,
+					output: null,
+				};
 			}
 
-			// Optionally format the result to a string if requested
+			const parameters = commandSpec.parameters || {};
+			const context = {
+				state: this.state,
+				manifest: this.manifest,
+			};
+
+			// STEP 1: Normalize parameters (provide fallbacks/defaults first)
+			const normalizationResult = Normalizer.normalizeAll(command.args, parameters, context);
+			if (normalizationResult.error) {
+				return { error: normalizationResult.error, output: null };
+			}
+
+			// STEP 2: Validate parameters (check normalized values)
+			const validationResult = Validator.validateAll(command.name, normalizationResult.args, parameters);
+			if (validationResult.error) {
+				return { error: validationResult.error, output: null };
+			}
+
+			// Update command with normalized+validated args
+			const processedCommand = {
+				...command,
+				args: validationResult.args,
+			};
+
+			// STEP 3: Execute the command
+			const result = await this.handler.handleCommand(processedCommand);
+
+			// Apply side effects and save state if command was successful
+			if (!result.error && contextFilePath !== null) {
+				this.stateManager.applySideEffects(processedCommand, commandSpec);
+				this.stateManager.saveState(contextFilePath);
+			}
 
 			return result;
+
 		} catch (error) {
 			return {
 				error: `Command processing error: ${error.message}`,

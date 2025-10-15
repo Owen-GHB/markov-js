@@ -1,6 +1,25 @@
-// File: processor/parsers/ParameterValidator.js
+// File: processor/parsers/Validator.js
 
-export class ParameterValidator {
+export class Validator {
+  /**
+   * Comprehensive validation - pure validation only
+   */
+  static validateAll(commandName, args, parameters) {
+    // 1. Check for unknown parameters
+    const unknownCheck = this.validateUnknownParameters(args, parameters);
+    if (unknownCheck.error) return unknownCheck;
+    
+    // 2. Check required parameters
+    const requiredCheck = this.validateRequiredParameters(args, parameters);
+    if (requiredCheck.error) return requiredCheck;
+    
+    // 3. Validate types and constraints
+    const typeCheck = this.validateTypes(args, parameters);
+    if (typeCheck.error) return typeCheck;
+    
+    return { error: null, args: typeCheck.args };
+  }
+
   /**
    * Validate unknown parameters (security check)
    */
@@ -12,11 +31,11 @@ export class ParameterValidator {
       if (!paramName) {
         return {
           error: `Unknown parameter: ${key}`,
-          valid: false
+          args: null
         };
       }
     }
-    return { error: null, valid: true };
+    return { error: null, args };
   }
 
   /**

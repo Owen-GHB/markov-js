@@ -1,14 +1,7 @@
-import { ParserUtils } from './Utils.js';
-import { ParameterValidator } from './ParameterValidator.js';
-import { ParameterNormalizer } from './ParameterNormalizer.js';
+// File: processor/parsers/Objective.js
 
-/**
- * Parse a command in object style
- * @param {string[]} match - Destructured match from regex
- * @param {Object} context - Optional context with runtime state
- * @param {Object} manifest - The application manifest
- * @returns {{error: string|null, command: Object|null}}
- */
+import { ParserUtils } from './Utils.js';
+
 export function parseObjectStyle([, name, argsString], context = {}, manifest) {
     const commandName = name.toLowerCase();
 
@@ -24,13 +17,13 @@ export function parseObjectStyle([, name, argsString], context = {}, manifest) {
     const parameters = command.parameters || {};
 
     let args;
-    // Preserve original object parsing logic with fallbacks
+    // Raw object parsing only
     try {
         // Try parsing as JSON
         args = JSON.parse(argsString);
     } catch (e) {
         try {
-            // Fallback: Convert JS object literal to JSON (add quotes around keys)
+            // Fallback: Convert JS object literal to JSON
             const wrappedArgsString = argsString.replace(
                 /([{,]\s*)([a-zA-Z_$][\w$]*)(\s*:)/g,
                 '$1"$2"$3',
@@ -55,7 +48,7 @@ export function parseObjectStyle([, name, argsString], context = {}, manifest) {
             const types = singleParam.type.split('|').map((t) => t.trim());
             let parsedValue = args;
 
-            // Validate and parse type
+            // Basic type parsing
             if (types.includes('integer') && !isNaN(parseInt(args, 10))) {
                 parsedValue = parseInt(args, 10);
             } else if (types.includes('string')) {
@@ -67,7 +60,7 @@ export function parseObjectStyle([, name, argsString], context = {}, manifest) {
                 };
             }
 
-            // Apply transform rule from manifest
+            // Apply transform rule
             if (singleParam.transform) {
                 const isInteger =
                     types.includes('integer') && Number.isInteger(parsedValue);
@@ -88,26 +81,14 @@ export function parseObjectStyle([, name, argsString], context = {}, manifest) {
         }
     }
 
-    // Normalize arguments using ParserUtils
+    // Basic normalization only
     args = ParserUtils.normalizeArgs(args);
-
-    // Security check: validate unknown parameters
-    const securityCheck = ParameterValidator.validateUnknownParameters(args, parameters);
-    if (securityCheck.error) {
-        return { error: securityCheck.error, command: null };
-    }
-
-    // Full parameter processing: fallbacks, required, defaults, types
-    const validationResult = ParameterNormalizer.processParameters(commandName, args, parameters, context);
-    if (validationResult.error) {
-        return { error: validationResult.error, command: null };
-    }
 
     return {
         error: null,
         command: {
             name: command.name,
-            args: validationResult.args,
+            args: args, // Raw parsed args - no validation/normalization
         },
     };
 }
