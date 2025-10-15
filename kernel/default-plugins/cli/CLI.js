@@ -104,6 +104,4 @@ export class CLI {
 	}
 }
 
-// The CLI class now requires paths to be passed in, so direct execution from this file
-// is not possible without the path resolver. This functionality would need to be handled
-// by the main application which has access to the path resolver.
+// This file is not meant to be run directly; it is imported and used by the main kernel app.

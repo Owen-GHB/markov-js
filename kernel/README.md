@@ -1,80 +1,6 @@
 # 🧠 Vertex Kernel
 
-A universal command processing engine that automatically discovers and executes commands defined in your domain-specific contract. Build once, run anywhere with any domain through CLI, REPL, HTTP, Electron, and web interfaces.
-
-## 🎯 What Problem Does Vertex Solve?
-
-Traditional applications are tightly coupled to their user interfaces. If you build a CLI tool, you can't easily add a web UI. If you build a web app, you can't easily add a desktop version. 
-
-**Vertex solves this** by separating your domain logic from your user interfaces. Define your commands once in a simple contract, and Vertex automatically provides multiple ways to interact with them.
-
-# 📁 Project Structure
-
-```
-your-project/
-├── kernel/                    # Universal command engine (copy once)
-│   ├── utils/
-│   │   ├── ResourceLoader.js  # Dynamic module loading with caching
-│   │   └── path-resolver.js   # Secure path resolution
-│   ├── processor/
-│   │   ├── CommandParser.js   # Multi-format command parsing
-│   │   ├── CommandHandler.js  # Command routing & execution
-│   │   ├── CommandProcessor.js # Unified processing pipeline
-│   │   ├── StateManager.js    # Persistent state with side effects
-│   │   └── adapters/          # Command type handlers
-│   │   └── parsers/           # Command parsing utilities
-│   ├── app.js                 # REPL/CLI launcher
-│   ├── kernel.js              # UI/Electron/HTTP launcher
-│   ├── contract.js            # Advanced contract loading & validation
-│   ├── config.json            # Kernel configuration
-│   ├── default-plugins/       # Built-in interface plugins
-│   │   ├── cli/               # Command line interface
-│   │   ├── repl/              # Interactive REPL interface
-│   │   └── shared/            # Shared utilities for plugins
-│   └── command-plugins/       # Extended functionality plugins
-│       ├── generate/          # EJS-based UI generation system
-│       ├── http/              # HTTP server with UI + API
-│       ├── electron/          # Electron desktop application
-│       └── [plugin-name]/     # Custom plugins
-│           ├── contract.json  # Plugin-specific contract
-│           ├── commands.json  # Plugin commands
-│           ├── runtime.json   # Plugin runtime behavior
-│           ├── help.json      # Plugin documentation
-│           └── index.js       # Plugin implementation
-├── contract.json              # Main domain configuration & sources
-├── commands.json              # Domain command definitions
-├── runtime.json               # Runtime behavior & side effects
-├── help.json                  # User documentation & examples
-├── your-domain/               # Your domain-specific logic
-│   └── index.js               # Domain methods
-└── main.js                    # Project entry point
-```
-
-## 📂 Key Directories Explained
-
-### `kernel/` - The Engine Core
-- **Never modify these files** - they work with any domain
-- Contains the universal command processing logic
-- Handles parsing, validation, execution, and state management
-
-### `kernel/default-plugins/` - Built-in Interfaces
-- **cli/**: Command-line interface for direct command execution
-- **repl/**: Interactive Read-Eval-Print Loop with history and completion
-- **shared/**: Common utilities used by multiple plugins
-
-### `command-plugins/` - Extended Capabilities
-- **generate/**: Creates web UIs from your contract using EJS templates
-- **http/**: Serves both static UI files and REST API endpoints
-- **electron/**: Desktop application wrapper
-- Add your own plugins here for custom functionality
-
-### Root Level Files - Your Domain Contract
-- **contract.json**: App metadata, sources, and state defaults
-- **commands.json**: Command definitions and parameters
-- **runtime.json**: Side effects and behavior rules
-- **help.json**: Examples and user documentation
-
-This structure separates the immutable engine (`kernel/`) from your domain-specific code and plugins, making it easy to update the framework while preserving your custom logic.
+A universal command processing engine that executes commands defined in your domain-specific contract. Build once, run anywhere with any domain through CLI, REPL, HTTP, Electron, and web interfaces.
 
 ## 🚀 Quick Start
 
@@ -398,27 +324,3 @@ Each source can have its own contract files, and Vertex automatically merges the
   }
 }
 ```
-
-## 🚨 Error Handling
-
-Vertex provides clear error messages:
-- **Command not found**: "Unknown command: createproject"
-- **Parameter validation**: "Parameter projectName must be a string"  
-- **Type errors**: "Parameter amount must be of type: integer|number"
-- **Source errors**: "Failed to load source 'myDomain': Source file not found"
-
-## 🔮 Why Choose Vertex?
-
-### For Solo Developers
-- **Rapid Prototyping**: Get multiple interfaces with minimal code
-- **Future-Proof**: Add web, desktop, or API interfaces without rewriting
-- **Consistent Experience**: Same commands work everywhere
-
-### For Teams
-- **Separation of Concerns**: Domain experts write logic, UI experts build interfaces
-- **API-First by Default**: Every command is automatically available via REST
-- **Tool Agnostic**: Use any frontend framework with the generated APIs
-
----
-
-**Vertex Kernel** - Build once, run anywhere with any domain! 🚀

@@ -1,4 +1,4 @@
-import { ResourceLoader } from '../../utils/ResourceLoader.js';
+import { ResourceLoader } from './ResourceLoader.js';
 
 export class NativeAdapter {
     constructor(commandRoot, projectRoot, manifest) {

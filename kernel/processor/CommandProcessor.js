@@ -1,10 +1,10 @@
 // File: processor/CommandProcessor.js
 
-import { CommandParser } from './CommandParser.js';
-import { CommandHandler } from './CommandHandler.js';
+import { CommandParser } from './parser/CommandParser.js';
+import { CommandHandler } from './handler/CommandHandler.js';
 import StateManager from './StateManager.js';
-import { Validator } from './parsers/Validator.js';
-import { Normalizer } from './parsers/Normalizer.js';
+import { Validator } from './normalizer/Validator.js';
+import { Normalizer } from './normalizer/Normalizer.js';
 
 /**
  * Consolidates shared command processing logic across all transports
