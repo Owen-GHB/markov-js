@@ -1,7 +1,5 @@
 // File: default-plugins/cli/CLI.js
 
-import { formatResult } from '../shared/format.js';
-import { HelpHandler } from '../shared/help.js';
 import path from 'path';
 import { pathToFileURL } from 'url';
 
@@ -27,7 +25,7 @@ export class CLI {
 	 */
 	async run(args) {
 		const exportsUrl = pathToFileURL(path.join(kernelPath, 'exports.js')).href;
-		const { manifestReader, CommandProcessor } = await import(exportsUrl);
+		const { manifestReader, CommandProcessor, HelpHandler, formatResult } = await import(exportsUrl);
 		const manifest = manifestReader(this.commandRoot);
 		const commandProcessor = new CommandProcessor(
 			this.commandRoot,

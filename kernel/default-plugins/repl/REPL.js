@@ -4,8 +4,6 @@ import readline from 'readline';
 import fs from 'fs';
 import path from 'path';
 import { pathToFileURL } from 'url';
-import { formatResult } from '../shared/format.js';
-import { HelpHandler } from '../shared/help.js';
 
 export class REPL {
 	constructor() {
@@ -56,6 +54,7 @@ export class REPL {
 
 		// Initialize with provided path and config values at the beginning of start
 		await this.initialize(kernelPath, commandRoot, projectRoot, contextFilePath, historyFilePath, maxHistory);
+		const { HelpHandler, formatResult } = await import(pathToFileURL(path.join(kernelPath, 'exports.js')).href);
 
 		// Initialize REPL instance
 		this.rl = readline.createInterface({

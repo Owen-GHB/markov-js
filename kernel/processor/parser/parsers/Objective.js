@@ -1,5 +1,3 @@
-// File: processor/parsers/Objective.js
-
 import { ParserUtils } from './Utils.js';
 
 export function parseObjectStyle([, name, argsString], context = {}, manifest) {

@@ -1,5 +1,3 @@
-// File: processor/parsers/Utils.js
-
 export class ParserUtils {
   /**
    * Normalize a single value from string to appropriate type

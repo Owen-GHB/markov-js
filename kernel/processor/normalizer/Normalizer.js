@@ -1,5 +1,3 @@
-// File: processor/parsers/Normalizer.js
-
 export class Normalizer {
   /**
    * Pure normalization - no validation, just transformation

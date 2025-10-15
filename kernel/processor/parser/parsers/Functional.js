@@ -1,5 +1,3 @@
-// File: processor/parsers/Functional.js
-
 import { ParserUtils } from './Utils.js';
 
 export function parseFunctionStyle([, name, argsString], context = {}, manifest) {

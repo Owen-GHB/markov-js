@@ -1,5 +1,3 @@
-// File: processor\format.js
-
 /**
  * Format command output results into human-readable strings
  * Used by transports that want basic text formatting (CLI, REPL, etc.)

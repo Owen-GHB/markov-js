@@ -1,5 +1,3 @@
-// File: default-plugins/shared/help.js
-
 export class HelpHandler {
     static formatGeneralHelp(manifest) {
         let helpText = `🔗 ${manifest.name} - ${manifest.description}\n`;

@@ -1,5 +1,3 @@
-// File: processor/parsers/Validator.js
-
 export class Validator {
   /**
    * Comprehensive validation - pure validation only
