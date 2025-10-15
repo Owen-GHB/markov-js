@@ -1,4 +1,4 @@
-# 🧠 Vertex Kernel Framework
+# 🧠 Vertex Kernel
 
 A universal command processing engine that automatically discovers and executes commands defined in your domain-specific contract. Build once, run anywhere with any domain through CLI, REPL, HTTP, Electron, and web interfaces.
 

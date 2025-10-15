@@ -167,9 +167,7 @@ export class UI {
 		const paramTemplatePath = path.join(templateDir, 'param-field.ejs');
 
 		if (!fs.existsSync(paramTemplatePath)) {
-			throw new Error(
-				`Parameter field template not found: ${paramTemplatePath}`,
-			);
+			throw new Error(`Parameter field template not found: ${paramTemplatePath}`);
 		}
 
 		const template = fs.readFileSync(paramTemplatePath, 'utf8');
@@ -185,6 +183,8 @@ export class UI {
 			const data = {
 				param: param,
 				defaultValue: defaultValue,
+				// Make sure constraints are passed through
+				constraints: param.constraints || {}
 			};
 
 			const fieldHtml = ejs.render(template, data);

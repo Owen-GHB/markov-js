@@ -52,7 +52,7 @@
         }
     });
     
-    // Handle form submissions
+    // Handle form submissions - SINGLE HANDLER
     document.addEventListener('submit', function(e) {
         if (e.target.classList.contains('command-form')) {
             e.preventDefault();
@@ -60,7 +60,7 @@
         }
     });
     
-    // Process a command form submission
+    // Process a command form submission - UPDATED FOR FILE SUPPORT
     async function handleCommandSubmit(form) {
         const commandName = form.getAttribute('data-command');
         if (!commandName) return;
@@ -71,35 +71,137 @@
             return;
         }
         
-        // Extract form data
+        // Check if this form has file inputs with files
+        const fileInputs = form.querySelectorAll('input[type="file"]');
+        let hasFiles = false;
+        const files = new FormData();
+        
+        for (const input of fileInputs) {
+            if (input.files.length > 0) {
+                files.append(input.name, input.files[0]);
+                hasFiles = true;
+            }
+        }
+        
+        if (hasFiles) {
+            // Handle file upload via multipart form
+            await executeCommandWithFiles(commandName, form, files);
+        } else {
+            // Handle regular form submission
+            await executeCommandRegular(commandName, form);
+        }
+    }
+    
+    // Execute command with file uploads
+    async function executeCommandWithFiles(commandName, form, files) {
+        const cmdManifest = commandManifests[commandName];
         const args = {};
         const paramManifests = cmdManifest.parameters || {};
         
-        for (const paramName in paramManifests) {
-            const param = paramManifests[paramName];
-            param.name = paramName;
+        // Extract arguments from form fields
+        const inputs = form.querySelectorAll('input, select, textarea');
+        
+        inputs.forEach(input => {
+            if (input.type === 'file') return; // Skip file inputs (handled separately)
             
-            // Find the field within the current form
-            const field = form.querySelector('[data-param-name="' + param.name + '"]');
+            const paramName = input.getAttribute('data-param-name') || input.name;
+            if (!paramName) return;
+            
+            const param = paramManifests[paramName];
+            if (!param) return;
+            
+            // Skip blob parameters (they're handled via file upload)
+            if (param.type && param.type.includes('blob')) return;
+            
             let value;
             
-            if (field) {
-                // Extract value from the form field
-                if (field.type === 'checkbox') {
-                    value = field.checked;
-                } else if (field.type === 'number') {
-                    value = field.value ? Number(field.value) : (param.required ? 0 : undefined);
-                } else if (field.type === 'select-multiple') {
-                    // Handle multi-select
-                    const selectedOptions = Array.from(field.selectedOptions);
-                    value = selectedOptions.map(option => option.value);
-                } else {
-                    value = field.value !== undefined ? field.value : (field.textContent || field.innerText);
-                    
-                    // Handle array inputs (comma-separated values)
-                    if (param.type === 'array' && value) {
-                        value = value.split(',').map(v => v.trim()).filter(v => v);
-                    }
+            // Extract value based on input type
+            if (input.type === 'checkbox') {
+                value = input.checked;
+            } else if (input.type === 'number') {
+                value = input.value ? Number(input.value) : (param.required ? 0 : undefined);
+            } else if (input.type === 'select-multiple') {
+                // Handle multi-select
+                const selectedOptions = Array.from(input.selectedOptions);
+                value = selectedOptions.map(option => option.value);
+            } else {
+                value = input.value !== undefined ? input.value : (input.textContent || input.innerText);
+                
+                // Handle JSON objects/arrays (optional fallback)
+                if (param.type === 'array' && value) {
+                    value = value.split(',').map(v => v.trim()).filter(v => v);
+                }
+            }
+            
+            // Apply runtime fallback
+            if ((value === undefined || value === '' || value === null) && param.runtimeFallback && state[param.runtimeFallback] !== undefined) {
+                value = state[param.runtimeFallback];
+            }
+            
+            if (value !== undefined && value !== '' && value !== null) {
+                args[paramName] = value;
+            }
+        });
+        
+        // Add the command JSON to the form data
+        files.append('command', JSON.stringify({
+            name: commandName,
+            args: args
+        }));
+        
+        try {
+            const response = await fetch('/api', {
+                method: 'POST',
+                body: files
+            });
+            
+            const result = await response.json();
+            
+            // Update state based on side effects
+            state = updateState(state, { name: commandName, args: args }, result, cmdManifest);
+            
+            // Show results
+            showResults(result, result.error ? 'error' : 'success');
+        } catch (error) {
+            showResults({ error: 'Network Error: ' + error.message }, 'error');
+        }
+    }
+    
+    // Execute regular command (no files)
+    async function executeCommandRegular(commandName, form) {
+        const cmdManifest = commandManifests[commandName];
+        const args = {};
+        const paramManifests = cmdManifest.parameters || {};
+        
+        // Extract arguments from form fields
+        const inputs = form.querySelectorAll('input, select, textarea');
+        
+        inputs.forEach(input => {
+            if (input.type === 'file') return; // Skip file inputs
+            
+            const paramName = input.getAttribute('data-param-name') || input.name;
+            if (!paramName) return;
+            
+            const param = paramManifests[paramName];
+            if (!param) return;
+            
+            let value;
+            
+            // Extract value based on input type
+            if (input.type === 'checkbox') {
+                value = input.checked;
+            } else if (input.type === 'number') {
+                value = input.value ? Number(input.value) : (param.required ? 0 : undefined);
+            } else if (input.type === 'select-multiple') {
+                // Handle multi-select
+                const selectedOptions = Array.from(input.selectedOptions);
+                value = selectedOptions.map(option => option.value);
+            } else {
+                value = input.value !== undefined ? input.value : (input.textContent || input.innerText);
+                
+                // Handle JSON objects/arrays (optional fallback)
+                if (param.type === 'array' && value) {
+                    value = value.split(',').map(v => v.trim()).filter(v => v);
                 }
             }
             
@@ -109,12 +211,12 @@
             }
             
             // For checkboxes, we should always include the value (true/false), otherwise only add to args if value exists and is not empty
-            if (field && field.type === 'checkbox') {
-                args[param.name] = value || false;
+            if (input.type === 'checkbox') {
+                args[paramName] = value || false;
             } else if (value !== undefined && value !== '' && value !== null) {
-                args[param.name] = value;
+                args[paramName] = value;
             }
-        }
+        });
         
         // Prepare command object
         const command = {
@@ -125,8 +227,9 @@
         console.log('Executing command:', command);
         
         try {
-            // Execute the command
-            const result = await executeCommand(command);
+            // Execute the command via GET request
+            const response = await fetch('/api?command=' + encodeURIComponent(JSON.stringify(command)));
+            const result = await response.json();
             
             // Update state based on side effects
             state = updateState(state, command, result, cmdManifest);
@@ -134,7 +237,45 @@
             // Show results
             showResults(result, result.error ? 'error' : 'success');
         } catch (error) {
-            showResults({ error: 'Execution Error: ' + error.message }, 'error');
+            showResults({ error: 'Network Error: ' + error.message }, 'error');
+        }
+    }
+    
+    // Extract value from form field
+    function extractFieldValue(field, param) {
+        if (!field) return undefined;
+        
+        if (field.type === 'checkbox') {
+            return field.checked;
+        } else if (field.type === 'number') {
+            return field.value ? Number(field.value) : undefined;
+        } else if (field.type === 'select-multiple') {
+            // Handle multi-select
+            const selectedOptions = Array.from(field.selectedOptions);
+            return selectedOptions.map(option => option.value);
+        } else {
+            let value = field.value !== undefined ? field.value : (field.textContent || field.innerText);
+            
+            // comma-separated values for arrays
+            if (param.type === 'array' && value && typeof value === 'string') {
+                value = value.split(',').map(v => v.trim()).filter(v => v);
+            }
+            
+            // Handle JSON objects/arrays (optional fallback)
+            if ((param.type === 'object' || param.type === 'array') && value && typeof value === 'string') {
+                // Only try JSON parsing if it looks like JSON
+                if ((value.startsWith('{') && value.endsWith('}')) || 
+                    (value.startsWith('[') && value.endsWith(']'))) {
+                    try {
+                        value = JSON.parse(value);
+                    } catch (e) {
+                        console.warn('Failed to parse JSON for parameter:', param.name, value);
+                        // Keep original value if JSON parsing fails
+                    }
+                }
+            }
+            
+            return value;
         }
     }
     
@@ -153,77 +294,65 @@
         return Object.assign({}, state);
     }
     
-    // API execution function that makes HTTP requests or uses Electron IPC
-    async function executeCommand(command) {
-        // More thorough check for Electron environment
-        const isElectron = window && window.electronAPI && typeof window.electronAPI.executeCommand === 'function';
+    // File upload handling - setup file input events
+    function setupFileInputs() {
+        const fileInputs = document.querySelectorAll('input[type="file"]');
         
-        if (isElectron) {
-            // Use IPC to send command to main process
-            try {
-                const result = await window.electronAPI.executeCommand(command);
-                return result;
-            } catch (error) {
-                // Fallback to HTTP if IPC fails
-            }
-        }
-        
-        // Make HTTP API call to the /api endpoint (default behavior if not in Electron or if IPC failed)
-        try {
-            // First, try POST request with JSON body
-            const response = await fetch('/api', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    json: JSON.stringify(command)
-                })
-            });
+        fileInputs.forEach(input => {
+            const infoDiv = document.getElementById(`${input.id}-info`);
+            if (!infoDiv) return;
             
-            if (!response.ok) {
-                let errorText = 'HTTP Error: ' + response.status;
-                try {
-                    const errorData = await response.json();
-                    if (errorData.error) {
-                        errorText = errorData.error;
+            input.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    // Validate file size
+                    const maxSize = input.getAttribute('data-max-size');
+                    if (maxSize && file.size > parseInt(maxSize)) {
+                        alert(`File too large. Maximum size: ${(maxSize / 1024 / 1024).toFixed(1)} MB`);
+                        input.value = '';
+                        infoDiv.style.display = 'none';
+                        return;
                     }
-                } catch (e) {
-                    errorText = response.statusText || errorText;
-                }
-                throw new Error(errorText);
-            }
-            
-            const result = await response.json();
-            return result;
-        } catch (postError) {
-            // If POST fails, try GET request as fallback
-            try {
-                const urlParams = new URLSearchParams({
-                    json: JSON.stringify(command)
-                });
-                
-                const response = await fetch('/api?' + urlParams.toString());
-                
-                if (!response.ok) {
-                    let errorText = 'HTTP Error: ' + response.status;
-                    try {
-                        const errorData = await response.json();
-                        if (errorData.error) {
-                            errorText = errorData.error;
+                    
+                    // Validate file type
+                    const allowedTypes = input.getAttribute('data-allowed-types');
+                    if (allowedTypes && !allowedTypes.split(',').includes(file.type)) {
+                        alert(`File type not allowed. Allowed types: ${allowedTypes}`);
+                        input.value = '';
+                        infoDiv.style.display = 'none';
+                        return;
+                    }
+                    
+                    // Validate file extension
+                    const allowedExtensions = input.getAttribute('accept');
+                    if (allowedExtensions) {
+                        const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+                        const acceptedExtensions = allowedExtensions.split(',').map(ext => ext.trim());
+                        if (!acceptedExtensions.includes(fileExtension)) {
+                            alert(`File extension not allowed. Allowed: ${acceptedExtensions.join(', ')}`);
+                            input.value = '';
+                            infoDiv.style.display = 'none';
+                            return;
                         }
-                    } catch (e) {
-                        errorText = response.statusText || errorText;
                     }
-                    throw new Error(errorText);
+                    
+                    // Show file info
+                    infoDiv.querySelector('.file-name').textContent = file.name;
+                    infoDiv.querySelector('.file-size').textContent = formatFileSize(file.size);
+                    infoDiv.style.display = 'block';
+                } else {
+                    infoDiv.style.display = 'none';
                 }
-                
-                const result = await response.json();
-                return result;
-            } catch (getError) {
-                throw getError;
-            }
-        }
+            });
+        });
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
     
     // Show results in the results container
@@ -237,12 +366,12 @@
         } else if (result.output) {
             resultsContainer.classList.add('success');
             // Format output, handling newlines properly
-            let formattedOutput = escapeHtml(result.output).replace(/\n/g, '<br>');
+            let formattedOutput = escapeHtml(String(result.output)).replace(/\n/g, '<br>');
             resultsContent.innerHTML = '<strong>Output:</strong><br><code>' + formattedOutput + '</code>';
         } else {
             // If no specific error or output, show the full result for debugging
             resultsContainer.classList.add(type);
-            resultsContent.innerHTML = '<pre>' + JSON.stringify(result, null, 2) + '</pre>';
+            resultsContent.innerHTML = '<pre>' + escapeHtml(JSON.stringify(result, null, 2)) + '</pre>';
         }
     }
     
@@ -257,8 +386,17 @@
             .replace(/'/g, '&#x27;');
     }
     
-    // Initialize - hide all forms initially
-    showForm('');
+    // Initialize - hide all forms initially and setup file inputs
+    function initialize() {
+        showForm('');
+        setupFileInputs();
+        console.log('EJS-generated UI initialized with', commands.length, 'commands');
+    }
     
-    console.log('EJS-generated UI initialized with', commands.length, 'commands');
+    // Start when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initialize);
+    } else {
+        initialize();
+    }
 })();

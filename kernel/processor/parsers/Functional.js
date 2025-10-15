@@ -1,5 +1,6 @@
-// File: processor/parsers/Functional.js
 import { ParserUtils } from './Utils.js';
+import { ParameterValidator } from './ParameterValidator.js';
+import { ParameterNormalizer } from './ParameterNormalizer.js';
 
 /**
  * Parse a command in function style
@@ -36,7 +37,7 @@ export function parseFunctionStyle([, name, argsString], context = {}, manifest)
 
     let positionalIndex = 0;
 
-    // Process arguments
+    // Process arguments - preserving original parsing logic
     for (const argPair of argPairs) {
         if (argPair.includes('=')) {
             // Named parameter: key=value
@@ -75,8 +76,8 @@ export function parseFunctionStyle([, name, argsString], context = {}, manifest)
         }
     }
 
-	// Check for missing required parameters
-    const validationResult = ParserUtils.processParameters(commandName, args, parameters, context);
+    // Use the new ParameterNormalizer for validation and normalization
+    const validationResult = ParameterNormalizer.processParameters(commandName, args, parameters, context);
     if (validationResult.error) {
         return { error: validationResult.error, command: null };
     }

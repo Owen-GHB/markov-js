@@ -1,5 +1,6 @@
-// File: processor/parsers/Objective.js
 import { ParserUtils } from './Utils.js';
+import { ParameterValidator } from './ParameterValidator.js';
+import { ParameterNormalizer } from './ParameterNormalizer.js';
 
 /**
  * Parse a command in object style
@@ -23,7 +24,7 @@ export function parseObjectStyle([, name, argsString], context = {}, manifest) {
     const parameters = command.parameters || {};
 
     let args;
-    // PRESERVE ORIGINAL OBJECT PARSING LOGIC WITH FALLBACKS
+    // Preserve original object parsing logic with fallbacks
     try {
         // Try parsing as JSON
         args = JSON.parse(argsString);
@@ -87,11 +88,17 @@ export function parseObjectStyle([, name, argsString], context = {}, manifest) {
         }
     }
 
-    // Normalize arguments using shared utility
+    // Normalize arguments using ParserUtils
     args = ParserUtils.normalizeArgs(args);
 
-    // USE SHARED VALIDATION INSTEAD OF DUPLICATE CODE
-    const validationResult = ParserUtils.processParameters(commandName, args, parameters, context);
+    // Security check: validate unknown parameters
+    const securityCheck = ParameterValidator.validateUnknownParameters(args, parameters);
+    if (securityCheck.error) {
+        return { error: securityCheck.error, command: null };
+    }
+
+    // Full parameter processing: fallbacks, required, defaults, types
+    const validationResult = ParameterNormalizer.processParameters(commandName, args, parameters, context);
     if (validationResult.error) {
         return { error: validationResult.error, command: null };
     }
