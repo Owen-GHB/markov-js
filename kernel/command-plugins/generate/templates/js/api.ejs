@@ -1,0 +1,211 @@
+// File: templates/js/api.ejs
+
+// Command execution and API communication
+(function() {
+    'use strict';
+    
+    if (!window.VertexUI) {
+        console.error('VertexUI core not loaded');
+        return;
+    }
+    
+    const { commandManifests, state } = window.VertexUI;
+    
+    // Process a command form submission
+    async function handleCommandSubmit(form) {
+        const commandName = form.getAttribute('data-command');
+        if (!commandName) return;
+        
+        const cmdManifest = commandManifests[commandName];
+        if (!cmdManifest) {
+            window.VertexUI.showResults({ error: 'Command not found: ' + commandName }, 'error');
+            return;
+        }
+        
+        // Check if this form has file inputs with files
+        const fileInputs = form.querySelectorAll('input[type="file"]');
+        let hasFiles = false;
+        const files = new FormData();
+        
+        for (const input of fileInputs) {
+            if (input.files.length > 0) {
+                files.append(input.name, input.files[0]);
+                hasFiles = true;
+            }
+        }
+        
+        if (hasFiles) {
+            // Handle file upload via multipart form
+            await executeCommandWithFiles(commandName, form, files);
+        } else {
+            // Handle regular form submission
+            await executeCommandRegular(commandName, form);
+        }
+    }
+    
+    // Execute command with file uploads
+    async function executeCommandWithFiles(commandName, form, files) {
+        const cmdManifest = commandManifests[commandName];
+        const args = extractFormArgs(form, cmdManifest, true); // true = skip blob params
+        
+        // Add the command JSON to the form data
+        files.append('command', JSON.stringify({
+            name: commandName,
+            args: args
+        }));
+        
+        try {
+            if (window.electronAPI) {
+                const result = await executeElectronCommandWithFiles(commandName, args, files);
+                handleCommandResult(commandName, args, result, cmdManifest);
+            } else {
+                const result = await executeHttpCommandWithFiles(files);
+                handleCommandResult(commandName, args, result, cmdManifest);
+            }
+        } catch (error) {
+            window.VertexUI.showResults({ error: 'Network Error: ' + error.message }, 'error');
+        }
+    }
+    
+    // Execute regular command (no files)
+    async function executeCommandRegular(commandName, form) {
+        const cmdManifest = commandManifests[commandName];
+        const args = extractFormArgs(form, cmdManifest, false);
+        
+        // Prepare command object
+        const command = {
+            name: commandName,
+            args: args
+        };
+        
+        try {
+            if (window.electronAPI) {
+                const result = await window.electronAPI.executeCommand(command);
+                handleCommandResult(commandName, args, result, cmdManifest);
+            } else {
+                const result = await executeHttpCommand(command);
+                handleCommandResult(commandName, args, result, cmdManifest);
+            }
+        } catch (error) {
+            window.VertexUI.showResults({ error: 'Network Error: ' + error.message }, 'error');
+        }
+    }
+    
+    // Extract arguments from form fields
+    function extractFormArgs(form, cmdManifest, skipBlobParams = false) {
+        const args = {};
+        const paramManifests = cmdManifest.parameters || {};
+        const inputs = form.querySelectorAll('input, select, textarea');
+        
+        inputs.forEach(input => {
+            if (input.type === 'file' && skipBlobParams) return;
+            
+            const paramName = input.getAttribute('data-param-name') || input.name;
+            if (!paramName) return;
+            
+            const param = paramManifests[paramName];
+            if (!param) return;
+            
+            let value = extractFieldValue(input, param);
+            
+            // Apply runtime fallback
+            if ((value === undefined || value === '' || value === null) && 
+                param.runtimeFallback && 
+                state[param.runtimeFallback] !== undefined) {
+                value = state[param.runtimeFallback];
+            }
+            
+            // For checkboxes, always include the value
+            if (input.type === 'checkbox') {
+                args[paramName] = value || false;
+            } else if (value !== undefined && value !== '' && value !== null) {
+                args[paramName] = value;
+            }
+        });
+        
+        return args;
+    }
+    
+    // Extract value from form field
+    function extractFieldValue(field, param) {
+        if (!field) return undefined;
+        
+        if (field.type === 'checkbox') {
+            return field.checked;
+        } else if (field.type === 'number') {
+            return field.value ? Number(field.value) : undefined;
+        } else if (field.type === 'select-multiple') {
+            const selectedOptions = Array.from(field.selectedOptions);
+            return selectedOptions.map(option => option.value);
+        } else {
+            let value = field.value !== undefined ? field.value : (field.textContent || field.innerText);
+            
+            // Comma-separated values for arrays
+            if (param.type === 'array' && value && typeof value === 'string') {
+                value = value.split(',').map(v => v.trim()).filter(v => v);
+            }
+            
+            return value;
+        }
+    }
+    
+    // Electron command execution with files
+    async function executeElectronCommandWithFiles(commandName, args, files) {
+        const commandData = {
+            name: commandName,
+            args: { ...args }
+        };
+
+        // Convert FormData files to Electron-compatible format
+        for (const [key, file] of files.entries()) {
+            if (key !== 'command') {
+                const arrayBuffer = await file.arrayBuffer();
+                const fileData = new Uint8Array(arrayBuffer);
+                
+                commandData.args[key] = {
+                    type: 'blob',
+                    name: file.name,
+                    mimeType: file.type,
+                    data: Array.from(fileData),
+                    size: file.size,
+                    encoding: 'binary'
+                };
+            }
+        }
+
+        return await window.electronAPI.executeCommand(commandData);
+    }
+    
+    // HTTP command execution with files
+    async function executeHttpCommandWithFiles(files) {
+        const response = await fetch('/api', {
+            method: 'POST',
+            body: files
+        });
+        return await response.json();
+    }
+    
+    // HTTP command execution (regular)
+    async function executeHttpCommand(command) {
+        const response = await fetch('/api?command=' + encodeURIComponent(JSON.stringify(command)));
+        return await response.json();
+    }
+    
+    // Handle command result and update state
+    function handleCommandResult(commandName, args, result, cmdManifest) {
+        // Update state based on side effects (simplified - would use proper state management)
+        window.VertexUI.state = updateState(window.VertexUI.state, { name: commandName, args }, result, cmdManifest);
+        
+        // Show results
+        window.VertexUI.showResults(result, result.error ? 'error' : 'success');
+    }
+    
+    // Update state based on command side effects (simplified)
+    function updateState(state, command, result, cmdManifest) {
+        // Simplified version - in real implementation use proper state management
+        return Object.assign({}, state);
+    }
+    
+    // Register method with core
+    window.VertexUI.handleCommandSubmit = handleCommandSubmit;
+})();

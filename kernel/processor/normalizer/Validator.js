@@ -249,6 +249,32 @@ export class Validator {
               // Continue to next type
             }
           }
+        } else if (type === 'buffer') {
+          try {
+            // Use the dedicated buffer normalization
+            parsedValue = this.normalizeBufferInput(value);
+            typeValidationPassed = true;
+            
+            // Add Buffer-specific constraints
+            if (paramSpec.maxSize && parsedValue.length > paramSpec.maxSize) {
+              return {
+                error: `Parameter ${paramName} exceeds maximum size: ${parsedValue.length} > ${paramSpec.maxSize}`,
+                value: null
+              };
+            }
+            
+            if (paramSpec.minSize && parsedValue.length < paramSpec.minSize) {
+              return {
+                error: `Parameter ${paramName} below minimum size: ${parsedValue.length} < ${paramSpec.minSize}`,
+                value: null
+              };
+            }
+            
+            break;
+          } catch (error) {
+            // If normalization fails, continue to next type in union
+            continue;
+          }
         }
       } catch {
         // Continue to next type if this one fails
@@ -273,6 +299,43 @@ export class Validator {
     }
 
     return { error: null, value: parsedValue };
+  }
+
+  static normalizeBufferInput(input) {
+    if (Buffer.isBuffer(input)) {
+      return input;
+    }
+    
+    if (typeof input === 'string') {
+      // Handle base64 strings
+      if (this.looksLikeBase64(input)) {
+        return Buffer.from(input, 'base64');
+      }
+      // Handle hex strings
+      if (this.looksLikeHex(input)) {
+        return Buffer.from(input, 'hex');
+      }
+      // Default to utf8
+      return Buffer.from(input, 'utf8');
+    }
+    
+    if (Array.isArray(input)) {
+      return Buffer.from(input);
+    }
+    
+    if (input && typeof input === 'object' && input.type === 'Buffer' && Array.isArray(input.data)) {
+      return Buffer.from(input.data);
+    }
+    
+    throw new Error(`Cannot convert input to Buffer: ${typeof input}`);
+  }
+
+  static looksLikeBase64(str) {
+    return /^[A-Za-z0-9+/]*={0,2}$/.test(str) && str.length % 4 === 0;
+  }
+
+  static looksLikeHex(str) {
+    return /^[0-9A-Fa-f]+$/.test(str);
   }
 
   /**

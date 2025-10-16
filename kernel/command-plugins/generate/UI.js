@@ -269,22 +269,26 @@ export class UI {
 		outputDir,
 		templateDir,
 	) {
-		const jsTemplatePath = path.join(templateDir, 'app.js.ejs');
+		const templateFiles = ['core.ejs', 'ui.ejs', 'api.ejs'];
+		let combinedJS = '';
 
-		if (!fs.existsSync(jsTemplatePath)) {
-			throw new Error(`JavaScript template not found: ${jsTemplatePath}`);
+		for (const templateFile of templateFiles) {
+			const templatePath = path.join(templateDir, 'js', templateFile);
+			if (!fs.existsSync(templatePath)) {
+				throw new Error(`JavaScript template not found: ${templatePath}`);
+			}
+			
+			const template = fs.readFileSync(templatePath, 'utf8');
+			const data = {
+				initialState: globalManifest.stateDefaults || {},
+				commands: commandManifests,
+			};
+			
+			combinedJS += ejs.render(template, data) + '\n\n';
 		}
 
-		const template = fs.readFileSync(jsTemplatePath, 'utf8');
-
-		const data = {
-			initialState: globalManifest.stateDefaults || {},
-			commands: commandManifests,
-		};
-
-		const renderedJS = ejs.render(template, data);
 		const jsFilePath = path.join(outputDir, 'app.js');
-		fs.writeFileSync(jsFilePath, renderedJS);
+		fs.writeFileSync(jsFilePath, combinedJS);
 
 		console.log(`Generated client-side JavaScript: ${jsFilePath}`);
 	}

@@ -1,0 +1,153 @@
+// File: templates/js/ui.ejs
+
+// UI interaction and form handling
+(function() {
+    'use strict';
+    
+    if (!window.VertexUI) {
+        console.error('VertexUI core not loaded');
+        return;
+    }
+    
+    const { commandManifests, commandSelector } = window.VertexUI;
+    
+    // Show a specific form and hide others
+    function showForm(commandName) {
+        // Hide all forms
+        document.querySelectorAll('.form-container').forEach(form => {
+            form.classList.remove('active-form');
+        });
+        
+        // Show the selected form if it exists
+        if (commandName) {
+            const form = document.getElementById(commandName + '-form');
+            if (form) {
+                form.classList.add('active-form');
+            }
+        }
+    }
+    
+    // Handle command selection change
+    commandSelector.addEventListener('change', function(e) {
+        const commandName = e.target.value;
+        showForm(commandName);
+        
+        // Scroll to the form
+        if (commandName) {
+            const form = document.getElementById(commandName + '-form');
+            if (form) {
+                form.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+    });
+    
+    // Handle form submissions - SINGLE HANDLER
+    document.addEventListener('submit', function(e) {
+        if (e.target.classList.contains('command-form')) {
+            e.preventDefault();
+            if (window.VertexUI.handleCommandSubmit) {
+                window.VertexUI.handleCommandSubmit(e.target);
+            }
+        }
+    });
+    
+    // File upload handling - setup file input events
+    function setupFileInputs() {
+        const fileInputs = document.querySelectorAll('input[type="file"]');
+        
+        fileInputs.forEach(input => {
+            const infoDiv = document.getElementById(`${input.id}-info`);
+            if (!infoDiv) return;
+            
+            input.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    // Validate file size
+                    const maxSize = input.getAttribute('data-max-size');
+                    if (maxSize && file.size > parseInt(maxSize)) {
+                        alert(`File too large. Maximum size: ${(maxSize / 1024 / 1024).toFixed(1)} MB`);
+                        input.value = '';
+                        infoDiv.style.display = 'none';
+                        return;
+                    }
+                    
+                    // Validate file type
+                    const allowedTypes = input.getAttribute('data-allowed-types');
+                    if (allowedTypes && !allowedTypes.split(',').includes(file.type)) {
+                        alert(`File type not allowed. Allowed types: ${allowedTypes}`);
+                        input.value = '';
+                        infoDiv.style.display = 'none';
+                        return;
+                    }
+                    
+                    // Validate file extension
+                    const allowedExtensions = input.getAttribute('accept');
+                    if (allowedExtensions) {
+                        const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+                        const acceptedExtensions = allowedExtensions.split(',').map(ext => ext.trim());
+                        if (!acceptedExtensions.includes(fileExtension)) {
+                            alert(`File extension not allowed. Allowed: ${acceptedExtensions.join(', ')}`);
+                            input.value = '';
+                            infoDiv.style.display = 'none';
+                            return;
+                        }
+                    }
+                    
+                    // Show file info
+                    infoDiv.querySelector('.file-name').textContent = file.name;
+                    infoDiv.querySelector('.file-size').textContent = formatFileSize(file.size);
+                    infoDiv.style.display = 'block';
+                } else {
+                    infoDiv.style.display = 'none';
+                }
+            });
+        });
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+    
+    // Show results in the results container
+    function showResults(result, type = 'success') {
+        const { resultsContainer, resultsContent } = window.VertexUI;
+        
+        resultsContainer.classList.remove('hidden', 'error', 'success');
+        
+        // Determine the appropriate type and content to display
+        if (result.error) {
+            resultsContainer.classList.add('error');
+            resultsContent.innerHTML = '<strong>Error:</strong><br><code>' + escapeHtml(result.error) + '</code>';
+        } else if (result.output) {
+            resultsContainer.classList.add('success');
+            // Format output, handling newlines properly
+            let formattedOutput = escapeHtml(String(result.output)).replace(/\n/g, '<br>');
+            resultsContent.innerHTML = '<strong>Output:</strong><br><code>' + formattedOutput + '</code>';
+        } else {
+            // If no specific error or output, show the full result for debugging
+            resultsContainer.classList.add(type);
+            resultsContent.innerHTML = '<pre>' + escapeHtml(JSON.stringify(result, null, 2)) + '</pre>';
+        }
+    }
+    
+    // Escape HTML special characters to prevent XSS
+    function escapeHtml(str) {
+        if (typeof str !== 'string') return String(str);
+        return str
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#x27;');
+    }
+    
+    // Register methods with core
+    window.VertexUI.showForm = showForm;
+    window.VertexUI.setupFileInputs = setupFileInputs;
+    window.VertexUI.showResults = showResults;
+    window.VertexUI.escapeHtml = escapeHtml;
+})();

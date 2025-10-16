@@ -1,0 +1,58 @@
+// File: templates/js/core.ejs
+
+// Core application state and initialization
+(function() {
+    'use strict';
+
+    // Initialize state from global defaults
+    let state = <%- JSON.stringify(initialState, null, 2) %>;
+    
+    // Available commands
+    const commands = <%- JSON.stringify(commands, null, 2) %>;
+    
+    // Map of command manifests by name for quick lookup
+    const commandManifests = {};
+    commands.forEach(cmd => {
+        commandManifests[cmd.name] = cmd;
+    });
+    
+    // DOM elements
+    const commandSelector = document.getElementById('commandSelector');
+    const formsContainer = document.getElementById('formsContainer');
+    const resultsContainer = document.getElementById('resultsContainer');
+    const resultsContent = document.getElementById('resultsContent');
+    
+    // Public API
+    window.VertexUI = {
+        state,
+        commands,
+        commandManifests,
+        commandSelector,
+        formsContainer,
+        resultsContainer,
+        resultsContent,
+        
+        // Methods that will be implemented in other modules
+        showForm: null,
+        handleCommandSubmit: null,
+        showResults: null,
+        setupFileInputs: null
+    };
+    
+    // Initialize when DOM is ready
+    function initialize() {
+        if (window.VertexUI.showForm) {
+            window.VertexUI.showForm('');
+        }
+        if (window.VertexUI.setupFileInputs) {
+            window.VertexUI.setupFileInputs();
+        }
+        console.log('EJS-generated UI initialized with', commands.length, 'commands');
+    }
+    
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initialize);
+    } else {
+        initialize();
+    }
+})();
