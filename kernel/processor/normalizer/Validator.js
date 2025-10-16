@@ -275,17 +275,6 @@ export class Validator {
     return { error: null, value: parsedValue };
   }
 
-  /** 
-   * Normalize blob input from various formats
-   */
-  static normaliseBlobInput(input){
-    if(Buffer.isBuffer(input))                return input;
-    if(Array.isArray(input))                  return Buffer.from(input);
-    if(typeof input==='string'&&isBase64(input))return Buffer.from(input,'base64');
-    // fallback for future encodings
-    throw new Error('Unsupported blob encoding');
-  }
-
   /**
    * Normalize blob input from various formats
    */
