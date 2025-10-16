@@ -65,3 +65,14 @@ export async function serveBook(params) {
 export async function launchElectron(params) {
     return await gutenbergService.launchElectron(params);
 }
+
+/**
+ * Download book from Project Gutenberg
+ * @param {Object} params - The parameters for downloading
+ * @param {number|string} params.id_or_title - Book ID or title to download
+ * @param {string} params.file - Filename to save as (optional) 
+ * @returns {Promise<Object} - Book as data buffer
+ */
+export async function downloadBookBuffer(params) {
+    return await gutenbergService.downloadBookBuffer(params)
+}

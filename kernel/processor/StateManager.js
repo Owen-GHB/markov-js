@@ -180,23 +180,67 @@ export class StateManager {
 	}
 
 	/**
-	 * Helper to evaluate template strings
-	 * @private
+	 * Template handler
+	 * Supports: {{input}}, {{input.param}}, {{output}}, {{output.property}}, {{state.key}}
 	 */
-	evaluateTemplate(template, bag) {
-		return template.replace(
-			/\{\{(\w+)(?:\s*\|\s*(\w+))?\}\}/g,
-			(_, key, filter) => {
-				let val = bag[key];
-				if (val === undefined) return '';
+	evaluateTemplate(template, contexts = {}) {
+	const { input = {}, output = {}, state = this.state } = contexts;
+	
+	return template.replace(
+		/\{\{([^{}]+)\}\}/g,
+		(_, expression) => {
+		const trimmed = expression.trim();
+		
+		// Handle nested property access (input.param, output.property, state.key)
+		if (trimmed.includes('.')) {
+			const [contextName, ...pathParts] = trimmed.split('.');
+			const path = pathParts.join('.');
+			
+			let context;
+			switch (contextName) {
+			case 'input':
+				context = input;
+				break;
+			case 'output':
+				context = output;
+				break;
+			case 'state':
+				context = state;
+				break;
+			default:
+				return ''; // Unknown context
+			}
+			
+			// Navigate the object path
+			const value = this.getNestedValue(context, path);
+			return value !== undefined ? String(value) : '';
+		}
+		
+		// Handle direct context references (input, output)
+		switch (trimmed) {
+			case 'input':
+			return JSON.stringify(input);
+			case 'output':
+			return JSON.stringify(output);
+			default:
+			// Fallback to original behavior for simple values
+			let val = input[trimmed] || output[trimmed];
+			if (val === undefined && state.has(trimmed)) {
+				val = state.get(trimmed);
+			}
+			return val !== undefined ? String(val) : '';
+		}
+		}
+	);
+	}
 
-				if (filter === 'basename') {
-					val = String(val).replace(/\.[^/.]+$/, '');
-				}
-
-				return String(val);
-			},
-		);
+	/**
+	 * Helper to get nested object values by path
+	 */
+	getNestedValue(obj, path) {
+	return path.split('.').reduce((current, key) => {
+		return current && current[key] !== undefined ? current[key] : undefined;
+	}, obj);
 	}
 }
 

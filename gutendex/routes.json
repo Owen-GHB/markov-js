@@ -1,0 +1,16 @@
+{
+  "pgb_download": {
+    "next": {
+      "uploadFile": {
+        "parameters": {
+          "file": {
+            "resolve": "{{output.buffer}}"
+          },
+          "filename": {
+            "resolve": "{{output.filename}}"
+          }
+        }
+      }
+    }
+  }
+}

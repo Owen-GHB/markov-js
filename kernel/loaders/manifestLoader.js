@@ -14,6 +14,7 @@ export function loadManifest(projectRoot, sourceContext = 'main application') {
   const commands = loadJSONFile(projectRoot, 'commands.json');
   const runtime = loadJSONFile(projectRoot, 'runtime.json', {}); // Optional
   const help = loadJSONFile(projectRoot, 'help.json', {}); // Optional
+  const routes = loadJSONFile(projectRoot, 'routes.json', {}); // Optional
 
   // Transform local commands object into array with name property
   const localCommands = Object.entries(commands).map(([commandName, commandSpec]) => {
@@ -23,6 +24,7 @@ export function loadManifest(projectRoot, sourceContext = 'main application') {
       // Merge runtime and help data for this command
       ...(runtime[commandName] || {}),
       ...(help[commandName] || {}),
+      ...(routes[commandName] || {}),
       // Deep merge parameters from all sources
       parameters: mergeParameters(
         commandSpec.parameters,

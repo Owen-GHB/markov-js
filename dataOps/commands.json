@@ -28,7 +28,7 @@
     "methodName": "uploadCorpusFile",
     "parameters": {
       "file": {
-        "type": "blob",
+        "type": "buffer",
         "required": true,
         "description": "Text file to upload to corpus"
       },

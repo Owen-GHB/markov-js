@@ -1,6 +1,8 @@
 import { getJSON, downloadFile } from './GutendexAPI.js';
 import fs from 'fs';
 import path from 'path';
+import https from 'https';
+import http from 'http';
 
 /**
  * Service class for Project Gutenberg operations
@@ -492,5 +494,145 @@ export class GutenbergService {
 		} catch (error) {
 			throw new Error(`Electron launch failed: ${error.message}`);
 		}
+	}
+
+	/**
+	 * Download a book from Project Gutenberg and return as buffer
+	 */
+	async downloadBookBuffer(params) {
+	const { id_or_title } = params;
+	let id = null;
+	let title = null;
+
+	if (typeof id_or_title === 'number' || /^\d+$/.test(id_or_title)) {
+		id = Number(id_or_title);
+	} else if (typeof id_or_title === 'string') {
+		title = id_or_title.trim();
+	}
+
+	if (!id && !title) {
+		throw new Error('Please specify either an ID or title');
+	}
+
+	try {
+		let book;
+		if (id) {
+		book = await getJSON(`${this.API_BASE}/books/${id}`);
+		if (!book || book.detail === 'Not found') {
+			throw new Error(`No book found with ID "${id}"`);
+		}
+		} else {
+		const searchResults = await getJSON(
+			`${this.API_BASE}/books/?search=${encodeURIComponent(title)}`,
+		);
+		if (!searchResults.results?.length) {
+			throw new Error(`No book found with title "${title}"`);
+		}
+		book = searchResults.results[0];
+		}
+
+		const txtUrl = this.findTextFormat(book.formats);
+		if (!txtUrl) {
+		throw new Error('No plain text format available');
+		}
+
+		// Download to buffer instead of file
+		const buffer = await this.downloadToBuffer(txtUrl);
+		
+		// Clean the text in memory
+		const cleanedBuffer = await this.cleanGutenbergBuffer(buffer);
+		
+		return {
+		success: true,
+		bookInfo: {
+			title: book.title,
+			authors: book.authors?.map(a => a.name).join(', ') || 'Unknown',
+			id: book.id
+		},
+		buffer: cleanedBuffer,
+		filename: this.generateFilename(book)
+		};
+	} catch (error) {
+		throw new Error(`Download failed: ${error.message}`);
+	}
+	}
+
+	/**
+	 * Download URL content to buffer
+	 */
+	async downloadToBuffer(url) {
+	return new Promise((resolve, reject) => {
+		const getClient = (url) => (url.startsWith('https:') ? https : http);
+		
+		const doGet = (url, depth = 0) => {
+		if (depth > 5) {
+			return reject(new Error('Too many redirects'));
+		}
+
+		const client = getClient(url);
+		const chunks = [];
+		
+		client.get(url, (res) => {
+			if (res.statusCode === 301 || res.statusCode === 302) {
+			let location = res.headers.location;
+			if (!location) return reject(new Error('Redirect with no location'));
+			if (!/^https?:\/\//i.test(location)) {
+				const base = new URL(url);
+				location = new URL(location, base).href;
+			}
+			return doGet(location, depth + 1);
+			}
+
+			if (res.statusCode !== 200) {
+			return reject(new Error(`HTTP ${res.statusCode}`));
+			}
+
+			res.on('data', (chunk) => chunks.push(chunk));
+			res.on('end', () => resolve(Buffer.concat(chunks)));
+		}).on('error', reject);
+		};
+
+		doGet(url);
+	});
+	}
+
+	/**
+	 * Clean Gutenberg text in memory
+	 */
+	async cleanGutenbergBuffer(buffer) {
+	try {
+		let text = buffer.toString('utf8');
+		const startMarker = '*** START OF THE PROJECT GUTENBERG EBOOK';
+		const endMarker = '*** END OF THE PROJECT GUTENBERG EBOOK';
+
+		const startIndex = text.indexOf(startMarker);
+		const endIndex = text.indexOf(endMarker);
+
+		if (startIndex !== -1 && endIndex !== -1) {
+		const afterStart = text.indexOf('\n', startIndex) + 1;
+		text = text.slice(afterStart, endIndex).trim();
+		}
+		
+		return Buffer.from(text, 'utf8');
+	} catch (error) {
+		console.warn('Error cleaning text buffer:', error.message);
+		return buffer; // Return original if cleaning fails
+	}
+	}
+
+	/**
+	 * Generate filename from book info
+	 */
+	generateFilename(book) {
+	if (book.id) {
+		return `${book.id}.txt`;
+	}
+	// Sanitize title for filename
+	const sanitizedTitle = book.title
+		.toLowerCase()
+		.replace(/[^a-z0-9]/g, '_')
+		.replace(/_+/g, '_')
+		.substring(0, 50);
+	return `${sanitizedTitle}.txt`;
 	}
 }

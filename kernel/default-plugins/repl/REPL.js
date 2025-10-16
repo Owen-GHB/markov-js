@@ -29,7 +29,7 @@ export class REPL {
 			this.projectRoot,
 			manifest
 		);
-		this.commandParser = new CommandParser(manifest);
+		this.parser = new CommandParser(manifest);
 		if (contextFilePath) this.processor.stateManager.loadState(contextFilePath);
 		this.loadHistory();
 	}

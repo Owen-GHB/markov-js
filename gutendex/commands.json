@@ -2,7 +2,7 @@
   "pgb_download": {
     "name": "pgb_download",
     "commandType": "native-method",
-    "methodName": "downloadGutenberg",
+    "methodName": "downloadBookBuffer",
     "combineArguments": true,
     "parameters": {
       "id_or_title": {

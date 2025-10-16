@@ -137,53 +137,36 @@ function formatFileSize(bytes) {
  * @param {string} params.filename - Optional custom filename
  * @returns {Promise<Object>} - The result of the upload
  */
+// In dataOps/data-operations.js - ensure uploadCorpusFile handles buffer
 export async function uploadCorpusFile(file, filename) {
-    if (!file) {
-        throw new Error('File is required');
-    }
+  if (!file) {
+    throw new Error('File is required');
+  }
 
-    // Ensure corpus directory exists
-    try {
-        await fs.mkdir(CORPUS_DIR, { recursive: true });
-    } catch (error) {
-        throw new Error(`Failed to create corpus directory: ${error.message}`);
-    }
+  // Handle both Buffer objects and array data from command chain
+  let fileBuffer;
+  if (Buffer.isBuffer(file)) {
+    fileBuffer = file;
+  } else if (file.data && Array.isArray(file.data)) {
+    // Handle array data from command chain serialization
+    fileBuffer = Buffer.from(file.data);
+  } else if (typeof file === 'object' && file.type === 'blob') {
+    // Handle blob objects
+    fileBuffer = Buffer.from(file.data);
+  } else {
+    throw new Error('Invalid file data format');
+  }
 
-    // Determine filename
-    const finalFilename = filename || file.name || `upload_${Date.now()}.txt`;
-    
-    // Ensure .txt extension
-    const safeFilename = finalFilename.endsWith('.txt') 
-        ? finalFilename 
-        : `${finalFilename.replace(/\.[^/.]+$/, "")}.txt`;
+  // Rest of your existing upload logic...
+  const finalFilename = filename || `upload_${Date.now()}.txt`;
+  const safeFilename = finalFilename.endsWith('.txt') 
+    ? finalFilename 
+    : `${finalFilename.replace(/\.[^/.]+$/, "")}.txt`;
 
-    // Security check
-    if (safeFilename.includes('../') || safeFilename.includes('..\\')) {
-        throw new Error('Invalid filename');
-    }
-
-    const fullPath = path.join(CORPUS_DIR, safeFilename);
-
-    try {
-        // Check if file already exists
-        try {
-            await fs.access(fullPath);
-            throw new Error(`File already exists: ${safeFilename}. Use a different filename.`);
-        } catch (error) {
-            // File doesn't exist, which is what we want
-            if (error.code !== 'ENOENT') throw error;
-        }
-        // Write the file data
-        await fs.writeFile(fullPath, file.data);
-        
-        // Verify the file was written
-        const stats = await fs.stat(fullPath);
-        
-        return `✅ Successfully uploaded: ${safeFilename} (${formatFileSize(stats.size)})`;
-    } catch (error) {
-        if (error.message.includes('already exists')) {
-            throw error;
-        }
-        throw new Error(`Failed to upload file: ${error.message}`);
-    }
+  const fullPath = path.join(CORPUS_DIR, safeFilename);
+  
+  await fs.writeFile(fullPath, fileBuffer);
+  const stats = await fs.stat(fullPath);
+  
+  return `✅ Successfully uploaded: ${safeFilename} (${formatFileSize(stats.size)})`;
 }
