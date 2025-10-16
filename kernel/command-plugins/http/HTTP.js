@@ -23,7 +23,10 @@ export class HTTPServer {
 			throw new Error('apiEndpoint parameter must be a string if provided');
 		}
 
-		if (!commandProcessor || typeof commandProcessor.processCommand !== 'function') {
+		if (
+			!commandProcessor ||
+			typeof commandProcessor.processCommand !== 'function'
+		) {
 			throw new Error(
 				'commandProcessor parameter must be a valid command processor instance',
 			);
@@ -90,11 +93,14 @@ export class HTTPServer {
 	async handleAPIRequest(req, res) {
 		try {
 			const parsedUrl = new URL(req.url, `http://${req.headers.host}`);
-    
+
 			// Handle multipart form data (file uploads)
 			const contentType = req.headers['content-type'] || '';
-			if (req.method === 'POST' && contentType.includes('multipart/form-data')) {
-			return await this.handleMultipartRequest(req, res);
+			if (
+				req.method === 'POST' &&
+				contentType.includes('multipart/form-data')
+			) {
+				return await this.handleMultipartRequest(req, res);
 			}
 
 			let commandString;
@@ -159,75 +165,90 @@ export class HTTPServer {
 	 */
 	async handleMultipartRequest(req, res) {
 		return new Promise((resolve, reject) => {
-			const bb = busboy({ 
-			headers: req.headers,
-			limits: {
-				fileSize: 50 * 1024 * 1024, // 50MB limit
-				files: 5, // Max 5 files
-				fields: 20 // Max 20 fields
-			}
+			const bb = busboy({
+				headers: req.headers,
+				limits: {
+					fileSize: 50 * 1024 * 1024, // 50MB limit
+					files: 5, // Max 5 files
+					fields: 20, // Max 20 fields
+				},
 			});
 
 			const formData = {
-			fields: {},
-			files: []
+				fields: {},
+				files: [],
 			};
 
 			// Handle form fields
 			bb.on('field', (name, value) => {
-			formData.fields[name] = value;
+				formData.fields[name] = value;
 			});
 
 			// Handle file uploads
 			bb.on('file', (name, file, info) => {
-			const { filename, encoding, mimeType } = info;
-			const chunks = [];
-			
-			file.on('data', (chunk) => {
-				chunks.push(chunk);
-			});
+				const { filename, encoding, mimeType } = info;
+				const chunks = [];
 
-			file.on('end', () => {
-				formData.files.push({
-				fieldName: name,
-				filename,
-				mimeType,
-				data: Buffer.concat(chunks),
-				size: Buffer.concat(chunks).length
+				file.on('data', (chunk) => {
+					chunks.push(chunk);
 				});
-			});
 
-			file.on('error', (err) => {
-				console.error(`File upload error for ${filename}:`, err);
-			});
+				file.on('end', () => {
+					formData.files.push({
+						fieldName: name,
+						filename,
+						mimeType,
+						data: Buffer.concat(chunks),
+						size: Buffer.concat(chunks).length,
+					});
+				});
+
+				file.on('error', (err) => {
+					console.error(`File upload error for ${filename}:`, err);
+				});
 			});
 
 			// When all parts are processed
 			bb.on('close', async () => {
-			try {
-				// Extract command from form fields
-				const commandString = formData.fields.command || formData.fields.json;
-				
-				if (!commandString) {
-				this.sendErrorResponse(res, "Missing 'command' field in form data", 400);
-				return resolve();
-				}
+				try {
+					// Extract command from form fields
+					const commandString = formData.fields.command || formData.fields.json;
 
-				// Convert files to blob format for your system
-				const commandWithFiles = await this.injectFilesIntoCommand(commandString, formData.files);
-				
-				// Execute the command
-				await this.executeCommandAndRespond(commandWithFiles, res);
-				resolve();
-			} catch (error) {
-				this.sendErrorResponse(res, `Error processing multipart request: ${error.message}`, 500);
-				resolve();
-			}
+					if (!commandString) {
+						this.sendErrorResponse(
+							res,
+							"Missing 'command' field in form data",
+							400,
+						);
+						return resolve();
+					}
+
+					// Convert files to blob format for your system
+					const commandWithFiles = await this.injectFilesIntoCommand(
+						commandString,
+						formData.files,
+					);
+
+					// Execute the command
+					await this.executeCommandAndRespond(commandWithFiles, res);
+					resolve();
+				} catch (error) {
+					this.sendErrorResponse(
+						res,
+						`Error processing multipart request: ${error.message}`,
+						500,
+					);
+					resolve();
+				}
 			});
 
 			bb.on('error', (err) => {
-			this.sendErrorResponse(res, `Multipart parsing error: ${err.message}`, 400);
-			resolve();
+				this.sendErrorResponse(
+					res,
+					`Multipart parsing error: ${err.message}`,
+					400,
+				);
+				resolve();
 			});
 
 			// Pipe the request to busboy
@@ -239,87 +260,104 @@ export class HTTPServer {
 	 * Inject uploaded files into the command structure
 	 */
 	async injectFilesIntoCommand(commandString, files) {
-	try {
-		// Parse the original command
-		const parsedCommand = this.commandParser.parse(commandString);
-		
-		if (parsedCommand.error) {
-			throw new Error(parsedCommand.error);
-		}
+		try {
+			// Parse the original command
+			const parsedCommand = this.commandParser.parse(commandString);
 
-		// If no files, return original command
-		if (files.length === 0) {
-			return commandString;
-		}
+			if (parsedCommand.error) {
+				throw new Error(parsedCommand.error);
+			}
 
-		// Get command specification to understand expected parameters
-		const commandName = parsedCommand.command.name;
-		const commandSpec = this.commandProcessor.getManifest().commands.find(
-		cmd => cmd.name === commandName
-		);
+			// If no files, return original command
+			if (files.length === 0) {
+				return commandString;
+			}
 
-		if (!commandSpec) {
-			throw new Error(`Unknown command: ${commandName}`);
-		}
+			// Get command specification to understand expected parameters
+			const commandName = parsedCommand.command.name;
+			const commandSpec = this.commandProcessor
+				.getManifest()
+				.commands.find((cmd) => cmd.name === commandName);
 
-		// Convert files to proper blob format
-		const fileBlobs = files.map(file => {
-		let fileData = file.data;
-		
-		if (fileData && fileData.type === 'Buffer' && Array.isArray(fileData.data)) {
-			fileData = Buffer.from(fileData.data);
-		} else if (Array.isArray(fileData)) {
-			fileData = Buffer.from(fileData);
-		}
+			if (!commandSpec) {
+				throw new Error(`Unknown command: ${commandName}`);
+			}
 
-		return {
-			type: 'blob',
-			name: file.filename,
-			mimeType: file.mimeType,
-			data: fileData,
-			size: file.size,
-			encoding: file.encoding || 'binary'
-		};
-		});
+			// Create file data based on parameter type
+			const fileDataMap = new Map();
+			const fileParametersWithType = Object.entries(
+				commandSpec.parameters || {},
+			)
+				.filter(
+					([paramName, paramSpec]) =>
+						paramSpec.type &&
+						(paramSpec.type.includes('blob') ||
+							paramSpec.type.includes('buffer')),
+				)
+				.map(([paramName, paramSpec]) => ({
+					name: paramName,
+					type: paramSpec.type,
+				}));
 
-		// Find file parameters from the command specification
-		const fileParameters = Object.entries(commandSpec.parameters || {})
-		.filter(([paramName, paramSpec]) => 
-			paramSpec.type && paramSpec.type.includes('blob')
-		)
-		.map(([paramName]) => paramName);
+			if (fileParametersWithType.length === 0) {
+				throw new Error(
+					`Command '${commandName}' does not accept file uploads, but ${files.length} file(s) were provided`,
+				);
+			}
 
-		// Inject files based on command specification
-		if (fileParameters.length === 0) {
-			// No blob parameters defined
-			throw new Error(
-				`Command '${commandName}' does not accept file uploads, but ${files.length} file(s) were provided`
-			);
-		} else if (files.length === 1 && fileParameters.length === 1) {
-			// Single file, single blob parameter - inject into that parameter
-			parsedCommand.command.args[fileParameters[0]] = fileBlobs[0];
-		} else if (files.length === fileParameters.length) {
-			// Multiple files, matching blob parameters - inject in order
-			fileParameters.forEach((paramName, index) => {
-				parsedCommand.command.args[paramName] = fileBlobs[index];
+			// Validate file/parameter count mismatch
+			if (files.length !== fileParametersWithType.length) {
+				const expectedTypes = fileParametersWithType.map(
+					(p) => `${p.name} (${p.type.includes('buffer') ? 'buffer' : 'blob'})`,
+				);
+				throw new Error(
+					`File parameter mismatch: command '${commandName}' expects ` +
+						`${fileParametersWithType.length} file parameter(s) but received ${files.length} file(s). ` +
+						`Expected parameters: ${expectedTypes.join(', ')}`,
+				);
+			}
+
+			// Handle single parameter with multiple files (not allowed for either blob or buffer)
+			const hasSingleFileParam = fileParametersWithType.length === 1;
+
+			if (files.length > 1 && hasSingleFileParam) {
+				const paramType = fileParametersWithType[0].type.includes('buffer') ? 'buffer' : 'blob';
+				throw new Error(
+					`${paramType.charAt(0).toUpperCase() + paramType.slice(1)} parameter '${fileParametersWithType[0].name}' cannot accept multiple files. ` +
+					`Received ${files.length} files but only one ${paramType} parameter expected.`,
+				);
+			}
+
+			// Now create the file data
+			files.forEach((file, index) => {
+				const paramInfo = fileParametersWithType[index];
+				if (!paramInfo) return;
+
+				if (paramInfo.type.includes('buffer')) {
+					// For buffer: just the raw Buffer data, no metadata
+					fileDataMap.set(paramInfo.name, file.data);
+				} else {
+					// For blob: full metadata object
+					fileDataMap.set(paramInfo.name, {
+						type: 'blob',
+						name: file.filename,
+						mimeType: file.mimeType,
+						data: file.data,
+						size: file.size,
+						encoding: file.encoding || 'binary',
+					});
+				}
 			});
-		} else if (fileParameters.length === 1 && files.length > 1) {
-			// Multiple files, single blob parameter - inject as array
-			parsedCommand.command.args[fileParameters[0]] = fileBlobs;
-		} else {
-			// Mismatch - report error
-			throw new Error(
-				`File parameter mismatch: command '${commandName}' expects ` +
-				`${fileParameters.length} blob parameter(s) but received ${files.length} file(s). ` +
-				`Expected parameters: ${fileParameters.join(', ')}`
-			);
-		}
 
-		// Convert back to string for execution
-		return JSON.stringify(parsedCommand.command);
-	} catch (error) {
-		throw new Error(`Failed to inject files into command: ${error.message}`);
-	}
+			// Inject files
+			for (const [paramName, fileData] of fileDataMap) {
+				parsedCommand.command.args[paramName] = fileData;
+			}
+			// Convert back to string for execution
+			return JSON.stringify(parsedCommand.command);
+		} catch (error) {
+			throw new Error(`Failed to inject files into command: ${error.message}`);
+		}
 	}
 
 	async executeCommandAndRespond(commandString, res) {

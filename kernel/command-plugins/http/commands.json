@@ -1,27 +1,27 @@
 {
-  "http": {
-    "commandType": "kernel-plugin",
-    "methodName": "start",
-    "description": "Start HTTP server serving UI and API",
-    "parameters": {
-      "serverPort": {
-        "type": "integer",
-        "required": true,
-        "runtimeFallback": "serverPort",
-        "description": "Port number for the server"
-      },
-      "servedUIDir": {
-        "type": "string",
-        "required": true,
-        "runtimeFallback": "servedUIDir",
-        "description": "Directory containing UI files to serve"
-      },
-      "apiEndpoint": {
-        "type": "string",
-        "required": true,
-        "runtimeFallback": "apiEndpoint",
-        "description": "API endpoint path"
-      }
-    }
-  }
+	"http": {
+		"commandType": "kernel-plugin",
+		"methodName": "start",
+		"description": "Start HTTP server serving UI and API",
+		"parameters": {
+			"serverPort": {
+				"type": "integer",
+				"required": true,
+				"runtimeFallback": "serverPort",
+				"description": "Port number for the server"
+			},
+			"servedUIDir": {
+				"type": "string",
+				"required": true,
+				"runtimeFallback": "servedUIDir",
+				"description": "Directory containing UI files to serve"
+			},
+			"apiEndpoint": {
+				"type": "string",
+				"required": true,
+				"runtimeFallback": "apiEndpoint",
+				"description": "API endpoint path"
+			}
+		}
+	}
 }

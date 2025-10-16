@@ -43,6 +43,34 @@
   </div>
   <% } %>
 </div>
+<% } else if (param.type.includes('buffer')) { %>
+<div class="form-field buffer-field">
+  <label for="<%= param.name %>">
+    <%= param.description %>
+    <% if (param.required) { %><span class="required">*</span><% } %>
+  </label>
+  
+  <input 
+    type="file" 
+    id="<%= param.name %>" 
+    name="<%= param.name %>"
+    class="file-input"
+    <% if (param.required) { %>required<% } %>
+    <% if (param.constraints) { %>
+      <% if (param.constraints.maxSize) { %>
+        data-max-size="<%= param.constraints.maxSize %>"
+      <% } %>
+    <% } %>
+  />
+  
+  <% if (param.constraints) { %>
+  <div class="constraints">
+    <% if (param.constraints.maxSize) { %>
+      <small>Max size: <%= (param.constraints.maxSize / 1024 / 1024).toFixed(1) %> MB</small>
+    <% } %>
+  </div>
+  <% } %>
+</div>
 <% } else { %>
 <!-- Existing field types (string, number, boolean, etc.) -->
 <div class="form-field">

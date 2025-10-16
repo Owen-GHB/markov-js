@@ -22,7 +22,7 @@
             return;
         }
         
-        // Check if this form has file inputs with files
+        // Check if this form has file inputs with files (both blob and buffer)
         const fileInputs = form.querySelectorAll('input[type="file"]');
         let hasFiles = false;
         const files = new FormData();
@@ -46,20 +46,23 @@
     // Execute command with file uploads
     async function executeCommandWithFiles(commandName, form, files) {
         const cmdManifest = commandManifests[commandName];
-        const args = extractFormArgs(form, cmdManifest, true); // true = skip blob params
+        const args = extractFormArgs(form, cmdManifest, true); // true = skip file params
         
-        // Add the command JSON to the form data
-        files.append('command', JSON.stringify({
-            name: commandName,
-            args: args
-        }));
+        // Determine parameter types for proper file handling
+        const isBufferParam = {};
+        if (cmdManifest.parameters) {
+            Object.entries(cmdManifest.parameters).forEach(([paramName, paramSpec]) => {
+                isBufferParam[paramName] = paramSpec.type && paramSpec.type.includes('buffer');
+            });
+        }
         
         try {
             if (window.electronAPI) {
-                const result = await executeElectronCommandWithFiles(commandName, args, files);
+                const result = await executeElectronCommandWithFiles(commandName, args, files, isBufferParam);
                 handleCommandResult(commandName, args, result, cmdManifest);
             } else {
-                const result = await executeHttpCommandWithFiles(files);
+                // FIX: Pass commandName and form to the HTTP function
+                const result = await executeHttpCommandWithFiles(commandName, form, files);
                 handleCommandResult(commandName, args, result, cmdManifest);
             }
         } catch (error) {
@@ -92,13 +95,14 @@
     }
     
     // Extract arguments from form fields
-    function extractFormArgs(form, cmdManifest, skipBlobParams = false) {
+    function extractFormArgs(form, cmdManifest, skipFileParams = false) {
         const args = {};
         const paramManifests = cmdManifest.parameters || {};
         const inputs = form.querySelectorAll('input, select, textarea');
         
         inputs.forEach(input => {
-            if (input.type === 'file' && skipBlobParams) return;
+            // Skip file inputs when processing for file upload (both blob and buffer)
+            if (input.type === 'file' && skipFileParams) return;
             
             const paramName = input.getAttribute('data-param-name') || input.name;
             if (!paramName) return;
@@ -150,26 +154,32 @@
     }
     
     // Electron command execution with files
-    async function executeElectronCommandWithFiles(commandName, args, files) {
+    async function executeElectronCommandWithFiles(commandName, args, files, isBufferParam) {
         const commandData = {
             name: commandName,
             args: { ...args }
         };
 
-        // Convert FormData files to Electron-compatible format
+        // Convert FormData files to Electron-compatible format USING Uint8Array
         for (const [key, file] of files.entries()) {
             if (key !== 'command') {
                 const arrayBuffer = await file.arrayBuffer();
                 const fileData = new Uint8Array(arrayBuffer);
                 
-                commandData.args[key] = {
-                    type: 'blob',
-                    name: file.name,
-                    mimeType: file.type,
-                    data: Array.from(fileData),
-                    size: file.size,
-                    encoding: 'binary'
-                };
+                if (isBufferParam[key]) {
+                    // For Buffer parameters: just the raw array data
+                    commandData.args[key] = Array.from(fileData);
+                } else {
+                    // For Blob parameters: metadata object with array data
+                    commandData.args[key] = {
+                        type: 'blob',
+                        name: file.name,
+                        mimeType: file.type,
+                        data: Array.from(fileData),
+                        size: file.size,
+                        encoding: 'binary'
+                    };
+                }
             }
         }
 
@@ -177,10 +187,31 @@
     }
     
     // HTTP command execution with files
-    async function executeHttpCommandWithFiles(files) {
+    async function executeHttpCommandWithFiles(commandName, form, files) {
+        const cmdManifest = commandManifests[commandName];
+        const args = extractFormArgs(form, cmdManifest, true); // true = skip file params
+        
+        // Create FormData and include the command
+        const formData = new FormData();
+        
+        // Add the command as a field
+        const command = {
+            name: commandName,
+            args: args
+        };
+        formData.append('command', JSON.stringify(command));
+        
+        // Add the files with their parameter names
+        const fileInputs = form.querySelectorAll('input[type="file"]');
+        for (const input of fileInputs) {
+            if (input.files.length > 0) {
+                formData.append(input.name, input.files[0]);
+            }
+        }
+        
         const response = await fetch('/api', {
             method: 'POST',
-            body: files
+            body: formData
         });
         return await response.json();
     }

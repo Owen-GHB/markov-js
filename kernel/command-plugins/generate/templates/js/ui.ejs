@@ -51,54 +51,61 @@
         }
     });
     
-    // File upload handling - setup file input events
+    // File upload handling - setup file input events for both blob and buffer
     function setupFileInputs() {
         const fileInputs = document.querySelectorAll('input[type="file"]');
         
         fileInputs.forEach(input => {
+            // For blob fields, we have file info display
             const infoDiv = document.getElementById(`${input.id}-info`);
-            if (!infoDiv) return;
+            
+            // Determine if this is a buffer field (no metadata display)
+            const isBufferField = input.closest('.buffer-field');
             
             input.addEventListener('change', function(e) {
                 const file = e.target.files[0];
                 if (file) {
-                    // Validate file size
+                    // Validate file size (applies to both blob and buffer)
                     const maxSize = input.getAttribute('data-max-size');
                     if (maxSize && file.size > parseInt(maxSize)) {
                         alert(`File too large. Maximum size: ${(maxSize / 1024 / 1024).toFixed(1)} MB`);
                         input.value = '';
-                        infoDiv.style.display = 'none';
+                        if (infoDiv) infoDiv.style.display = 'none';
                         return;
                     }
                     
-                    // Validate file type
-                    const allowedTypes = input.getAttribute('data-allowed-types');
-                    if (allowedTypes && !allowedTypes.split(',').includes(file.type)) {
-                        alert(`File type not allowed. Allowed types: ${allowedTypes}`);
-                        input.value = '';
-                        infoDiv.style.display = 'none';
-                        return;
-                    }
-                    
-                    // Validate file extension
-                    const allowedExtensions = input.getAttribute('accept');
-                    if (allowedExtensions) {
-                        const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
-                        const acceptedExtensions = allowedExtensions.split(',').map(ext => ext.trim());
-                        if (!acceptedExtensions.includes(fileExtension)) {
-                            alert(`File extension not allowed. Allowed: ${acceptedExtensions.join(', ')}`);
+                    // Only validate MIME types and extensions for blob fields, not buffer
+                    if (!isBufferField) {
+                        const allowedTypes = input.getAttribute('data-allowed-types');
+                        if (allowedTypes && !allowedTypes.split(',').includes(file.type)) {
+                            alert(`File type not allowed. Allowed types: ${allowedTypes}`);
                             input.value = '';
-                            infoDiv.style.display = 'none';
+                            if (infoDiv) infoDiv.style.display = 'none';
                             return;
+                        }
+
+                        const allowedExtensions = input.getAttribute('accept');
+                        if (allowedExtensions) {
+                            const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+                            const acceptedExtensions = allowedExtensions.split(',').map(ext => ext.trim());
+                            if (!acceptedExtensions.includes(fileExtension)) {
+                                alert(`File extension not allowed. Allowed: ${acceptedExtensions.join(', ')}`);
+                                input.value = '';
+                                if (infoDiv) infoDiv.style.display = 'none';
+                                return;
+                            }
                         }
                     }
                     
-                    // Show file info
-                    infoDiv.querySelector('.file-name').textContent = file.name;
-                    infoDiv.querySelector('.file-size').textContent = formatFileSize(file.size);
-                    infoDiv.style.display = 'block';
+                    // Show file info only for blob fields (buffer fields don't have infoDiv)
+                    if (infoDiv) {
+                        infoDiv.querySelector('.file-name').textContent = file.name;
+                        infoDiv.querySelector('.file-size').textContent = formatFileSize(file.size);
+                        infoDiv.style.display = 'block';
+                    }
                 } else {
-                    infoDiv.style.display = 'none';
+                    // Hide file info if file is removed (blob fields only)
+                    if (infoDiv) infoDiv.style.display = 'none';
                 }
             });
         });
