@@ -137,7 +137,6 @@ function formatFileSize(bytes) {
  * @param {string} params.filename - Optional custom filename
  * @returns {Promise<Object>} - The result of the upload
  */
-// In dataOps/data-operations.js - ensure uploadCorpusFile handles buffer
 export async function uploadCorpusFile(file, filename) {
   if (!file) {
     throw new Error('File is required');
@@ -168,5 +167,45 @@ export async function uploadCorpusFile(file, filename) {
   await fs.writeFile(fullPath, fileBuffer);
   const stats = await fs.stat(fullPath);
   
-  return `✅ Successfully uploaded: ${safeFilename} (${formatFileSize(stats.size)})`;
+  return `✅ Saved corpus file: ${safeFilename} (${formatFileSize(stats.size)})`;
+}
+
+/**
+ * Upload a text file to the corpus directory
+ * @param {Object} params - The parameters for file upload
+ * @param {Object} params.file - The file blob object
+ * @param {string} params.filename - Optional custom filename
+ * @returns {Promise<Object>} - The result of the upload
+ */
+export async function saveModelFile(file, filename) {
+  if (!file) {
+    throw new Error('File is required');
+  }
+
+  // Handle both Buffer objects and array data from command chain
+  let fileBuffer;
+  if (Buffer.isBuffer(file)) {
+    fileBuffer = file;
+  } else if (file.data && Array.isArray(file.data)) {
+    // Handle array data from command chain serialization
+    fileBuffer = Buffer.from(file.data);
+  } else if (typeof file === 'object' && file.type === 'blob') {
+    // Handle blob objects
+    fileBuffer = Buffer.from(file.data);
+  } else {
+    throw new Error('Invalid file data format');
+  }
+
+  // Rest of your existing upload logic...
+  const finalFilename = filename || `upload_${Date.now()}.txt`;
+  const safeFilename = finalFilename.endsWith('.txt') 
+    ? finalFilename 
+    : `${finalFilename.replace(/\.[^/.]+$/, "")}.txt`;
+
+  const fullPath = path.join(MODELS_DIR, safeFilename);
+  
+  await fs.writeFile(fullPath, fileBuffer);
+  const stats = await fs.stat(fullPath);
+  
+  return `✅ Model saved: ${safeFilename} (${formatFileSize(stats.size)})`;
 }

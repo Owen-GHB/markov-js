@@ -38,5 +38,22 @@
         "description": "Optional custom filename (uses original name if not provided)"
       }
     }
+  },
+  "saveModel": {
+    "name": "saveModel",
+    "commandType": "native-method",
+    "methodName": "saveModelFile",
+    "parameters" :{
+      "file": {
+        "type": "buffer",
+        "required": true,
+        "description": "Model file to be saved"
+      },
+      "filename": {
+        "type": "string",
+        "required": false,
+        "description": "Filename for the model"
+      }
+    }
   }
 }

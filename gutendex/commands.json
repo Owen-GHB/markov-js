@@ -15,50 +15,6 @@
       }
     }
   },
-  "pgb_download_html": {
-    "name": "pgb_download_html",
-    "commandType": "native-method",
-    "methodName": "downloadGutenbergHTML",
-    "combineArguments": true,
-    "parameters": {
-      "id_or_title": {
-        "type": "string|integer",
-        "required": true
-      },
-      "file": {
-        "type": "string",
-        "required": false
-      }
-    }
-  },
-  "pgb_serve_book": {
-    "name": "pgb_serve_book",
-    "commandType": "native-method",
-    "methodName": "serveBook",
-    "combineArguments": true,
-    "parameters": {
-      "filename": {
-        "type": "string",
-        "required": true
-      },
-      "port": {
-        "type": "integer",
-        "required": false
-      }
-    }
-  },
-  "pgb_electron": {
-    "name": "pgb_electron",
-    "commandType": "native-method",
-    "methodName": "launchElectron",
-    "combineArguments": true,
-    "parameters": {
-      "filename": {
-        "type": "string",
-        "required": true
-      }
-    }
-  },
   "pgb_info": {
     "name": "pgb_info",
     "commandType": "native-method",

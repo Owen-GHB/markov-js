@@ -17,32 +17,6 @@
       }
     }
   },
-  "pgb_download_html": {
-    "parameters": {
-      "id_or_title": {
-        "transform": {
-          "if": "integer",
-          "then": {
-            "id": "value"
-          },
-          "else": {
-            "title": "value"
-          }
-        }
-      },
-      "file": {
-        "default": null
-      }
-    }
-  },
-  "pgb_serve_book": {
-    "parameters": {
-      "port": {
-        "default": 3000
-      }
-    }
-  },
-  "pgb_electron": {},
   "pgb_info": {
     "parameters": {
       "id_or_title": {
