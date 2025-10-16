@@ -1,128 +1,176 @@
-// manifestLoader.js
+// File: loaders/manifestLoader.js
+
 import fs from 'fs';
 import path from 'path';
 
 /**
- * Loads and merges manifest from the new 4-file structure with recursive sources
- * @param {string} projectRoot - Root directory of the project
- * @param {string} sourceContext - Context for error messages (internal use)
- * @returns {Object} - Complete merged manifest
+ * Loads and merges manifest using per-file recursive merging
  */
-export function loadManifest(projectRoot, sourceContext = 'main application') {
-  // Load the four core files
-  const contract = loadJSONFile(projectRoot, 'contract.json');
-  const commands = loadJSONFile(projectRoot, 'commands.json');
-  const runtime = loadJSONFile(projectRoot, 'runtime.json', {}); // Optional
-  const help = loadJSONFile(projectRoot, 'help.json', {}); // Optional
-  const routes = loadJSONFile(projectRoot, 'routes.json', {}); // Optional
+export function loadManifest(projectRoot) {
+  try {
+    // 1. Recursive merge per file type (parent wins)
+    const contracts = mergeFilesRecursive(projectRoot, 'contract.json');
+    const commands = mergeFilesRecursive(projectRoot, 'commands.json', {});
+    const help = mergeFilesRecursive(projectRoot, 'help.json', {});
+    const runtime = mergeFilesRecursive(projectRoot, 'runtime.json', {});
+    const routes = mergeFilesRecursive(projectRoot, 'routes.json', {});
+    
+    // 2. Combine everything into final manifest
+    return combineManifest(contracts, commands, help, runtime, routes);
+  } catch (error) {
+    throw new Error(`Failed to load manifest: ${error.message}`);
+  }
+}
 
-  // Transform local commands object into array with name property
-  const localCommands = Object.entries(commands).map(([commandName, commandSpec]) => {
-    return {
+function mergeFilesRecursive(projectRoot, filename, defaultValue = null, parentRoot = null) {
+  const current = loadJSONFile(projectRoot, filename, defaultValue) || {};
+  let merged = { ...current };
+  
+  // Transform paths if this is commands.json and we're in a child
+  if (filename === 'commands.json' && parentRoot) {
+    merged = transformCommandSources(merged, projectRoot, parentRoot);
+  }
+  
+  const contract = loadJSONFile(projectRoot, 'contract.json');
+  
+  if (contract && contract.sources) {
+    for (const sourcePath of Object.values(contract.sources)) {
+      try {
+        const resolvedPath = validateSourcePath(sourcePath, projectRoot);
+        if (fs.existsSync(resolvedPath)) {
+          const childData = mergeFilesRecursive(resolvedPath, filename, defaultValue, projectRoot); // Pass current as parent
+          merged = deepMerge(childData, merged);
+        }
+      } catch (error) {
+        console.warn(`⚠️ Failed to merge ${filename} from source '${sourcePath}': ${error.message}`);
+      }
+    }
+  }
+  
+  return merged;
+}
+
+function transformCommandSources(commands, childRoot, parentRoot) {
+  const transformed = {};
+  
+  for (const [commandName, commandSpec] of Object.entries(commands)) {
+    transformed[commandName] = {
+      ...commandSpec,
+      source: resolveSourcePath(commandSpec.source, childRoot, parentRoot)
+    };
+  }
+  
+  return transformed;
+}
+
+function resolveSourcePath(childSource, childRoot, parentRoot) {
+  if (!childSource) {
+    // No source specified - default to source directory relative to parent
+    return path.relative(parentRoot, childRoot);
+  }
+  
+  if (childSource.startsWith('./') || childSource.startsWith('../')) {
+    // Relative path in child → resolve relative to parent
+    return path.join(path.relative(parentRoot, childRoot), childSource);
+  }
+  
+  // Absolute/NPM package → pass through unchanged
+  return childSource;
+}
+
+/**
+ * Combine all merged files into final manifest
+ */
+function combineManifest(contracts, commands, help, runtime, routes) {
+  // Build final command list
+  const finalCommands = [];
+  const seenNames = new Set();
+  
+  // Process commands with parent precedence (reverse iteration for parent-first)
+  const allCommands = Object.entries(commands);
+  
+  for (const [commandName, commandSpec] of allCommands) {
+    if (seenNames.has(commandName)) continue; // Parent already defined
+    
+    // Create merged command with data from all file types
+    const mergedCommand = {
       name: commandName,
       ...commandSpec,
-      // Merge runtime and help data for this command
+      // Apply global overrides (parent wins)
       ...(runtime[commandName] || {}),
       ...(help[commandName] || {}),
       ...(routes[commandName] || {}),
-      // Deep merge parameters from all sources
+      // Deep merge parameters
       parameters: mergeParameters(
         commandSpec.parameters,
         runtime[commandName]?.parameters,
         help[commandName]?.parameters
       )
     };
-  });
-
-  // Track all source manifests for state merging
-  const sourceManifests = [];
-  let sourceCommands = [];
-
-  // Expand sources if they exist
-  if (contract.sources && typeof contract.sources === 'object') {
-    try {
-      const expansionResult = expandSourceCommands(contract.sources, projectRoot, sourceContext);
-      sourceCommands = expansionResult.commands;
-      sourceManifests.push(...expansionResult.manifests);
-    } catch (error) {
-      console.warn(`⚠️  Failed to expand sources in ${sourceContext}: ${error.message}`);
-    }
+    
+    finalCommands.push(mergedCommand);
+    seenNames.add(commandName);
   }
-
-  // Merge state defaults
-  const mergedStateDefaults = mergeStateDefaults(contract.stateDefaults, sourceManifests);
-
-  // Build final command list with conflict detection
-  const allCommands = [];
-  const seenNames = new Set();
-
-  function addCommand(command, source = 'local') {
-    if (seenNames.has(command.name)) {
-      console.warn(`⚠️  Command name conflict in ${sourceContext}: '${command.name}' from ${source} will be ignored`);
-      return;
-    }
-    seenNames.add(command.name);
-    allCommands.push(command);
-  }
-
-  // Add source commands first (lower priority)
-  sourceCommands.forEach(cmd => addCommand(cmd, 'source'));
-  // Add local commands second (higher priority - will override conflicts)
-  localCommands.forEach(cmd => addCommand(cmd, 'local'));
-
+  
+  // Merge state defaults with parent precedence
+  const stateDefaults = mergeStateDefaultsRecursive(contracts);
+  
   return {
-    ...contract,
-    stateDefaults: mergedStateDefaults,
-    commands: allCommands
+    ...contracts,
+    stateDefaults,
+    commands: finalCommands
   };
 }
 
 /**
- * Expand source commands recursively
+ * Special recursive merge for state defaults (parent wins)
  */
-function expandSourceCommands(sources, projectRoot, context) {
-  const sourceCommands = [];
-  const sourceManifests = [];
-
-  for (const [sourceName, sourcePath] of Object.entries(sources)) {
-    try {
-      const resolvedPath = validateSourcePath(sourcePath, projectRoot);
-      
-      if (!fs.existsSync(resolvedPath)) {
-        console.warn(`⚠️  Source directory not found: ${sourcePath} (resolved to ${resolvedPath})`);
-        continue;
+function mergeStateDefaultsRecursive(contracts) {
+  if (!contracts.stateDefaults) return {};
+  
+  let merged = { ...contracts.stateDefaults };
+  
+  // Recursively merge sources (parent overrides child)
+  if (contracts.sources && typeof contracts.sources === 'object') {
+    for (const sourcePath of Object.values(contracts.sources)) {
+      try {
+        const resolvedPath = validateSourcePath(sourcePath, process.cwd());
+        if (fs.existsSync(resolvedPath)) {
+          const childContract = loadJSONFile(resolvedPath, 'contract.json');
+          if (childContract && childContract.stateDefaults) {
+            merged = deepMerge(childContract.stateDefaults, merged);
+          }
+        }
+      } catch (error) {
+        console.warn(`⚠️ Failed to merge state defaults from source '${sourcePath}': ${error.message}`);
       }
-
-      const sourceManifest = loadSourceManifest(resolvedPath, sourceName);
-      if (!sourceManifest) continue;
-
-      sourceManifests.push(sourceManifest);
-
-      // Transform and add commands from this source
-      const transformedCommands = transformSourceCommands(
-        sourceManifest.commands || [],
-        sourcePath,
-        projectRoot
-      );
-      sourceCommands.push(...transformedCommands);
-
-    } catch (error) {
-      console.warn(`⚠️  Failed to load source '${sourceName}' in ${context}: ${error.message}`);
     }
   }
-
-  return { commands: sourceCommands, manifests: sourceManifests };
+  
+  return merged;
 }
 
 /**
- * Load a source manifest recursively
+ * Load a JSON file with optional default value
  */
-function loadSourceManifest(sourceDir, sourceName) {
+function loadJSONFile(projectRoot, filename, defaultValue = null) {
+  const filePath = path.join(projectRoot, filename);
+  
+  if (!fs.existsSync(filePath)) {
+    if (defaultValue !== null) {
+      return defaultValue;
+    }
+    // Only throw for required files
+    if (filename === 'contract.json' || filename === 'commands.json') {
+      throw new Error(`Required manifest file not found: ${filename}`);
+    }
+    return {};
+  }
+
   try {
-    return loadManifest(sourceDir, `source '${sourceName}'`);
+    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
   } catch (error) {
-    console.warn(`⚠️  Failed to load manifest from source '${sourceName}': ${error.message}`);
-    return null;
+    throw new Error(`Failed to parse ${filename}: ${error.message}`);
   }
 }
 
@@ -142,47 +190,6 @@ function validateSourcePath(sourcePath, projectRoot) {
 }
 
 /**
- * Transform source commands with proper path resolution
- */
-function transformSourceCommands(commands, sourceBasePath, parentProjectRoot) {
-  return commands.map(command => ({
-    ...command,
-    // Transform source paths to be relative to parent project root
-    source: resolveSourcePath(command.source, sourceBasePath, parentProjectRoot)
-  }));
-}
-
-/**
- * Resolve source paths from child to parent context
- */
-function resolveSourcePath(childSource, sourceBasePath, parentProjectRoot) {
-  if (!childSource) {
-    // No source in child → point to source directory relative to parent
-    return sourceBasePath;
-  }
-
-  if (childSource.startsWith('./') || childSource.startsWith('../')) {
-    // Relative path in child → join with source base path
-    return path.join(sourceBasePath, childSource);
-  }
-
-  // Absolute/NPM package → pass through unchanged
-  return childSource;
-}
-
-/**
- * Merge state defaults from all sources
- */
-function mergeStateDefaults(parentState = {}, sourceManifests = []) {
-  return sourceManifests.reduce((mergedState, sourceManifest) => {
-    if (sourceManifest.stateDefaults) {
-      return deepMerge(mergedState, sourceManifest.stateDefaults);
-    }
-    return mergedState;
-  }, { ...parentState });
-}
-
-/**
  * Deep merge objects
  */
 function deepMerge(target, source) {
@@ -197,26 +204,6 @@ function deepMerge(target, source) {
   }
 
   return result;
-}
-
-/**
- * Load a JSON file with optional default value
- */
-function loadJSONFile(projectRoot, filename, defaultValue = null) {
-  const filePath = path.join(projectRoot, filename);
-  
-  if (!fs.existsSync(filePath)) {
-    if (defaultValue !== null) {
-      return defaultValue;
-    }
-    throw new Error(`Required manifest file not found: ${filename}`);
-  }
-
-  try {
-    return JSON.parse(fs.readFileSync(filePath, 'utf8'));
-  } catch (error) {
-    throw new Error(`Failed to parse ${filename}: ${error.message}`);
-  }
 }
 
 /**
@@ -242,9 +229,7 @@ function mergeParameters(...paramSources) {
   return merged;
 }
 
-/**
- * Utility to validate the manifest structure
- */
+// Keep the existing validation and reader
 export function validateManifest(manifest) {
   const errors = [];
 
@@ -271,7 +256,6 @@ export function validateManifest(manifest) {
   return true;
 }
 
-// Updated version that works with the new loader
 export function manifestReader(projectRoot) {
   return loadManifest(projectRoot);
 }
