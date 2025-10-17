@@ -39,7 +39,9 @@ export class CLI {
 			this.projectRoot,
 			manifest
 		);
-		if (this.contextFilePath) this.processor.stateManager.loadState(this.contextFilePath);
+		
+		// Load state
+		let state = CommandProcessor.StateManager.loadState(this.contextFilePath, manifest);
 
 		if (args.length === 0) {
 			// Show help when no arguments provided using HelpHandler
@@ -80,7 +82,8 @@ export class CLI {
 			result = parsedCommand;
 		} else {
 			const command = parsedCommand.command;
-			result = await this.processor.processStatefulCommand(command);
+			result = await this.processor.runCommand(command, state);
+			state = this.processor.state;
 		}
 
 		if (result.error) {
@@ -89,7 +92,7 @@ export class CLI {
 		}
 
 		if (result.output) {
-			this.processor.stateManager.saveState(this.contextFilePath);
+			CommandProcessor.StateManager.saveState(state, this.contextFilePath, manifest);
 			console.log(formatResult(result.output));
 		}
 
@@ -99,5 +102,3 @@ export class CLI {
 		}
 	}
 }
-
-// This file is not meant to be run directly; it is imported and used by the main kernel app.

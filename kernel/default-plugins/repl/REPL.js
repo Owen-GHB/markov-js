@@ -19,6 +19,7 @@ export class REPL {
 		this.commandRoot = commandRoot;
 		this.projectRoot = projectRoot;
 		this.contextFilePath = contextFilePath;
+		
 		this.maxHistory = maxHistory;
 		this.historyFilePath = historyFilePath;
 		const exportsUrl = pathToFileURL(path.join(kernelPath, 'exports.js')).href;
@@ -29,6 +30,7 @@ export class REPL {
 			this.projectRoot,
 			manifest
 		);
+		this.state = CommandProcessor.StateManager.loadState(this.contextFilePath, manifest);
 		this.parser = new CommandParser(manifest);
 		if (contextFilePath) this.processor.stateManager.loadState(contextFilePath);
 		this.loadHistory();
@@ -125,7 +127,8 @@ export class REPL {
 				result = parsedCommand;
 			} else {
 				const command = parsedCommand.command;
-				result = await this.processor.processStatefulCommand(command);
+				result = await this.processor.runCommand(command, this.state);
+				this.state = this.processor.state;
 			}
 
 			if (result.error) {
@@ -133,7 +136,7 @@ export class REPL {
 			}
 
 			if (result.output) {
-				this.processor.stateManager.saveState(this.contextFilePath);
+				this.processor.stateManager.saveState(this.state, this.contextFilePath, manifest);
 				console.log(formatResult(result.output));
 			}
 

@@ -1,179 +1,182 @@
 import { CommandHandler } from './handler/CommandHandler.js';
 import { StateManager } from './StateManager.js';
-import { Validator } from './normalizer/Validator.js';
+import { Validator } from './Validator.js';
 import { Evaluator } from './Evaluator.js';
 
 /**
- * Consolidates shared command processing logic across all transports
+ * Unified command processor - state is optional
  */
 export class CommandProcessor {
-	constructor(commandRoot, projectRoot, manifest) {
-		// Validate config parameter
-		if (!projectRoot) {
-			throw new Error('CommandProcessor requires a projectRoot parameter');
-		}
+  constructor(commandRoot, projectRoot, manifest) {
+    if (!projectRoot) {
+      throw new Error('CommandProcessor requires a projectRoot parameter');
+    }
+    if (!manifest || typeof manifest !== 'object') {
+      throw new Error('CommandProcessor requires a manifest object');
+    }
 
-		// Validate manifest parameter
-		if (!manifest || typeof manifest !== 'object') {
-			throw new Error('CommandProcessor requires a manifest object');
-		}
+    this.manifest = manifest;
+    this.handler = new CommandHandler(commandRoot, projectRoot, manifest);
+    this.state = StateManager.createState(manifest); // Internal state for side effects
+  }
 
-		this.manifest = manifest;
-		this.stateManager = new StateManager(manifest);
-		// Pass the full config to CommandHandler
-		this.handler = new CommandHandler(commandRoot, projectRoot, manifest);
-		this.state = this.stateManager.getStateMap();
-	}
+  /**
+   * Process a command through the preparation pipeline (synchronous)
+   * @returns fully processed command object ready for execution
+   * @throws error if validation fails
+   */
+  processCommand(command, state = null) {
+    const commandSpec = this.manifest.commands[command.name];
+    if (!commandSpec) {
+      throw new Error(`Unknown command: ${command.name}`);
+    }
 
-	/**
-	 * Process a command and apply side effects manually
-	 */
-	async processStatefulCommand(
-		command, 
-		chainContext = { 
-			originalCommand: command,
-			previousCommand: command
-		}
-	) {
-		try {
-			// Get command specification
-			const commandSpec = this.manifest.commands[command.name];
+    // Use provided state or internal state for processing
+    const processingState = state !== null && state !== undefined ? state : this.state;
 
-			if (!commandSpec) {
-				return {
-					error: `Unknown command: ${command.name}`,
-					output: null,
-				};
-			}
+    const parameters = commandSpec.parameters || {};
+    
+    // Apply state-dependent transformations
+    const processedArgs = StateManager.applyState(command.args, parameters, processingState);
+    
+    // Validate (always happens)
+    const validatedArgs = Validator.validateAll(command.name, processedArgs, parameters);
+    if (validatedArgs.error) {
+      throw new Error(validatedArgs.error);
+    }
 
-			const parameters = commandSpec.parameters || {};
-			const context = {
-				input: chainContext.previousCommand.args,
-				state: this.state,
-				manifest: this.manifest,
-				previous: chainContext.previousCommand.name,
-				original: chainContext.originalCommand.name
-			};
+    // Return fully processed command
+    return {
+      ...command,
+      args: validatedArgs.args,
+    };
+  }
 
-			// Normalize parameters (provide fallbacks/defaults first)
-			const statefulArgs = this.stateManager.applyState(command.args, parameters, context);
-			const statefulCommand = {
-				...command,
-				args: statefulArgs,
-			};
+  /**
+   * Run a command through full pipeline including execution and side effects
+   */
+  async runCommand(command, state = null, chainContext = null) {
+    // Initialize chain context if this is the first command in a chain
+    const isChainStart = !chainContext;
+    if (isChainStart) {
+      chainContext = {
+        originalCommand: command,
+        previousCommand: command
+      };
+    }
 
-			const result = await this.processCommand(statefulCommand);
+    try {
+      const commandSpec = this.manifest.commands[command.name];
+      
+      // STEP 1: Process command through preparation pipeline
+      const processedCommand = this.processCommand(command, state);
 
-			// Apply side effects if command was successful
-			if (!result.error) {
-				this.stateManager.applySideEffects(statefulCommand, commandSpec);
-				
-				// Check for command chaining with conditionals
-				if (commandSpec.next) {
-					const nextCommand = this.constructNextCommand(
-						commandSpec.next, 
-						{
-							input: chainContext.previousCommand.args,
-							output: result.output,
-							previous: chainContext.previousCommand.name,
-							original: chainContext.originalCommand.name
-						}
-					);
-					
-					if (nextCommand) {
-						// Recursively process the chain with updated context
-						return await this.processStatefulCommand(nextCommand, {
-							originalCommand: chainContext.originalCommand, // Preserve original
-							previousCommand: command // Update previous to current command
-						});
-					}
-				}
-			}
-			
-			return result;
+      // STEP 2: Execute command
+      const result = await this.handler.handleCommand(processedCommand);
 
-		} catch (error) {
-			return {
-				error: `Chain failed at '${command.name}': ${error.message}`,
-				output: null,
-			};
-		}
-	}
+      // STEP 3: Apply side effects if command successful
+      // Only apply side effects if we have state (either provided or internal)
+      if (!result.error) {
+        // Use provided state if given, otherwise use internal state
+        const sideEffectState = state !== null && state !== undefined ? state : this.state;
+        StateManager.applySideEffects(processedCommand, commandSpec, sideEffectState);
+      }
 
-	/**
-	 * Process a command without state management
-	 */
-	async processCommand(command) {
-		const commandSpec = this.manifest.commands[command.name];
-		const parameters = commandSpec.parameters || {};
-		const validatedArgs = Validator.validateAll(command.name, command.args, parameters);
-		if (validatedArgs.error) {
-			return { error: validatedArgs.error, output: null };
-		}
-		const processedCommand = {
-			...command,
-			args: validatedArgs.args,
-		};
-		const result = await this.handler.handleCommand(processedCommand);
-		return result;
-	}
+      // STEP 4: Handle command chaining if command successful
+      if (!result.error && commandSpec?.next) {
+        // Use the same state logic for chaining context
+        const chainingState = state !== null && state !== undefined ? state : this.state;
+        const nextCommand = this.constructNextCommand(
+          commandSpec.next, 
+          {
+            input: chainContext.previousCommand.args,
+            output: result.output,
+            state: chainingState,
+            previous: chainContext.previousCommand.name,
+            original: chainContext.originalCommand.name
+          }
+        );
+        
+        if (nextCommand) {
+          // Recursively run with same state but updated context
+          return await this.runCommand(nextCommand, state, {
+            originalCommand: chainContext.originalCommand,
+            previousCommand: command
+          });
+        }
+      }
 
-	/**
-	 * Construct next command with optional conditional evaluation
-	 */
-	constructNextCommand(nextConfig, contexts) {
-		try {
-			// Iterate through all commands in 'next' (maintaining property order)
-			const entries = Object.entries(nextConfig);
-			
-			for (const [nextCommandName, nextCommandConfig] of entries) {
-				if (!nextCommandConfig || typeof nextCommandConfig !== 'object') continue;
+      return result;
 
-				// Evaluate condition if present - UPDATED: Use Evaluator
-				let shouldExecute = true;
-				if (nextCommandConfig.when) {
-					shouldExecute = Evaluator.evaluateConditional(nextCommandConfig.when, contexts);
-				}
+    } catch (error) {
+      const contextInfo = isChainStart ? '' : ` in chain starting with '${chainContext.originalCommand.name}'`;
+      return {
+        error: `Command '${command.name}' failed${contextInfo}: ${error.message}`,
+        output: null,
+      };
+    }
+  }
 
-				// If condition passes (or no condition), execute this command
-				if (shouldExecute) {
-					// Resolve parameters using enhanced template system - UPDATED: Use Evaluator
-					const resolvedArgs = {};
-					for (const [paramName, paramConfig] of Object.entries(nextCommandConfig.parameters || {})) {
-						if (paramConfig.resolve) {
-							const resolvedValue = Evaluator.evaluateTemplate(paramConfig.resolve, contexts);
-							
-							// Parse JSON if the resolved value looks like JSON
-							try {
-								resolvedArgs[paramName] = JSON.parse(resolvedValue);
-							} catch {
-								resolvedArgs[paramName] = resolvedValue;
-							}
-						}
-					}
+  /**
+   * Construct next command with optional conditional evaluation
+   */
+  constructNextCommand(nextConfig, contexts) {
+    try {
+      const entries = Object.entries(nextConfig);
+      
+      for (const [nextCommandName, nextCommandConfig] of entries) {
+        if (!nextCommandConfig || typeof nextCommandConfig !== 'object') continue;
 
-					return {
-						name: nextCommandName,
-						args: resolvedArgs
-					};
-				}
-				// If condition fails, continue to next command (fallthrough)
-			}
+        let shouldExecute = true;
+        if (nextCommandConfig.when) {
+          shouldExecute = Evaluator.evaluateConditional(nextCommandConfig.when, contexts);
+        }
 
-			// All conditions failed = stop chain by returning null
-			return null;
+        if (shouldExecute) {
+          const resolvedArgs = {};
+          for (const [paramName, paramConfig] of Object.entries(nextCommandConfig.parameters || {})) {
+            if (paramConfig.resolve) {
+              const resolvedValue = Evaluator.evaluateTemplate(paramConfig.resolve, contexts);
+              try {
+                resolvedArgs[paramName] = JSON.parse(resolvedValue);
+              } catch {
+                resolvedArgs[paramName] = resolvedValue;
+              }
+            }
+          }
 
-		} catch (error) {
-			throw new Error(`Failed to construct next command: ${error.message}`);
-		}
-	}
+          return {
+            name: nextCommandName,
+            args: resolvedArgs
+          };
+        }
+      }
 
-	// REMOVED: evaluateConditional and normalizeConditionalValue methods (now in Evaluator)
+      return null;
 
-	/**
-	 * Get the manifest
-	 */
-	getManifest() {
-		return this.manifest;
-	}
+    } catch (error) {
+      throw new Error(`Failed to construct next command: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get the manifest
+   */
+  getManifest() {
+    return this.manifest;
+  }
+
+  /**
+   * Get the current state (for transports that need to persist it)
+   */
+  getState() {
+    return this.state;
+  }
+
+  /**
+   * Set the state (for transports that manage persistence)
+   */
+  setState(state) {
+    this.state = state;
+  }
 }

@@ -369,7 +369,7 @@ export class HTTPServer {
 				result = parsedCommand;
 			} else {
 				const command = parsedCommand.command;
-				result = await this.commandProcessor.processStatefulCommand(command);
+				result = await this.commandProcessor.runCommand(command);
 			}
 			return this.sendResponse(res, result);
 		} catch (err) {
