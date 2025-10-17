@@ -47,7 +47,7 @@ export class UI {
 			const globalManifest = manifest;
 			const commandManifests = manifest.commands || [];
 			console.log(
-				`Processing manifest with ${commandManifests.length} command manifests`,
+				`Processing manifest with ${Object.keys(commandManifests).length} command manifests`,
 			);
 
 			// Ensure output directory exists and is empty
@@ -101,10 +101,10 @@ export class UI {
 	 * @returns {Promise<Array>} Array of rendered command form HTML
 	 */
 	async generateCommandForms(commandManifests, globalManifest, templateDir) {
-		const commandForms = [];
 		const initialState = globalManifest.stateDefaults || {};
-
-		for (const command of commandManifests) {
+		const commandForms = [];
+		
+		for (const command of Object.values(commandManifests)) {
 			try {
 				const formHtml = await this.renderCommandForm(
 					command,
@@ -113,14 +113,11 @@ export class UI {
 				);
 				commandForms.push(formHtml);
 			} catch (error) {
-				console.error(
-					`Error generating form for command ${command.name}:`,
-					error,
-				);
+				console.error(`Error generating form for command ${command.name}:`, error);
 				throw error;
 			}
 		}
-
+		
 		return commandForms;
 	}
 
@@ -245,7 +242,7 @@ export class UI {
 			htmlTitle: globalManifest.name || 'Command Interface',
 			pageHeader: globalManifest.description || 'Command Interface',
 			commandSelectorLabel: 'Select Command:',
-			commands: commandManifests,
+    		commands: Object.values(commandManifests),
 			commandForms: commandForms.join('\n'),
 		};
 

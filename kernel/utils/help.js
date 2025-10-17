@@ -4,7 +4,7 @@ export class HelpHandler {
         helpText += '='.repeat(Math.max(manifest.name.length + 2, 40)) + '\n\n';
         helpText += 'Available commands:\n';
 
-        const sortedCommands = [...manifest.commands].sort((a, b) =>
+        const sortedCommands = Object.values(manifest.commands).sort((a, b) =>
             a.name.localeCompare(b.name),
         );
 

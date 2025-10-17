@@ -55,13 +55,10 @@ export class CommandParser {
         } catch (jsonError) {
             // Not a JSON command object, continue with string parsing
         }
-
         // Try CLI-style parsing first
         const cliMatch = trimmed.match(this.patterns.cliStyle);
         if (cliMatch) {
-            const spec = this.manifest.commands.find(
-                (c) => c.name.toLowerCase() === cliMatch[1].toLowerCase(),
-            );
+            const spec = this.manifest.commands[cliMatch[1]];
             if (
                 !(
                     spec &&
@@ -99,9 +96,7 @@ export class CommandParser {
     }
 
     parseCliStyle(command, argsString) {
-        const spec = this.manifest.commands.find(
-            (c) => c.name.toLowerCase() === command.toLowerCase(),
-        );
+        const spec = this.manifest.commands[command];
         if (!spec) return { error: `Unknown command: ${command}`, command: null };
 
         const required = Object.entries(spec.parameters || {})

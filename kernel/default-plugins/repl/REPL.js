@@ -98,7 +98,7 @@ export class REPL {
 			if (HelpHandler.isHelpCommand(input)) {
 				const helpArgs = HelpHandler.getHelpCommandArgs(input);
 				if (helpArgs.command) {
-					const cmd = this.processor.getManifest().commands.find(c => c.name === helpArgs.command);
+					const cmd = this.processor.getManifest().commands[helpArgs.command];
 					if (!cmd) {
 						console.error(`❌ Unknown command: ${helpArgs.command}`);
 					} else {
@@ -159,7 +159,7 @@ export class REPL {
 	commandCompleter(line) {
 		// Include built-in commands in completion
 		const commands = [
-			...this.processor.getManifest().commands.map((c) => c.name),
+			...Object.keys(this.processor.getManifest().commands),
 			'help',
 			'exit',
 		];

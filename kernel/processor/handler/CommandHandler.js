@@ -32,9 +32,7 @@ export class CommandHandler {
 		
 		try {
 			// Get the command specification from the manifest
-			const commandSpec = this.manifest.commands.find(
-				(c) => c.name === command.name,
-			);
+			const commandSpec = this.manifest.commands[command.name];
 
 			if (!commandSpec) {
 				return {

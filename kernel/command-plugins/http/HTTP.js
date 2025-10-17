@@ -277,7 +277,7 @@ export class HTTPServer {
 			const commandName = parsedCommand.command.name;
 			const commandSpec = this.commandProcessor
 				.getManifest()
-				.commands.find((cmd) => cmd.name === commandName);
+				.commands[commandName];
 
 			if (!commandSpec) {
 				throw new Error(`Unknown command: ${commandName}`);

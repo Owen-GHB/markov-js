@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { Evaluator } from './Evaluator.js';
 
 /**
  * Manages persistent state for the application
@@ -83,8 +84,6 @@ export class StateManager {
 
 	/**
 	 * Get value from state
-	 * @param {string} key - State key
-	 * @returns {*} Value or undefined if not set
 	 */
 	get(key) {
 		return this.state.get(key);
@@ -92,8 +91,6 @@ export class StateManager {
 
 	/**
 	 * Set value in state
-	 * @param {string} key - State key
-	 * @param {*} value - Value to set
 	 */
 	set(key, value) {
 		this.state.set(key, value);
@@ -101,8 +98,6 @@ export class StateManager {
 
 	/**
 	 * Check if key exists in state
-	 * @param {string} key - State key
-	 * @returns {boolean} True if key exists
 	 */
 	has(key) {
 		return this.state.has(key);
@@ -110,7 +105,6 @@ export class StateManager {
 
 	/**
 	 * Delete key from state
-	 * @param {string} key - State key to delete
 	 */
 	delete(key) {
 		return this.state.delete(key);
@@ -118,7 +112,6 @@ export class StateManager {
 
 	/**
 	 * Get the entire state as a Map
-	 * @returns {Map} Current state
 	 */
 	getStateMap() {
 		return this.state;
@@ -126,8 +119,6 @@ export class StateManager {
 
 	/**
 	 * Apply side effects to state based on command manifest
-	 * @param {Object} command - Command object
-	 * @param {Object} commandManifest - Manifest for the executed command
 	 */
 	applySideEffects(command, commandManifest) {
 		if (!commandManifest?.sideEffects) return;
@@ -142,8 +133,11 @@ export class StateManager {
 					value = command.args[rule.fromParam];
 				}
 				if (value === undefined && rule.template && command.args) {
-					// Apply template string with available parameters
-					value = this.evaluateTemplate(rule.template, command.args);
+					// Apply template string with available parameters - UPDATED: Use Evaluator
+					value = Evaluator.evaluateTemplate(rule.template, { 
+						input: command.args,
+						state: this.state 
+					});
 				}
 
 				if (value !== undefined) {
@@ -179,69 +173,42 @@ export class StateManager {
 		}
 	}
 
-	/**
-	 * Template handler
-	 * Supports: {{input}}, {{input.param}}, {{output}}, {{output.property}}, {{state.key}}
-	 */
-	evaluateTemplate(template, contexts = {}) {
-	const { input = {}, output = {}, state = this.state } = contexts;
-	
-	return template.replace(
-		/\{\{([^{}]+)\}\}/g,
-		(_, expression) => {
-		const trimmed = expression.trim();
-		
-		// Handle nested property access (input.param, output.property, state.key)
-		if (trimmed.includes('.')) {
-			const [contextName, ...pathParts] = trimmed.split('.');
-			const path = pathParts.join('.');
-			
-			let context;
-			switch (contextName) {
-			case 'input':
-				context = input;
-				break;
-			case 'output':
-				context = output;
-				break;
-			case 'state':
-				context = state;
-				break;
-			default:
-				return ''; // Unknown context
-			}
-			
-			// Navigate the object path
-			const value = this.getNestedValue(context, path);
-			return value !== undefined ? String(value) : '';
-		}
-		
-		// Handle direct context references (input, output)
-		switch (trimmed) {
-			case 'input':
-			return JSON.stringify(input);
-			case 'output':
-			return JSON.stringify(output);
-			default:
-			// Fallback to original behavior for simple values
-			let val = input[trimmed] || output[trimmed];
-			if (val === undefined && state.has(trimmed)) {
-				val = state.get(trimmed);
-			}
-			return val !== undefined ? String(val) : '';
-		}
-		}
-	);
-	}
+ /**
+   * Applies fallbacks and defaults
+   * Assumes arguments have already been validated
+   */
+  static applyState(args, parameters, context = {}) {
+    const normalized = { ...args };
+    
+    // Step 1: Apply runtime fallbacks
+    this.applyRuntimeFallbacks(normalized, parameters, context);
+    
+    // Step 2: Apply default values
+    this.applyDefaultValues(normalized, parameters);
+    
+    return normalized;
+  }
 
-	/**
-	 * Helper to get nested object values by path
-	 */
-	getNestedValue(obj, path) {
-	return path.split('.').reduce((current, key) => {
-		return current && current[key] !== undefined ? current[key] : undefined;
-	}, obj);
-	}
+  static applyRuntimeFallbacks(args, parameters, context) {
+    for (const [paramName, paramSpec] of Object.entries(parameters)) {
+      if (args[paramName] === undefined && 
+          paramSpec.runtimeFallback && 
+          context.state && 
+          context.state.has(paramSpec.runtimeFallback)) {
+        args[paramName] = context.state.get(paramSpec.runtimeFallback);
+      }
+    }
+  }
+
+  static applyDefaultValues(args, parameters) {
+    for (const [paramName, paramSpec] of Object.entries(parameters)) {
+      if (args[paramName] === undefined && 
+          !paramSpec.required && 
+          paramSpec.default !== undefined) {
+        args[paramName] = paramSpec.default;
+      }
+    }
+  }
 }
 
 // Export the class, but not the singleton since it now requires a paths parameter

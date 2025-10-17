@@ -54,7 +54,7 @@ export class CLI {
 		if (HelpHandler.isHelpCommand(input)) {
 			const helpArgs = HelpHandler.getHelpCommandArgs(input);
 			if (helpArgs.command) {
-				const cmd = manifest.commands.find(c => c.name === helpArgs.command);
+				const cmd = manifest.commands[helpArgs.command];
 				if (!cmd) {
 					console.error(`❌ Unknown command: ${helpArgs.command}`);
 					console.log(HelpHandler.formatGeneralHelp(manifest));

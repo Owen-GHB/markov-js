@@ -1,10 +1,8 @@
 import { ParserUtils } from './Utils.js';
 
 export function parseObjectStyle([, name, argsString], manifest) {
-    const commandName = name.toLowerCase();
-
     // Find the command in manifest
-    const command = ParserUtils.findCommand(commandName, manifest);
+    const command = manifest.commands[name];
     if (!command) {
         return {
             error: `Unknown command: ${name}`,

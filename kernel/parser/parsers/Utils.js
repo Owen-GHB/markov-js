@@ -77,13 +77,4 @@ export class ParserUtils {
   static isNullish(v) {
     return v === null || v === undefined || v === 'null';
   }
-
-  /**
-   * Find command in manifest by name (case-insensitive)
-   */
-  static findCommand(commandName, manifest) {
-    return manifest.commands.find(
-      cmd => cmd.name.toLowerCase() === commandName.toLowerCase()
-    );
-  }
 }

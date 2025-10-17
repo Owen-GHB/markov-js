@@ -82,15 +82,15 @@ function resolveSourcePath(childSource, childRoot, parentRoot) {
  * Combine all merged files into final manifest
  */
 function combineManifest(contracts, commands, help, runtime, routes) {
-  // Build final command list
-  const finalCommands = [];
-  const seenNames = new Set();
+  // Build final command object (not array)
+  const finalCommands = {};
   
-  // Process commands with parent precedence (reverse iteration for parent-first)
+  // Process commands with parent precedence
   const allCommands = Object.entries(commands);
   
   for (const [commandName, commandSpec] of allCommands) {
-    if (seenNames.has(commandName)) continue; // Parent already defined
+    // Skip if parent already defined this command (parent wins)
+    if (finalCommands[commandName]) continue;
     
     // Create merged command with data from all file types
     const mergedCommand = {
@@ -108,8 +108,7 @@ function combineManifest(contracts, commands, help, runtime, routes) {
       )
     };
     
-    finalCommands.push(mergedCommand);
-    seenNames.add(commandName);
+    finalCommands[commandName] = mergedCommand;
   }
   
   // Merge state defaults with parent precedence

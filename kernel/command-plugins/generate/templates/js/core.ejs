@@ -11,10 +11,7 @@
     const commands = <%- JSON.stringify(commands, null, 2) %>;
     
     // Map of command manifests by name for quick lookup
-    const commandManifests = {};
-    commands.forEach(cmd => {
-        commandManifests[cmd.name] = cmd;
-    });
+    const commandManifests = commands;
     
     // DOM elements
     const commandSelector = document.getElementById('commandSelector');
@@ -47,7 +44,7 @@
         if (window.VertexUI.setupFileInputs) {
             window.VertexUI.setupFileInputs();
         }
-        console.log('EJS-generated UI initialized with', commands.length, 'commands');
+        console.log('EJS-generated UI initialized with', Object.keys(commandManifests).length, 'commands');
     }
     
     if (document.readyState === 'loading') {
