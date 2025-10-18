@@ -17,10 +17,8 @@ import { HMModel } from '../models/HMM/Model.js';
  * @returns {Promise<Object>} - The result of the training
  */
 export async function trainModel(params) {
-	const output = [];
 	const { file, modelType, order = 2 } = params || {};
-	const modelName =
-		params?.modelName || `${file.replace(/\.[^/.]+$/, '')}.json`;
+	const modelName = params?.modelName || `${file.replace(/\.[^/.]+$/, '')}.json`;
 
 	if (!file) {
 		throw new Error('Training failed: file parameter is required');
@@ -55,10 +53,13 @@ export async function trainModel(params) {
 	await serializer.saveModel(model, modelName);
 
 	const stats = model.getStats();
-	output.push(
-		`📚 Trained from "${file}" → "${modelName}"`,
-		`📊 Vocabulary: ${stats.vocabularySize.toLocaleString()}`,
-	);
-
-	return output.join('\n');
+	
+	// Return data object instead of formatted string
+	return {
+		file: file,
+		modelName: modelName,
+		vocabularySize: stats.vocabularySize,
+		modelType: modelType,
+		order: order
+	};
 }

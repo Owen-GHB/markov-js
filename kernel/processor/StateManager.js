@@ -61,80 +61,80 @@ export class StateManager {
     }
   }
 
-	/**
-	 * Apply state-dependent transformations to command arguments
-	 */
-	static applyState(args, parameters, state = null) {
-	if (!state) return args; // No state, no transformations
-	
-	const normalized = { ...args };
-	
-	// Apply runtime fallbacks
-	for (const [paramName, paramSpec] of Object.entries(parameters)) {
-		if (args[paramName] === undefined && 
-			paramSpec.runtimeFallback && 
-			state.has(paramSpec.runtimeFallback)) {
-		normalized[paramName] = state.get(paramSpec.runtimeFallback);
-		}
-	}
-	
-	// Apply default values
-	for (const [paramName, paramSpec] of Object.entries(parameters)) {
-		if (normalized[paramName] === undefined && 
-			!paramSpec.required && 
-			paramSpec.default !== undefined) {
-		normalized[paramName] = paramSpec.default;
-		}
-	}
-	
-	return normalized;
-	}
-
-  /**
-   * Apply side effects to state based on command manifest
-   */
-  static applySideEffects(command, commandSpec, state) {
-    if (!commandSpec?.sideEffects) return;
-
-    if (commandSpec.sideEffects.setState) {
-      for (const [key, rule] of Object.entries(commandSpec.sideEffects.setState)) {
-        let value;
-
-        if (rule.fromParam && command.args) {
-          value = command.args[rule.fromParam];
-        }
-        if (value === undefined && rule.template && command.args) {
-          value = Evaluator.evaluateTemplate(rule.template, { 
-            input: command.args,
-            state: state 
-          });
-        }
-
-        if (value !== undefined) {
-          state.set(key, value);
-        }
-      }
-    }
-
-    if (commandSpec.sideEffects.clearState) {
-      for (const key of commandSpec.sideEffects.clearState) {
-        state.delete(key);
-      }
-    }
-
-    if (commandSpec.sideEffects.clearStateIf) {
-      for (const [key, rule] of Object.entries(commandSpec.sideEffects.clearStateIf)) {
-        if (rule.fromParam && command.args && command.args[rule.fromParam] !== undefined) {
-          const paramValue = command.args[rule.fromParam];
-          const stateValue = state.get(key);
-
-          if (paramValue === stateValue) {
-            state.delete(key);
-          }
-        }
-      }
+/**
+ * Apply state-dependent transformations to command arguments
+ */
+static applyState(args, parameters, state = null) {
+  if (!state) return args; // No state, no transformations
+  
+  const normalized = { ...args };
+  
+  // Apply runtime fallbacks
+  for (const [paramName, paramSpec] of Object.entries(parameters)) {
+    if (args[paramName] === undefined && 
+        paramSpec.runtimeFallback && 
+        state.has(paramSpec.runtimeFallback)) {
+      normalized[paramName] = state.get(paramSpec.runtimeFallback);
     }
   }
+  
+  // Apply default values
+  for (const [paramName, paramSpec] of Object.entries(parameters)) {
+    if (normalized[paramName] === undefined && 
+        !paramSpec.required && 
+        paramSpec.default !== undefined) {
+      normalized[paramName] = paramSpec.default;
+    }
+  }
+  
+  return normalized;
+}
+
+	/**
+	 * Apply side effects to state based on command manifest
+	 */
+	static applySideEffects(command, commandSpec, state, context = {}) {
+	if (!commandSpec?.sideEffects) return;
+
+	// Handle setState with unified template context
+	if (commandSpec.sideEffects.setState) {
+		for (const [key, rule] of Object.entries(commandSpec.sideEffects.setState)) {
+		let value;
+
+		if (rule.fromParam && command.args) {
+			value = command.args[rule.fromParam];
+		}
+		if (value === undefined && rule.template) {
+			value = Evaluator.evaluateTemplate(rule.template, context);
+		}
+
+		if (value !== undefined) {
+			state.set(key, value);
+		}
+		}
+	}
+
+	// Handle clearState (simple array of keys to delete)
+	if (commandSpec.sideEffects.clearState) {
+		for (const key of commandSpec.sideEffects.clearState) {
+		state.delete(key);
+		}
+	}
+
+	// Handle clearStateIf (conditional state clearing with templates)
+	if (commandSpec.sideEffects.clearStateIf) {
+		for (const [key, condition] of Object.entries(commandSpec.sideEffects.clearStateIf)) {
+		try {
+			const shouldClear = Evaluator.evaluateConditional(condition, context);
+			if (shouldClear) {
+			state.delete(key);
+			}
+		} catch (error) {
+			console.warn(`⚠️ Failed to evaluate clearStateIf condition for '${key}':`, error.message);
+		}
+		}
+	}
+	}
 
   /**
    * Create a new state with defaults

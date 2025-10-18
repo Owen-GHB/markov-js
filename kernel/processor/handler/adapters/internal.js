@@ -1,24 +1,4 @@
 /**
- * Simple template renderer that substitutes {{paramName}} with parameter values
- * @param {string} template - Template string with {{param}} placeholders
- * @param {Object} params - Parameter values to substitute
- * @returns {string} - Rendered template
- */
-function renderTemplate(template, params) {
-    if (!template || typeof template !== 'string') {
-        return '';
-    }
-
-    return template.replace(/\{\{([^}]+)\}\}/g, (match, paramName) => {
-        const trimmedParamName = paramName.trim();
-        if (params && params.hasOwnProperty(trimmedParamName)) {
-            return String(params[trimmedParamName]);
-        }
-        return match; // Keep original placeholder if param not found
-    });
-}
-
-/**
  * Handle a declarative internal command
  * @param {Object} command - The parsed command object
  * @param {Object} commandSpec - The command manifest specification
@@ -27,30 +7,19 @@ function renderTemplate(template, params) {
 export function handleInternalCommand(command, commandSpec) {
     const { args = {} } = command;
 
-    // Validate required parameters
+    // Validate required parameters only
     if (commandSpec.parameters) {
         for (const paramName in commandSpec.parameters) {
             const param = commandSpec.parameters[paramName];
-            if (
-                param.required &&
-                (args[paramName] === undefined || args[paramName] === null)
-            ) {
-                return {
-                    error: `Parameter '${paramName}' is required for command '${commandSpec.name}'`,
-                    output: null,
-                };
+            if (param.required && (args[paramName] === undefined || args[paramName] === null)) {
+                throw new Error(`Parameter '${paramName}' is required for command '${commandSpec.name}'`);
             }
         }
     }
 
-    // Generate success output from template if provided
-    let output = null;
-    if (commandSpec.successOutput) {
-        output = renderTemplate(commandSpec.successOutput, args);
-    }
-
+    // Just return success - template application happens in pipeline
     return {
         error: null,
-        output: output,
+        output: true, // Let pipeline apply template if successOutput exists
     };
 }

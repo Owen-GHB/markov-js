@@ -1,23 +1,15 @@
 {
-	"http": {
-		"sideEffects": {
-			"setState": {
-				"servedUIDir": {
-					"fromParam": "servedUIDir"
-				},
-				"serverPort": {
-					"fromParam": "serverPort"
-				},
-				"apiEndpoint": {
-					"fromParam": "apiEndpoint"
-				},
-				"isServerRunning": true,
-				"currentMode": "http",
-				"lastOperation": {
-					"template": "started_http_on_port_{{serverPort}}"
-				}
-			}
-		},
-		"successOutput": "🌐 HTTP server running!\n   UI: http://localhost:{{serverPort}}/\n   API: http://localhost:{{serverPort}}{{apiEndpoint}}\n   Serving: {{servedUIDir}}"
-	}
+  "http": {
+    "sideEffects": {
+      "setState": {
+        "servedUIDir": "{{input.servedUIDir}}",
+        "serverPort": "{{input.serverPort}}",
+        "apiEndpoint": "{{input.apiEndpoint}}",
+        "isServerRunning": true,
+        "currentMode": "http",
+        "lastOperation": "started_http_on_port_{{input.serverPort}}"
+      }
+    },
+    "successOutput": "🌐 HTTP server running!\n   UI: http://localhost:{{input.serverPort}}/\n   API: http://localhost:{{input.serverPort}}{{input.apiEndpoint}}\n   Serving: {{input.servedUIDir}}"
+  }
 }

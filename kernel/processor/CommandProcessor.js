@@ -68,33 +68,40 @@ export class CommandProcessor {
     try {
       const commandSpec = this.manifest.commands[command.name];
       
+      // Use provided state or internal state
+      const effectiveState = state !== null && state !== undefined ? state : this.state;
+
       // STEP 1: Process command through preparation pipeline
-      const processedCommand = this.processCommand(command, state);
+      const processedCommand = this.processCommand(command, effectiveState);
 
       // STEP 2: Execute command
       const result = await this.handler.handleCommand(processedCommand);
 
-      // STEP 3: Apply side effects if command successful
-      // Only apply side effects if we have state (either provided or internal)
-      if (!result.error) {
-        // Use provided state if given, otherwise use internal state
-        const sideEffectState = state !== null && state !== undefined ? state : this.state;
-        StateManager.applySideEffects(processedCommand, commandSpec, sideEffectState);
+      // Build unified template context
+      const templateContext = {
+        input: processedCommand.args,
+        output: result.output,
+        state: effectiveState,
+        previous: chainContext.previousCommand.name,
+        original: chainContext.originalCommand.args,
+        originalCommand: chainContext.originalCommand.name
+      };
+
+      // STEP 3: Apply success output template if command successful
+      if (!result.error && commandSpec.successOutput) {
+        result.output = Evaluator.evaluateTemplate(commandSpec.successOutput, templateContext);
       }
 
-      // STEP 4: Handle command chaining if command successful
+      // STEP 4: Apply side effects if command successful
+      if (!result.error) {
+        StateManager.applySideEffects(processedCommand, commandSpec, effectiveState, templateContext);
+      }
+
+      // STEP 5: Handle command chaining if command successful
       if (!result.error && commandSpec?.next) {
-        // Use the same state logic for chaining context
-        const chainingState = state !== null && state !== undefined ? state : this.state;
         const nextCommand = this.constructNextCommand(
           commandSpec.next, 
-          {
-            input: chainContext.previousCommand.args,
-            output: result.output,
-            state: chainingState,
-            previous: chainContext.previousCommand.name,
-            original: chainContext.originalCommand.name
-          }
+          templateContext // Pass the same unified context
         );
         
         if (nextCommand) {

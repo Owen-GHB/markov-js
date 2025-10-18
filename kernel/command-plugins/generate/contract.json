@@ -4,8 +4,6 @@
   "description": "EJS-based UI Generation System",
   "stateDefaults": {
     "userTemplateDir": "./ejs-templates",
-    "generatedUIDir": "./generated-ui",
-    "uiGenerationCount": 0,
-    "lastTemplateUsed": "built-in"
+    "generatedUIDir": "./generated-ui"
   }
 }

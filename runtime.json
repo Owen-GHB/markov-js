@@ -2,12 +2,10 @@
   "use": {
     "sideEffects": {
       "setState": {
-        "currentModel": {
-          "fromParam": "modelName"
-        }
+        "currentModel": "{{input.modelName}}"
       }
     },
-    "successOutput": "âœ… Using model: {{modelName}}",
+    "successOutput": "✅ Using model: {{input.modelName}}",
     "parameters": {
       "modelName": {
         "runtimeFallback": "currentModel"

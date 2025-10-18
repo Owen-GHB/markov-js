@@ -30,9 +30,7 @@ export class REPL {
 			this.projectRoot,
 			manifest
 		);
-		this.state = CommandProcessor.StateManager.loadState(this.contextFilePath, manifest);
 		this.parser = new CommandParser(manifest);
-		if (contextFilePath) this.processor.stateManager.loadState(contextFilePath);
 		this.loadHistory();
 	}
 
@@ -55,8 +53,9 @@ export class REPL {
 		}
 
 		// Initialize with provided path and config values at the beginning of start
+		const { HelpHandler, formatResult, StateManager } = await import(pathToFileURL(path.join(kernelPath, 'exports.js')).href);		
 		await this.initialize(kernelPath, commandRoot, projectRoot, contextFilePath, historyFilePath, maxHistory);
-		const { HelpHandler, formatResult } = await import(pathToFileURL(path.join(kernelPath, 'exports.js')).href);
+		this.state = StateManager.loadState(this.contextFilePath, this.processor.getManifest());
 
 		// Initialize REPL instance
 		this.rl = readline.createInterface({
@@ -128,7 +127,7 @@ export class REPL {
 			} else {
 				const command = parsedCommand.command;
 				result = await this.processor.runCommand(command, this.state);
-				this.state = this.processor.state;
+				this.state = this.processor.state; // Update our state reference
 			}
 
 			if (result.error) {
@@ -136,7 +135,7 @@ export class REPL {
 			}
 
 			if (result.output) {
-				this.processor.stateManager.saveState(this.state, this.contextFilePath, manifest);
+				StateManager.saveState(this.state, this.contextFilePath, this.processor.getManifest());
 				console.log(formatResult(result.output));
 			}
 
@@ -150,6 +149,7 @@ export class REPL {
 		});
 
 		this.rl.on('close', () => {
+			StateManager.saveState(this.state, this.contextFilePath, this.processor.getManifest());
 			process.exit(0);
 		});
 
@@ -158,7 +158,6 @@ export class REPL {
 			this.rl.prompt();
 		});
 	}
-
 	commandCompleter(line) {
 		// Include built-in commands in completion
 		const commands = [

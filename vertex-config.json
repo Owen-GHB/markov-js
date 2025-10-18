@@ -11,8 +11,6 @@
   "totalRequests": 0,
   "userTemplateDir": "./ejs-templates",
   "generatedUIDir": "./generated-ui",
-  "uiGenerationCount": " + 1",
-  "lastTemplateUsed": "{{#userTemplateDir}}custom{{/userTemplateDir}}{{^userTemplateDir}}built-in{{/userTemplateDir}}",
   "contextFilePath": "./context/state.json",
   "replHistoryFilePath": "./context/repl-history.txt",
   "maxReplHistory": 100

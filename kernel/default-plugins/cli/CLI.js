@@ -30,7 +30,8 @@ export class CLI {
 			CommandProcessor, 
 			HelpHandler, 
 			formatResult, 
-			CommandParser 
+			CommandParser,
+			StateManager
 		} = await import(exportsUrl);
 		const manifest = manifestReader(this.commandRoot);
 		this.parser = new CommandParser(manifest);
@@ -41,7 +42,7 @@ export class CLI {
 		);
 		
 		// Load state
-		let state = CommandProcessor.StateManager.loadState(this.contextFilePath, manifest);
+		let state = StateManager.loadState(this.contextFilePath, manifest);
 
 		if (args.length === 0) {
 			// Show help when no arguments provided using HelpHandler
@@ -92,7 +93,7 @@ export class CLI {
 		}
 
 		if (result.output) {
-			CommandProcessor.StateManager.saveState(state, this.contextFilePath, manifest);
+			StateManager.saveState(state, this.contextFilePath, manifest);
 			console.log(formatResult(result.output));
 		}
 

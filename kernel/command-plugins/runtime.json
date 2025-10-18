@@ -2,11 +2,9 @@
   "set": {
     "sideEffects": {
       "setState": {
-        "{{configstate}}": {
-          "fromParam": "value"
-        }
+        "{{input.configstate}}": "{{input.value}}"
       }
     },
-    "successOutput": "✅ Set {{configstate}} = {{value}}{{#persist}} (persisted){{/persist}}{{^persist}} (temporary){{/persist}}"
+    "successOutput": "✅ Set {{input.configstate}} = {{input.value}}"
   }
 }
