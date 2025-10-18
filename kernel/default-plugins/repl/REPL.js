@@ -55,7 +55,7 @@ export class REPL {
 		// Initialize with provided path and config values at the beginning of start
 		const { HelpHandler, formatResult, StateManager } = await import(pathToFileURL(path.join(kernelPath, 'exports.js')).href);		
 		await this.initialize(kernelPath, commandRoot, projectRoot, contextFilePath, historyFilePath, maxHistory);
-		this.state = StateManager.loadState(this.contextFilePath, this.processor.getManifest());
+		this.processor.state = StateManager.loadState(this.contextFilePath, this.processor.getManifest());
 
 		// Initialize REPL instance
 		this.rl = readline.createInterface({
@@ -126,8 +126,7 @@ export class REPL {
 				result = parsedCommand;
 			} else {
 				const command = parsedCommand.command;
-				result = await this.processor.runCommand(command, this.state);
-				this.state = this.processor.state; // Update our state reference
+				result = await this.processor.runCommand(command, this.processor.state);
 			}
 
 			if (result.error) {
@@ -135,7 +134,7 @@ export class REPL {
 			}
 
 			if (result.output) {
-				StateManager.saveState(this.state, this.contextFilePath, this.processor.getManifest());
+				StateManager.saveState(this.processor.state, this.contextFilePath, this.processor.getManifest());
 				console.log(formatResult(result.output));
 			}
 
@@ -149,7 +148,7 @@ export class REPL {
 		});
 
 		this.rl.on('close', () => {
-			StateManager.saveState(this.state, this.contextFilePath, this.processor.getManifest());
+			StateManager.saveState(this.processor.state, this.contextFilePath, this.processor.getManifest());
 			process.exit(0);
 		});
 

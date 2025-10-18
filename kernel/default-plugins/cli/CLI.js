@@ -40,9 +40,7 @@ export class CLI {
 			this.projectRoot,
 			manifest
 		);
-		
-		// Load state
-		let state = StateManager.loadState(this.contextFilePath, manifest);
+		this.processor.state = StateManager.loadState(this.contextFilePath, this.processor.getManifest());
 
 		if (args.length === 0) {
 			// Show help when no arguments provided using HelpHandler
@@ -83,8 +81,7 @@ export class CLI {
 			result = parsedCommand;
 		} else {
 			const command = parsedCommand.command;
-			result = await this.processor.runCommand(command, state);
-			state = this.processor.state;
+			result = await this.processor.runCommand(command, this.processor.state);
 		}
 
 		if (result.error) {
@@ -93,7 +90,7 @@ export class CLI {
 		}
 
 		if (result.output) {
-			StateManager.saveState(state, this.contextFilePath, manifest);
+			StateManager.saveState(this.processor.state, this.contextFilePath, manifest);
 			console.log(formatResult(result.output));
 		}
 
