@@ -14,18 +14,20 @@ export class NativeAdapter {
         const combineArguments = commandSpec.combineArguments === true;
         const syncMethod = commandSpec.syncMethod === true;
 
+        // Handle missing methodName - treat as internal command
+        if (!commandSpec.methodName) {
+            return { error: null, output: true };
+        }
+
         try {
             const method = await this.resourceLoader.getResourceMethod(sourcePath, commandSpec.methodName);
             
             let result;
             
             if (syncMethod) {
-                // Single-line obvious async detection
                 if (method.constructor.name === 'AsyncFunction') {
                     console.warn(`⚠️ Method '${commandSpec.methodName}' is declared as sync but is an async function. Falling back to async execution.`);
-                    // Fall through to async execution
                 } else {
-                    // Trust the user - synchronous execution
                     if (combineArguments) {
                         result = method(args);
                     } else {

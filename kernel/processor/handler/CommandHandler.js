@@ -1,4 +1,3 @@
-import { handleInternalCommand } from './adapters/internal.js';
 import { NativeAdapter } from './adapters/native.js';
 import { PluginAdapter } from './adapters/plugin.js';
 
@@ -17,15 +16,13 @@ export class CommandHandler {
 		this.manifest = manifest;
 		this.projectRoot = projectRoot;
 		
-		// Create an instance of NativeAdapter
+		// Create adapters
 		this.nativeAdapter = new NativeAdapter(commandRoot, projectRoot, manifest);
 		this.pluginAdapter = new PluginAdapter(commandRoot, projectRoot, manifest);
 	}
 
 	/**
 	 * Handle a parsed command
-	 * @param {Object} command - The command object
-	 * @returns {Promise<Object>} - The result of the command
 	 */
 	async handleCommand(command) {
 		if (!command) return;
@@ -41,12 +38,7 @@ export class CommandHandler {
 				};
 			}
 
-			// Handle internal commands declaratively
-			if (commandSpec.commandType === 'internal') {
-				return handleInternalCommand(command, commandSpec);
-			}
-
-			// Handle native-method commands using source system
+			// Handle native-method commands (including internal commands without methodName)
 			if (commandSpec.commandType === 'native-method') {
 				return await this.nativeAdapter.handleNativeMethod(command, commandSpec);
 			}

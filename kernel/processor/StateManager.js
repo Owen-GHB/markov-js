@@ -99,18 +99,13 @@ static applyState(args, parameters, state = null) {
 	// Handle setState with unified template context
 	if (commandSpec.sideEffects.setState) {
 		for (const [key, rule] of Object.entries(commandSpec.sideEffects.setState)) {
-		let value;
-
-		if (rule.fromParam && command.args) {
-			value = command.args[rule.fromParam];
-		}
-		if (value === undefined && rule.template) {
-			value = Evaluator.evaluateTemplate(rule.template, context);
-		}
-
-		if (value !== undefined) {
-			state.set(key, value);
-		}
+			let value;
+			if (value === undefined && rule) {
+				value = Evaluator.evaluateTemplate(rule, context);
+			}
+			if (value !== undefined) {
+				state.set(key, value);
+			}
 		}
 	}
 
@@ -134,6 +129,8 @@ static applyState(args, parameters, state = null) {
 		}
 		}
 	}
+
+	return state;
 	}
 
   /**

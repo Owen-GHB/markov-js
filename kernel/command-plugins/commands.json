@@ -1,6 +1,6 @@
 {
   "set": {
-    "commandType": "internal",
+    "commandType": "native-method",
     "description": "Set kernel state values at runtime",
     "parameters": {
       "configstate": {

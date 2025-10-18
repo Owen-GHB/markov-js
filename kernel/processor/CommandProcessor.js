@@ -94,7 +94,7 @@ export class CommandProcessor {
 
       // STEP 4: Apply side effects if command successful
       if (!result.error) {
-        StateManager.applySideEffects(processedCommand, commandSpec, effectiveState, templateContext);
+        this.state = StateManager.applySideEffects(processedCommand, commandSpec, effectiveState, templateContext);
       }
 
       // STEP 5: Handle command chaining if command successful

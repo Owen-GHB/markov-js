@@ -1,7 +1,7 @@
 {
   "use": {
     "name": "use",
-    "commandType": "internal",
+    "commandType": "native-method",
     "parameters": {
       "modelName": {
         "type": "string",
