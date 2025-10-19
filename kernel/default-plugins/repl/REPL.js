@@ -8,7 +8,7 @@ import { pathToFileURL } from 'url';
 export class REPL {
 	constructor() {
 		// These will be initialized in the start method
-		this.processor = null;
+		this.runner = null;
 		this.maxHistory = 100;
 		this.history = [];
 		this.historyFilePath = null;
@@ -23,9 +23,9 @@ export class REPL {
 		this.maxHistory = maxHistory;
 		this.historyFilePath = historyFilePath;
 		const exportsUrl = pathToFileURL(path.join(kernelPath, 'exports.js')).href;
-		const { manifestReader, CommandProcessor, CommandParser } = await import(exportsUrl);
+		const { manifestReader, Runner, CommandParser } = await import(exportsUrl);
 		const manifest = manifestReader(this.commandRoot);
-		this.processor = new CommandProcessor(
+		this.runner = new Runner(
 			this.commandRoot,
 			this.projectRoot,
 			manifest
@@ -60,13 +60,13 @@ export class REPL {
 			Evaluator 
 		} = await import(pathToFileURL(path.join(kernelPath, 'exports.js')).href);		
 		await this.initialize(kernelPath, commandRoot, projectRoot, contextFilePath, historyFilePath, maxHistory);
-		this.processor.state = StateManager.loadState(this.contextFilePath, this.processor.getManifest());
+		this.runner.state = StateManager.loadState(this.contextFilePath, this.runner.getManifest());
 
 		// Initialize REPL instance
 		this.rl = readline.createInterface({
 			input: process.stdin,
 			output: process.stdout,
-			prompt: this.processor.getManifest().prompt || '> ', // Use prompt from manifest or default fallback
+			prompt: this.runner.getManifest().prompt || '> ', // Use prompt from manifest or default fallback
 			completer: (line) => this.commandCompleter(line),
 		});
 
@@ -75,10 +75,10 @@ export class REPL {
 
 		// Display welcome message and prompt
 		console.log(
-			`🔗 ${this.processor.getManifest().name} - ${this.processor.getManifest().description}`,
+			`🔗 ${this.runner.getManifest().name} - ${this.runner.getManifest().description}`,
 		);
 		console.log(
-			'='.repeat(Math.max(this.processor.getManifest().name.length + 2, 40)),
+			'='.repeat(Math.max(this.runner.getManifest().name.length + 2, 40)),
 		);
 		console.log(
 			'Type "help()" for available commands or "exit()" to quit.',
@@ -104,14 +104,14 @@ export class REPL {
 			if (HelpHandler.isHelpCommand(input)) {
 				const helpArgs = HelpHandler.getHelpCommandArgs(input);
 				if (helpArgs.command) {
-					const cmd = this.processor.getManifest().commands[helpArgs.command];
+					const cmd = this.runner.getManifest().commands[helpArgs.command];
 					if (!cmd) {
 						console.error(`❌ Unknown command: ${helpArgs.command}`);
 					} else {
 						console.log(HelpHandler.formatCommandHelp(cmd));
 					}
 				} else {
-					console.log(HelpHandler.formatGeneralHelp(this.processor.getManifest()));
+					console.log(HelpHandler.formatGeneralHelp(this.runner.getManifest()));
 				}
 				this.rl.prompt();
 				return;
@@ -126,22 +126,22 @@ export class REPL {
 
 			try {
 				const command = this.parser.parse(input);
-				let result = await this.processor.runCommand(command, this.processor.state);
+				let result = await this.runner.runCommand(command, this.runner.state);
 				
 				// Apply success output template in transport layer
-				const commandSpec = this.processor.getManifest().commands[command.name];
+				const commandSpec = this.runner.getManifest().commands[command.name];
 				if (commandSpec?.successOutput) {
 					const templateContext = {
 					input: command.args,
 					output: result,
-					state: this.processor.state,
+					state: this.runner.state,
 					original: command.args,
 					originalCommand: command.name
 					};
 					result = Evaluator.evaluateTemplate(commandSpec.successOutput, templateContext);
 				}
 				
-				StateManager.saveState(this.processor.state, this.contextFilePath, this.processor.getManifest());
+				StateManager.saveState(this.runner.state, this.contextFilePath, this.runner.getManifest());
 				console.log(formatResult(result));
 			} catch (err) {
 				console.error(`❌ ${err}`);
@@ -151,7 +151,7 @@ export class REPL {
 		});
 
 		this.rl.on('close', () => {
-			StateManager.saveState(this.processor.state, this.contextFilePath, this.processor.getManifest());
+			StateManager.saveState(this.runner.state, this.contextFilePath, this.runner.getManifest());
 			process.exit(0);
 		});
 
@@ -163,7 +163,7 @@ export class REPL {
 	commandCompleter(line) {
 		// Include built-in commands in completion
 		const commands = [
-			...Object.keys(this.processor.getManifest().commands),
+			...Object.keys(this.runner.getManifest().commands),
 			'help',
 			'exit',
 		];

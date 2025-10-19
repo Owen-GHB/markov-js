@@ -26,7 +26,7 @@ function getHttpInstance() {
  * @param {number} port - Port number for the server
  * @param {string} servedUIDir - Directory to serve static UI files from
  * @param {string} apiEndpoint - API endpoint path
- * @param {Object} commandProcessor - Command processor instance
+ * @param {Object} commandRunner - Command processor instance
  * @returns {Promise<void>}
  */
 export async function start(
@@ -38,11 +38,11 @@ export async function start(
 	apiEndpoint,
 ) {
 	const exportsUrl = pathToFileURL(path.join(kernelPath, 'exports.js')).href;
-	const { manifestReader, CommandProcessor, CommandParser } = await import(
+	const { manifestReader, Runner, CommandParser } = await import(
 		exportsUrl
 	);
 	const manifest = manifestReader(projectRoot);
-	const commandProcessor = new CommandProcessor(
+	const commandRunner = new Runner(
 		commandRoot,
 		projectRoot,
 		manifest,
@@ -56,7 +56,7 @@ export async function start(
 		serverPort,
 		servedUIDir,
 		apiEndpoint,
-		commandProcessor,
+		commandRunner,
 		commandParser,
 	);
 

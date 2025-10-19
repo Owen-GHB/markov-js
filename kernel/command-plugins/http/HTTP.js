@@ -6,10 +6,10 @@ import busboy from 'busboy';
 
 export class HTTPServer {
 	constructor() {
-		this.commandProcessor = null; // Will be initialized in start method
+		this.commandRunner = null; // Will be initialized in start method
 	}
 
-	start(port, servedUIDir, apiEndpoint, commandProcessor, commandParser) {
+	start(port, servedUIDir, apiEndpoint, commandRunner, commandParser) {
 		// Validate parameters
 		if (typeof port !== 'number' || port <= 0) {
 			throw new Error('port parameter must be a positive number');
@@ -24,11 +24,11 @@ export class HTTPServer {
 		}
 
 		if (
-			!commandProcessor ||
-			typeof commandProcessor.processCommand !== 'function'
+			!commandRunner ||
+			typeof commandRunner.processCommand !== 'function'
 		) {
 			throw new Error(
-				'commandProcessor parameter must be a valid command processor instance',
+				'commandRunner parameter must be a valid command processor instance',
 			);
 		}
 
@@ -36,7 +36,7 @@ export class HTTPServer {
 		this.port = port;
 		this.staticDir = servedUIDir;
 		this.apiEndpoint = apiEndpoint;
-		this.commandProcessor = commandProcessor;
+		this.commandRunner = commandRunner;
 		this.commandParser = commandParser;
 
 		return new Promise((resolve, reject) => {
@@ -275,7 +275,7 @@ export class HTTPServer {
 
 			// Get command specification to understand expected parameters
 			const commandName = parsedCommand.command.name;
-			const commandSpec = this.commandProcessor
+			const commandSpec = this.commandRunner
 				.getManifest()
 				.commands[commandName];
 
@@ -364,7 +364,7 @@ export class HTTPServer {
 		try {
 			// Process command using the shared processor
 			const command = this.commandParser.parse(commandString);
-			const output = await this.commandProcessor.runCommand(command);
+			const output = await this.commandRunner.runCommand(command);
 			const result = {
 				output:output,
 				error:null

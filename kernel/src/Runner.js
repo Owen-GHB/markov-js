@@ -9,10 +9,10 @@ import { Evaluator } from './Evaluator.js';
 export class Runner {
   constructor(commandRoot, projectRoot, manifest) {
     if (!projectRoot) {
-      throw new Error('CommandProcessor requires a projectRoot parameter');
+      throw new Error('Runner requires a projectRoot parameter');
     }
     if (!manifest || typeof manifest !== 'object') {
-      throw new Error('CommandProcessor requires a manifest object');
+      throw new Error('Runner requires a manifest object');
     }
 
     this.manifest = manifest;
@@ -37,7 +37,7 @@ export class Runner {
     const effectiveState = state !== null && state !== undefined ? state : this.state;
 
     // Process command through preparation pipeline
-    const processedCommand = this.processCommand(command, effectiveState);
+    const processedCommand = this.processor.preProcess(command, effectiveState);
 
     // Execute command
     const result = await this.handler.handleCommand(processedCommand); 
@@ -47,7 +47,7 @@ export class Runner {
       input: processedCommand.args,
       output: result,
       state: effectiveState,
-      previous: chainContext.previousCommand.name,
+      previousCommand: chainContext.previousCommand.name,
       original: chainContext.originalCommand.args,
       originalCommand: chainContext.originalCommand.name
     };

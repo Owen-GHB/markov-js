@@ -27,7 +27,7 @@ export class CLI {
 		const exportsUrl = pathToFileURL(path.join(this.kernelPath, 'exports.js')).href;
 		const { 
 			manifestReader, 
-			CommandProcessor, 
+			Runner, 
 			HelpHandler, 
 			formatResult, 
 			CommandParser,
@@ -36,7 +36,7 @@ export class CLI {
 		} = await import(exportsUrl);
 		const manifest = manifestReader(this.commandRoot);
 		this.parser = new CommandParser(manifest);
-		this.processor = new CommandProcessor(
+		this.processor = new Runner(
 			this.commandRoot,
 			this.projectRoot,
 			manifest

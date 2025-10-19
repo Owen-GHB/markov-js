@@ -34,9 +34,9 @@ class ElectronUIManager {
  * Handles commands for the Electron application via IPC
  */
 class ElectronCommandHandler {
-	constructor(commandProcessor, commandParser) {
+	constructor(commandRunner, commandParser) {
 		this.commandParser = commandParser;
-		this.commandProcessor = commandProcessor;
+		this.commandRunner = commandRunner;
 	}
 
 	/**
@@ -48,7 +48,7 @@ class ElectronCommandHandler {
 		try {
 			// The command from UI is already parsed as an object
 			// We'll pass it through the processor to handle state management properly
-			let result = await this.commandProcessor.runCommand(command);
+			let result = await this.commandRunner.runCommand(command);
 			return { error: null, output: result }
 		} catch (error) {
 			return { error: error.message, output: null };
@@ -126,7 +126,7 @@ export class ElectronApp {
 		});
 	}
 
-	async start(servedUIDir, electronPreloadPath, commandProcessor, commandParser) {
+	async start(servedUIDir, electronPreloadPath, commandRunner, commandParser) {
 		// Validate parameters
 		if (!servedUIDir) {
 			console.error('❌ servedUIDir path must be provided');
@@ -136,8 +136,8 @@ export class ElectronApp {
 			console.error('❌ electronPreloadPath path must be provided');
 			process.exit(1)
 		}
-		if (!commandProcessor) {
-			console.error('❌ commandProcessor must be provided');
+		if (!commandRunner) {
+			console.error('❌ commandRunner must be provided');
 			process.exit(1);
 		}
 
@@ -145,7 +145,7 @@ export class ElectronApp {
 		this.paths = {servedUIDir, electronPreloadPath};
 
 		// Initialize command handler
-		this.commandHandler = new ElectronCommandHandler(commandProcessor, commandParser);
+		this.commandHandler = new ElectronCommandHandler(commandRunner, commandParser);
 
 		// Update the preload path in webPreferences
 		this.windowOptions.webPreferences.preload = electronPreloadPath;
