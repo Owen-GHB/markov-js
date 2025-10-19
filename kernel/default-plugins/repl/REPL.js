@@ -23,14 +23,14 @@ export class REPL {
 		this.maxHistory = maxHistory;
 		this.historyFilePath = historyFilePath;
 		const exportsUrl = pathToFileURL(path.join(kernelPath, 'exports.js')).href;
-		const { manifestReader, Runner, CommandParser } = await import(exportsUrl);
+		const { manifestReader, Runner, Parser } = await import(exportsUrl);
 		const manifest = manifestReader(this.commandRoot);
 		this.runner = new Runner(
 			this.commandRoot,
 			this.projectRoot,
 			manifest
 		);
-		this.parser = new CommandParser(manifest);
+		this.parser = new Parser(manifest);
 		this.loadHistory();
 	}
 

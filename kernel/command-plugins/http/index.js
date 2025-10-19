@@ -23,10 +23,6 @@ function getHttpInstance() {
 
 /**
  * Start the HTTP server plugin
- * @param {number} port - Port number for the server
- * @param {string} servedUIDir - Directory to serve static UI files from
- * @param {string} apiEndpoint - API endpoint path
- * @param {Object} commandRunner - Command processor instance
  * @returns {Promise<void>}
  */
 export async function start(
@@ -38,16 +34,16 @@ export async function start(
 	apiEndpoint,
 ) {
 	const exportsUrl = pathToFileURL(path.join(kernelPath, 'exports.js')).href;
-	const { manifestReader, Runner, CommandParser } = await import(
+	const { manifestReader, Runner, Parser } = await import(
 		exportsUrl
 	);
 	const manifest = manifestReader(projectRoot);
-	const commandRunner = new Runner(
+	const runner = new Runner(
 		commandRoot,
 		projectRoot,
 		manifest,
 	);
-	const commandParser = new CommandParser(manifest);
+	const parser = new Parser(manifest);
 
 	const httpServer = getHttpInstance();
 
@@ -56,8 +52,8 @@ export async function start(
 		serverPort,
 		servedUIDir,
 		apiEndpoint,
-		commandRunner,
-		commandParser,
+		runner,
+		parser,
 	);
 
 	// Return a clean success message instead of the server object

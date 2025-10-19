@@ -30,12 +30,12 @@ export class CLI {
 			Runner, 
 			HelpHandler, 
 			formatResult, 
-			CommandParser,
+			Parser,
 			StateManager,
 			Evaluator
 		} = await import(exportsUrl);
 		const manifest = manifestReader(this.commandRoot);
-		this.parser = new CommandParser(manifest);
+		this.parser = new Parser(manifest);
 		this.processor = new Runner(
 			this.commandRoot,
 			this.projectRoot,

@@ -9,7 +9,7 @@ import { parseFunctionStyle } from './parsers/Functional.js';
  * - command({param1: "value1", key: value2})
  * - command param1 param2 key=value
  */
-export class CommandParser {
+export class Parser {
     constructor(manifest) {
         // Validate manifest parameter
         if (!manifest || typeof manifest !== 'object') {
@@ -31,7 +31,7 @@ export class CommandParser {
      * @param {Object} context - Optional context with runtime state
      * @returns {Object} - Command object {name: string, args: Object}
      */
-    parse(input) {
+    parseCommand(input) {
         if (!input || typeof input !== 'string') {
             throw new Error('Invalid input: must be a non-empty string');
         }

@@ -6,10 +6,10 @@ import busboy from 'busboy';
 
 export class HTTPServer {
 	constructor() {
-		this.commandRunner = null; // Will be initialized in start method
+		this.runner = null; // Will be initialized in start method
 	}
 
-	start(port, servedUIDir, apiEndpoint, commandRunner, commandParser) {
+	start(port, servedUIDir, apiEndpoint, runner, parser) {
 		// Validate parameters
 		if (typeof port !== 'number' || port <= 0) {
 			throw new Error('port parameter must be a positive number');
@@ -24,11 +24,11 @@ export class HTTPServer {
 		}
 
 		if (
-			!commandRunner ||
-			typeof commandRunner.processCommand !== 'function'
+			!runner ||
+			typeof runner.processCommand !== 'function'
 		) {
 			throw new Error(
-				'commandRunner parameter must be a valid command processor instance',
+				'runner parameter must be a valid command runner instance',
 			);
 		}
 
@@ -36,8 +36,8 @@ export class HTTPServer {
 		this.port = port;
 		this.staticDir = servedUIDir;
 		this.apiEndpoint = apiEndpoint;
-		this.commandRunner = commandRunner;
-		this.commandParser = commandParser;
+		this.runner = runner;
+		this.parser = parser;
 
 		return new Promise((resolve, reject) => {
 			const server = http.createServer(async (req, res) => {
@@ -262,7 +262,7 @@ export class HTTPServer {
 	async injectFilesIntoCommand(commandString, files) {
 		try {
 			// Parse the original command
-			const parsedCommand = this.commandParser.parse(commandString);
+			const parsedCommand = this.parser.parse(commandString);
 
 			if (parsedCommand.error) {
 				throw new Error(parsedCommand.error);
@@ -275,7 +275,7 @@ export class HTTPServer {
 
 			// Get command specification to understand expected parameters
 			const commandName = parsedCommand.command.name;
-			const commandSpec = this.commandRunner
+			const commandSpec = this.runner
 				.getManifest()
 				.commands[commandName];
 
@@ -363,8 +363,8 @@ export class HTTPServer {
 	async executeCommandAndRespond(commandString, res) {
 		try {
 			// Process command using the shared processor
-			const command = this.commandParser.parse(commandString);
-			const output = await this.commandRunner.runCommand(command);
+			const command = this.parser.parse(commandString);
+			const output = await this.runner.runCommand(command);
 			const result = {
 				output:output,
 				error:null
