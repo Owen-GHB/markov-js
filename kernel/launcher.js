@@ -24,7 +24,7 @@ export async function launch(args, projectRoot) {
   // Determine execution path
   const kernelIndex = args.indexOf('--kernel');
   const isKernelMode = kernelIndex !== -1;
-  const kernelCommandRoot = resolveSecurePath('command-plugins', __dirname);
+  const kernelCommandRoot = resolveSecurePath( __dirname, 'command-plugins');
   
   if (isKernelMode) {
     // Kernel commands: use kernel's command-plugins as "command root"
@@ -50,7 +50,7 @@ async function executeCommandPath(args, projectRoot, kernelCommandRoot, isKernel
   const manifest = loadManifest(kernelCommandRoot);
 
   // Use default plugins (CLI/REPL)
-  const defaultPluginsDir = resolveSecurePath('default-plugins', __dirname);
+  const defaultPluginsDir = resolveSecurePath( __dirname, 'default-plugins');
   const loader = new ResourceLoader(defaultPluginsDir);
 
   // Determine context with user config first, kernel defaults as fallback
@@ -61,7 +61,7 @@ async function executeCommandPath(args, projectRoot, kernelCommandRoot, isKernel
   
   if (isKernelMode) {
     // Kernel mode: use vertex-config.json in the user's project root
-    contextFilePath = resolveSecurePath('vertex-config.json', projectRoot);
+    contextFilePath = resolveSecurePath(projectRoot, 'vertex-config.json');
     commandRoot = kernelCommandRoot;
     
     // For REPL settings, check user config first, then kernel manifest defaults
@@ -73,11 +73,11 @@ async function executeCommandPath(args, projectRoot, kernelCommandRoot, isKernel
     commandRoot = projectRoot;
     
     // Load user's config with fallback to kernel manifest
-    const userConfigPath = resolveSecurePath('vertex-config.json', projectRoot);
+    const userConfigPath = resolveSecurePath(projectRoot, 'vertex-config.json');
     const userConfig = loadUserConfig(userConfigPath);
     
     contextFilePath = userConfig.contextFilePath || 
-                     resolveSecurePath('manifest.stateDefaults.contextFilePath', kernelCommandRoot);
+                     resolveSecurePath(kernelCommandRoot, 'manifest.stateDefaults.contextFilePath');
     replHistoryFilePath = userConfig.replHistoryFilePath || manifest.stateDefaults.replHistoryFilePath;
     maxHistory = userConfig.maxHistory || manifest.stateDefaults.maxHistory;
   }

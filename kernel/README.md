@@ -2,7 +2,7 @@
 
 🧠 **Universal Command Engine with Declarative Workflows**
 
-Vertex is a powerful application host that transforms how you build and orchestrate commands across multiple interfaces - CLI, REPL, HTTP, and Electron - all from a single declarative configuration.
+Vertex is a powerful application host that transforms how you build and orchestrate commands across multiple interfaces - currently CLI, REPL, HTTP, and Electron - all from a single declarative configuration.
 
 ## What Problem Does Vertex Solve?
 

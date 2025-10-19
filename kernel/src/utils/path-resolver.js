@@ -17,7 +17,7 @@ export function validatePathSecurity(resolvedPath, projectRoot, originalPath) {
 /**
  * Safely resolve a path relative to project root with security validation
  */
-export function resolveSecurePath(originalPath, projectRoot) {
+export function resolveSecurePath(projectRoot, originalPath) {
     if (!originalPath) return null;
     
     const resolvedPath = path.resolve(projectRoot, originalPath);
