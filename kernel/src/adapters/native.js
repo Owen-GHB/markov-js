@@ -1,9 +1,8 @@
 import { ResourceLoader } from '../ResourceLoader.js';
 
 export class NativeAdapter {
-    constructor(commandRoot, projectRoot, manifest) {
+    constructor(commandRoot, projectRoot) {
         this.resourceLoader = new ResourceLoader(projectRoot);
-        this.manifest = manifest;
     }
 
     async handleNativeMethod(command, commandSpec) {

@@ -35,13 +35,12 @@ export class CLI {
 			Evaluator
 		} = await import(exportsUrl);
 		const manifest = manifestReader(this.commandRoot);
-		this.parser = new Parser(manifest);
 		this.processor = new Runner(
 			this.commandRoot,
 			this.projectRoot,
 			manifest
 		);
-		this.processor.state = StateManager.loadState(this.contextFilePath, this.processor.getManifest());
+		this.processor.state = StateManager.loadState(this.contextFilePath, manifest);
 
 		if (args.length === 0) {
 			// Show help when no arguments provided using HelpHandler
@@ -76,18 +75,18 @@ export class CLI {
 		}
 
 		try {
-			const command = this.parser.parse(input);
-			let result = await this.processor.runCommand(command, this.processor.state);
+			const commandName = Parser.extractCommandName(input);
+			const commandSpec = manifest.commands[commandName];
+			const command = Parser.parseCommand(input, commandSpec);
+			let result = await this.processor.runCommand(command, commandSpec, this.processor.state);
 			
-			// Apply success output template in transport layer
-			const commandSpec = this.processor.getManifest().commands[command.name];
 			if (commandSpec?.successOutput) {
 				const templateContext = {
-				input: command.args,
-				output: result,
-				state: this.processor.state,
-				original: command.args,
-				originalCommand: command.name
+					input: command.args,
+					output: result,
+					state: this.processor.state,
+					original: command.args,
+					originalCommand: command.name
 				};
 				result = Evaluator.evaluateTemplate(commandSpec.successOutput, templateContext);
 			}

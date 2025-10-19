@@ -47,8 +47,8 @@ class ElectronCommandHandler {
 	async executeCommand(command) {
 		try {
 			// The command from UI is already parsed as an object
-			// We'll pass it through the processor to handle state management properly
-			let result = await this.runner.runCommand(command);
+			const commandSpec = this.runner.getManifest().commands[command.name];
+			let result = await this.runner.runCommand(command, commandSpec);
 			return { error: null, output: result }
 		} catch (error) {
 			return { error: error.message, output: null };

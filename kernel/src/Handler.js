@@ -2,37 +2,24 @@ import { NativeAdapter } from './adapters/native.js';
 import { PluginAdapter } from './adapters/plugin.js';
 
 export class Handler {
-	constructor(commandRoot, projectRoot, manifest) {
-		// Validate manifest parameter
-		if (!manifest || typeof manifest !== 'object') {
-			throw new Error('Handler requires a manifest object');
-		}
-
-		// Validate config parameter
+	constructor(commandRoot, projectRoot) {		
+		// Validate projectRoot parameter
 		if (projectRoot === null) {
 			throw new Error('Handler requires a projectRoot parameter');
 		}
 
-		this.manifest = manifest;
 		this.projectRoot = projectRoot;
 		
 		// Create adapters
-		this.nativeAdapter = new NativeAdapter(commandRoot, projectRoot, manifest);
-		this.pluginAdapter = new PluginAdapter(commandRoot, projectRoot, manifest);
+		this.nativeAdapter = new NativeAdapter(commandRoot, projectRoot);
+		this.pluginAdapter = new PluginAdapter(commandRoot, projectRoot);
 	}
 
 	/**
-	 * Handle a parsed command
+	 * Handle a parsed command WITH commandSpec
 	 */
-	async handleCommand(command) {
-		if (!command) return;
-		
-		// Get the command specification from the manifest
-		const commandSpec = this.manifest.commands[command.name];
-
-		if (!commandSpec) {
-			throw new Error(`Unknown command: ${command.name}`);
-		}
+	async handleCommand(command, commandSpec) {
+		if (!command || !commandSpec) return;
 
 		// Handle native-method commands (including internal commands without methodName)
 		if (commandSpec.commandType === 'native-method') {
@@ -46,6 +33,5 @@ export class Handler {
 
 		// If we get here, it's an unknown command type
 		throw new Error(`Unknown command type '${commandSpec.commandType}' for command '${command.name}'`);
-		
 	}
 }

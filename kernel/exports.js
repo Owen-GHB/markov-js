@@ -1,7 +1,7 @@
 // File: exports.js (in kernel root)
 
 export { manifestReader } from './src/manifestReader.js';
-export { CommandParser } from './src/Parser.js';
+export { Parser } from './src/Parser.js';
 export { Runner } from './src/Runner.js';
 export { StateManager } from './src/StateManager.js';
 export { formatResult } from './src/utils/format.js';

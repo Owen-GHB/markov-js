@@ -16,25 +16,22 @@ export class Runner {
     }
 
     this.manifest = manifest;
-    this.handler = new Handler(commandRoot, projectRoot, manifest);
-    this.processor = new Processor(commandRoot, projectRoot, manifest);
+    this.handler = new Handler(commandRoot, projectRoot);
     this.state = StateManager.createState(manifest); // Internal state for side effects
   }
 
-  async runCommand(command, state = null, originalCommand) {
+  async runCommand(command, commandSpec, state = null, originalCommand) {
     // Initialize chain context if this is the first command in a chain
     if (!originalCommand) originalCommand = command;
-
-    const commandSpec = this.manifest.commands[command.name];
     
     // Use provided state or internal state
     const effectiveState = state !== null && state !== undefined ? state : this.state;
 
     // Process command through preparation pipeline
-    const processedCommand = this.processor.processCommand(command, effectiveState);
+    const processedCommand = Processor.processCommand(command, commandSpec, effectiveState);
 
     // Execute command
-    const result = await this.handler.handleCommand(processedCommand); 
+    const result = await this.handler.handleCommand(processedCommand, commandSpec); 
     
     // Build template context (for side effects and chaining)
     const templateContext = {

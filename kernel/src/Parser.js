@@ -1,37 +1,35 @@
 import { parseObjectStyle } from './parsers/Objective.js';
 import { parseFunctionStyle } from './parsers/Functional.js';
 
+// Constants - pure data, no state
+const PATTERNS = {
+    objectCall: /^(\w+)\s*\(\s*(\{.*\})\s*\)\s*$/,
+    funcCall: /^(\w+)\s*\(\s*([^)]*)\s*\)\s*$/,
+    simpleCommand: /^(\w+)\s*$/,
+    cliStyle: /^(\w+)\s+(.+)$/,
+};
+
 /**
- * Command parser for REPL-style interface
- *
+ * Static command parser for REPL-style interface
+ * 
+ * Pure functional parsing - no state, no instances, no dependencies!
+ * 
  * Supports both function-style and object-style syntax:
  * - command("param1", "param2", key=value)
- * - command({param1: "value1", key: value2})
+ * - command({param1: "value1", key: value2})  
  * - command param1 param2 key=value
  */
 export class Parser {
-    constructor(manifest) {
-        // Validate manifest parameter
-        if (!manifest || typeof manifest !== 'object') {
-            throw new Error('CommandParser requires a manifest object');
-        }
-
-        this.manifest = manifest;
-        this.patterns = {
-            objectCall: /^(\w+)\s*\(\s*(\{.*\})\s*\)\s*$/,
-            funcCall: /^(\w+)\s*\(\s*([^)]*)\s*\)\s*$/,
-            simpleCommand: /^(\w+)\s*$/,
-            cliStyle: /^(\w+)\s+(.+)$/,
-        };
-    }
+    // Expose patterns as static constants
+    static patterns = PATTERNS;
 
     /**
      * Parse a command string into a command object
      * @param {string} input - The command string to parse
-     * @param {Object} context - Optional context with runtime state
+     * @param {Object} commandSpec - The command specification
      * @returns {Object} - Command object {name: string, args: Object}
      */
-    parseCommand(input) {
+    static parseCommand(input, commandSpec) {
         if (!input || typeof input !== 'string') {
             throw new Error('Invalid input: must be a non-empty string');
         }
@@ -42,55 +40,50 @@ export class Parser {
         try {
             const commandObj = JSON.parse(trimmed);
             if (commandObj && typeof commandObj === 'object' && commandObj.name) {
-                // This is a valid JSON command object
-                return commandObj; // Return raw command object!
+                return commandObj;
             }
         } catch (jsonError) {
             // Not a JSON command object, continue with string parsing
         }
 
         // Try CLI-style parsing first
-        const cliMatch = trimmed.match(this.patterns.cliStyle);
+        const cliMatch = trimmed.match(PATTERNS.cliStyle);
         if (cliMatch) {
-            const spec = this.manifest.commands[cliMatch[1]];
-            if (
-                !(
-                    spec &&
-                    Object.entries(spec.parameters || {}).every(([_, p]) => !p.required)
-                )
-            ) {
-                return this.parseCliStyle(cliMatch[1], cliMatch[2]);
+            if (!commandSpec.parameters || Object.entries(commandSpec.parameters).every(([_, p]) => !p.required)) {
+                return Parser.parseCliStyle(cliMatch[1], cliMatch[2], commandSpec);
             }
         }
 
         // Try object style first (backward compatible)
-        const objectMatch = trimmed.match(this.patterns.objectCall);
+        const objectMatch = trimmed.match(PATTERNS.objectCall);
         if (objectMatch) {
-            return parseObjectStyle(objectMatch, this.manifest);
+            return parseObjectStyle(objectMatch, commandSpec);
         }
 
         // Try function style
-        const funcMatch = trimmed.match(this.patterns.funcCall);
+        const funcMatch = trimmed.match(PATTERNS.funcCall);
         if (funcMatch) {
-            return parseFunctionStyle(funcMatch, this.manifest);
+            return parseFunctionStyle(funcMatch, commandSpec);
         }
 
         // Try simple command
-        const simpleMatch = trimmed.match(this.patterns.simpleCommand);
+        const simpleMatch = trimmed.match(PATTERNS.simpleCommand);
         if (simpleMatch) {
             const funcCall = `${trimmed}()`;
-            const match = funcCall.match(this.patterns.funcCall);
-            if (match) return parseFunctionStyle(match, this.manifest);
+            const match = funcCall.match(PATTERNS.funcCall);
+            if (match) return parseFunctionStyle(match, commandSpec);
         }
 
         throw new Error(`Could not parse command: ${input}`);
     }
 
-    parseCliStyle(command, argsString) {
-        const spec = this.manifest.commands[command];
-        if (!spec) throw new Error(`Unknown command: ${command}`);
+    /**
+     * Parse CLI-style arguments into command object
+     */
+    static parseCliStyle(command, argsString, commandSpec) {
+        if (!commandSpec) throw new Error(`Unknown command: ${command}`);
 
-        const required = Object.entries(spec.parameters || {})
+        const required = Object.entries(commandSpec.parameters || {})
             .filter(([_, p]) => p.required)
             .map(([name, param]) => ({ name, ...param }));
         const parts = argsString.split(/\s+/).filter(Boolean);
@@ -118,8 +111,37 @@ export class Parser {
 
         // Build final function-style string
         const funcCall = `${command}(${[...positionalPairs, ...named].join(',')})`;
-        const match = funcCall.match(this.patterns.funcCall);
+        const match = funcCall.match(PATTERNS.funcCall);
 
-        return parseFunctionStyle(match, this.manifest);
+        return parseFunctionStyle(match, commandSpec);
+    }
+
+    /**
+     * Extract command name from input string (without full parsing)
+     */
+    static extractCommandName(input) {
+        if (!input || typeof input !== 'string') {
+            throw new Error('Invalid input: must be a non-empty string');
+        }
+
+        const trimmed = input.trim();
+        
+        // Try simple command first
+        const simpleMatch = trimmed.match(PATTERNS.simpleCommand);
+        if (simpleMatch) return simpleMatch[1];
+        
+        // Try function style
+        const funcMatch = trimmed.match(PATTERNS.funcCall);
+        if (funcMatch) return funcMatch[1];
+        
+        // Try object style
+        const objectMatch = trimmed.match(PATTERNS.objectCall);
+        if (objectMatch) return objectMatch[1];
+        
+        // Try CLI style
+        const cliMatch = trimmed.match(PATTERNS.cliStyle);
+        if (cliMatch) return cliMatch[1];
+        
+        throw new Error(`Could not extract command name from: ${input}`);
     }
 }

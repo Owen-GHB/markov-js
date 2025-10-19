@@ -1,13 +1,7 @@
 import { ParserUtils } from './Utils.js';
 
-export function parseObjectStyle([, name, argsString], manifest) {
-    // Find the command in manifest
-    const command = manifest.commands[name];
-    if (!command) {
-        throw new Error(`Unknown command: ${name}`);
-    }
-
-    const parameters = command.parameters || {};
+export function parseObjectStyle([, name, argsString], commandSpec) {
+    const parameters = commandSpec.parameters || {};
 
     let args;
     // Raw object parsing only
@@ -61,7 +55,7 @@ export function parseObjectStyle([, name, argsString], manifest) {
                 args = { [paramName]: parsedValue };
             }
         } else {
-            throw new Error(`Expected object or single value for ${command.name} with transform`); 
+            throw new Error(`Expected object or single value for ${commandSpec.name} with transform`); 
         }
     }
 
@@ -69,7 +63,7 @@ export function parseObjectStyle([, name, argsString], manifest) {
     args = ParserUtils.normalizeArgs(args);
 
     return {
-        name: command.name,
+        name: commandSpec.name,
         args: args,
     };
 }

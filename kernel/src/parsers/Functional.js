@@ -1,13 +1,7 @@
 import { ParserUtils } from './Utils.js';
 
-export function parseFunctionStyle([, name, argsString], manifest) {
-    // Find the command in manifest
-    const command = manifest.commands[name];
-    if (!command) {
-        throw new Error(`Unknown command: ${name}`);
-    }
-
-    const parameters = command.parameters || {};
+export function parseFunctionStyle([, name, argsString], commandSpec) {
+    const parameters = commandSpec.parameters || {};
     const requiredParams = Object.entries(parameters)
         .filter(([_, p]) => p.required)
         .map(([name, param]) => ({ name, ...param }));
@@ -54,7 +48,7 @@ export function parseFunctionStyle([, name, argsString], manifest) {
     }
 
     return {
-        name: command.name,
+        name: commandSpec.name,
         args: args,
     };
 }

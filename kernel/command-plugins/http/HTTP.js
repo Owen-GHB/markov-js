@@ -25,7 +25,7 @@ export class HTTPServer {
 
 		if (
 			!runner ||
-			typeof runner.processCommand !== 'function'
+			typeof runner.runCommand !== 'function'
 		) {
 			throw new Error(
 				'runner parameter must be a valid command runner instance',
@@ -262,22 +262,14 @@ export class HTTPServer {
 	async injectFilesIntoCommand(commandString, files) {
 		try {
 			// Parse the original command
-			const parsedCommand = this.parser.parse(commandString);
-
-			if (parsedCommand.error) {
-				throw new Error(parsedCommand.error);
-			}
+			const commandName = this.parser.extractCommandName(commandString);
+			const commandSpec = this.runner.getManifest().commands[commandName];
+			const command = this.parser.parseCommand(commandString, commandSpec);
 
 			// If no files, return original command
 			if (files.length === 0) {
 				return commandString;
 			}
-
-			// Get command specification to understand expected parameters
-			const commandName = parsedCommand.command.name;
-			const commandSpec = this.runner
-				.getManifest()
-				.commands[commandName];
 
 			if (!commandSpec) {
 				throw new Error(`Unknown command: ${commandName}`);
@@ -351,10 +343,10 @@ export class HTTPServer {
 
 			// Inject files
 			for (const [paramName, fileData] of fileDataMap) {
-				parsedCommand.command.args[paramName] = fileData;
+				command.args[paramName] = fileData;
 			}
 			// Convert back to string for execution
-			return JSON.stringify(parsedCommand.command);
+			return JSON.stringify(command);
 		} catch (error) {
 			throw new Error(`Failed to inject files into command: ${error.message}`);
 		}
@@ -363,8 +355,10 @@ export class HTTPServer {
 	async executeCommandAndRespond(commandString, res) {
 		try {
 			// Process command using the shared processor
-			const command = this.parser.parse(commandString);
-			const output = await this.runner.runCommand(command);
+			const commandName = this.parser.extractCommandName(commandString);
+			const commandSpec = this.runner.getManifest().commands[commandName];
+			const command = this.parser.parseCommand(commandString, commandSpec);
+			const output = await this.runner.runCommand(command, commandSpec);
 			const result = {
 				output:output,
 				error:null

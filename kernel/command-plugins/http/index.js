@@ -43,7 +43,6 @@ export async function start(
 		projectRoot,
 		manifest,
 	);
-	const parser = new Parser(manifest);
 
 	const httpServer = getHttpInstance();
 
@@ -53,7 +52,7 @@ export async function start(
 		servedUIDir,
 		apiEndpoint,
 		runner,
-		parser,
+		Parser,
 	);
 
 	// Return a clean success message instead of the server object

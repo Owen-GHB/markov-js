@@ -12,6 +12,7 @@ export class REPL {
 		this.maxHistory = 100;
 		this.history = [];
 		this.historyFilePath = null;
+		this.manifest = null;
 	}
 
 	async initialize(kernelPath, commandRoot, projectRoot, contextFilePath, historyFilePath, maxHistory) {
@@ -25,12 +26,12 @@ export class REPL {
 		const exportsUrl = pathToFileURL(path.join(kernelPath, 'exports.js')).href;
 		const { manifestReader, Runner, Parser } = await import(exportsUrl);
 		const manifest = manifestReader(this.commandRoot);
+		this.manifest = manifestReader(this.commandRoot);
 		this.runner = new Runner(
 			this.commandRoot,
 			this.projectRoot,
 			manifest
 		);
-		this.parser = new Parser(manifest);
 		this.loadHistory();
 	}
 
@@ -60,13 +61,13 @@ export class REPL {
 			Evaluator 
 		} = await import(pathToFileURL(path.join(kernelPath, 'exports.js')).href);		
 		await this.initialize(kernelPath, commandRoot, projectRoot, contextFilePath, historyFilePath, maxHistory);
-		this.runner.state = StateManager.loadState(this.contextFilePath, this.runner.getManifest());
+		this.runner.state = StateManager.loadState(this.contextFilePath,  this.manifest);
 
 		// Initialize REPL instance
 		this.rl = readline.createInterface({
 			input: process.stdin,
 			output: process.stdout,
-			prompt: this.runner.getManifest().prompt || '> ', // Use prompt from manifest or default fallback
+			prompt:  this.manifest.prompt || '> ', // Use prompt from manifest or default fallback
 			completer: (line) => this.commandCompleter(line),
 		});
 
@@ -75,10 +76,10 @@ export class REPL {
 
 		// Display welcome message and prompt
 		console.log(
-			`🔗 ${this.runner.getManifest().name} - ${this.runner.getManifest().description}`,
+			`🔗 ${this.manifest.name} - ${ this.manifest.description}`,
 		);
 		console.log(
-			'='.repeat(Math.max(this.runner.getManifest().name.length + 2, 40)),
+			'='.repeat(Math.max(this.manifest.name.length + 2, 40)),
 		);
 		console.log(
 			'Type "help()" for available commands or "exit()" to quit.',
@@ -104,14 +105,14 @@ export class REPL {
 			if (HelpHandler.isHelpCommand(input)) {
 				const helpArgs = HelpHandler.getHelpCommandArgs(input);
 				if (helpArgs.command) {
-					const cmd = this.runner.getManifest().commands[helpArgs.command];
+					const cmd = this.manifest.commands[helpArgs.command];
 					if (!cmd) {
 						console.error(`❌ Unknown command: ${helpArgs.command}`);
 					} else {
 						console.log(HelpHandler.formatCommandHelp(cmd));
 					}
 				} else {
-					console.log(HelpHandler.formatGeneralHelp(this.runner.getManifest()));
+					console.log(HelpHandler.formatGeneralHelp(this.manifest));
 				}
 				this.rl.prompt();
 				return;
@@ -124,12 +125,12 @@ export class REPL {
 				return;
 			}
 
-			try {
-				const command = this.parser.parse(input);
-				let result = await this.runner.runCommand(command, this.runner.state);
+			try {	
+				const commandName = Parser.extractCommandName(input);
+				const commandSpec = this.manifest.commands[commandName];
+				const command = Parser.parseCommand(input, commandSpec);
+				let result = await this.runner.runCommand(command, commandSpec, this.runner.state);
 				
-				// Apply success output template in transport layer
-				const commandSpec = this.runner.getManifest().commands[command.name];
 				if (commandSpec?.successOutput) {
 					const templateContext = {
 					input: command.args,
@@ -141,7 +142,7 @@ export class REPL {
 					result = Evaluator.evaluateTemplate(commandSpec.successOutput, templateContext);
 				}
 				
-				StateManager.saveState(this.runner.state, this.contextFilePath, this.runner.getManifest());
+				StateManager.saveState(this.runner.state, this.contextFilePath, this.manifest);
 				console.log(formatResult(result));
 			} catch (err) {
 				console.error(`❌ ${err}`);
@@ -151,7 +152,7 @@ export class REPL {
 		});
 
 		this.rl.on('close', () => {
-			StateManager.saveState(this.runner.state, this.contextFilePath, this.runner.getManifest());
+			StateManager.saveState(this.runner.state, this.contextFilePath, this.manifest);
 			process.exit(0);
 		});
 
@@ -163,7 +164,7 @@ export class REPL {
 	commandCompleter(line) {
 		// Include built-in commands in completion
 		const commands = [
-			...Object.keys(this.runner.getManifest().commands),
+			...Object.keys(this.manifest.commands),
 			'help',
 			'exit',
 		];
