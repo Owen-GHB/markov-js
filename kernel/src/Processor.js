@@ -1,11 +1,10 @@
-import { CommandHandler } from './Handler.js';
 import { StateManager } from './StateManager.js';
 import { Validator } from './Validator.js';
 
 /**
  * Unified command processor - state is optional
  */
-export class CommandProcessor {
+export class Processor {
   constructor(commandRoot, projectRoot, manifest) {
     if (!projectRoot) {
       throw new Error('CommandProcessor requires a projectRoot parameter');
@@ -15,7 +14,6 @@ export class CommandProcessor {
     }
 
     this.manifest = manifest;
-    this.handler = new CommandHandler(commandRoot, projectRoot, manifest);
   }
 
   /**
@@ -23,7 +21,7 @@ export class CommandProcessor {
    * @returns fully processed command object ready for execution
    * @throws error if validation fails
    */
-  preProcess(command, state = null) {
+  processCommand(command, state = null) {
     const commandSpec = this.manifest.commands[command.name];
     if (!commandSpec) {
       throw new Error(`Unknown command: ${command.name}`);

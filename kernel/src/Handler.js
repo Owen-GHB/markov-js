@@ -1,16 +1,16 @@
 import { NativeAdapter } from './adapters/native.js';
 import { PluginAdapter } from './adapters/plugin.js';
 
-export class CommandHandler {
+export class Handler {
 	constructor(commandRoot, projectRoot, manifest) {
 		// Validate manifest parameter
 		if (!manifest || typeof manifest !== 'object') {
-			throw new Error('CommandHandler requires a manifest object');
+			throw new Error('Handler requires a manifest object');
 		}
 
 		// Validate config parameter
 		if (projectRoot === null) {
-			throw new Error('CommandHandler requires a projectRoot parameter');
+			throw new Error('Handler requires a projectRoot parameter');
 		}
 
 		this.manifest = manifest;

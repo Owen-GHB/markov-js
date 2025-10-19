@@ -1,4 +1,4 @@
-import { ResourceLoader } from './ResourceLoader.js';
+import { ResourceLoader } from '../ResourceLoader.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 

@@ -1,6 +1,6 @@
-import { CommandHandler } from './Handler.js';
+import { Handler } from './Handler.js';
 import { StateManager } from './StateManager.js';
-import { CommandProcessor } from './Processor.js';
+import { Processor } from './Processor.js';
 import { Evaluator } from './Evaluator.js';
 
 /**
@@ -16,20 +16,14 @@ export class Runner {
     }
 
     this.manifest = manifest;
-    this.handler = new CommandHandler(commandRoot, projectRoot, manifest);
-    this.processor = new CommandProcessor(commandRoot, projectRoot, manifest);
+    this.handler = new Handler(commandRoot, projectRoot, manifest);
+    this.processor = new Processor(commandRoot, projectRoot, manifest);
     this.state = StateManager.createState(manifest); // Internal state for side effects
   }
 
-  async runCommand(command, state = null, chainContext = null) {
+  async runCommand(command, state = null, originalCommand) {
     // Initialize chain context if this is the first command in a chain
-    const isChainStart = !chainContext;
-    if (isChainStart) {
-      chainContext = {
-        originalCommand: command,
-        previousCommand: command
-      };
-    }
+    if (!originalCommand) originalCommand = command;
 
     const commandSpec = this.manifest.commands[command.name];
     
@@ -37,7 +31,7 @@ export class Runner {
     const effectiveState = state !== null && state !== undefined ? state : this.state;
 
     // Process command through preparation pipeline
-    const processedCommand = this.processor.preProcess(command, effectiveState);
+    const processedCommand = this.processor.processCommand(command, effectiveState);
 
     // Execute command
     const result = await this.handler.handleCommand(processedCommand); 
@@ -47,9 +41,8 @@ export class Runner {
       input: processedCommand.args,
       output: result,
       state: effectiveState,
-      previousCommand: chainContext.previousCommand.name,
-      original: chainContext.originalCommand.args,
-      originalCommand: chainContext.originalCommand.name
+      original: originalCommand.args,
+      originalCommand: originalCommand.name
     };
 
     // Apply side effects
@@ -59,10 +52,7 @@ export class Runner {
     if (commandSpec?.next) {
       const nextCommand = this.constructNextCommand(commandSpec.next, templateContext);
       if (nextCommand) {
-        return await this.runCommand(nextCommand, state, {
-          originalCommand: chainContext.originalCommand,
-          previousCommand: command
-        });
+        return await this.runCommand(nextCommand, state, originalCommand);
       }
     }
 

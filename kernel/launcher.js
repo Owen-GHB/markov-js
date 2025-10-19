@@ -2,8 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { loadManifest } from './src/manifestReader.js';
-import { ResourceLoader } from './src/adapters/ResourceLoader.js';
-import { resolveSecurePath } from './utils/path-resolver.js';
+import { ResourceLoader } from './src/ResourceLoader.js';
+import { resolveSecurePath } from './src/utils/path-resolver.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
