@@ -53,7 +53,12 @@ export class REPL {
 		}
 
 		// Initialize with provided path and config values at the beginning of start
-		const { HelpHandler, formatResult, StateManager } = await import(pathToFileURL(path.join(kernelPath, 'exports.js')).href);		
+		const { 
+			HelpHandler, 
+			formatResult, 
+			StateManager, 
+			Evaluator 
+		} = await import(pathToFileURL(path.join(kernelPath, 'exports.js')).href);		
 		await this.initialize(kernelPath, commandRoot, projectRoot, contextFilePath, historyFilePath, maxHistory);
 		this.processor.state = StateManager.loadState(this.contextFilePath, this.processor.getManifest());
 
@@ -119,29 +124,27 @@ export class REPL {
 				return;
 			}
 
-			// Process command using the shared processor
-			const parsedCommand = this.parser.parse(input);
-			let result;
-			if (parsedCommand.error) {
-				result = parsedCommand;
-			} else {
-				const command = parsedCommand.command;
-				result = await this.processor.runCommand(command, this.processor.state);
-			}
-
-			if (result.error) {
-				console.error(`❌ ${result.error}`);
-			}
-
-			if (result.output) {
+			try {
+				const command = this.parser.parse(input);
+				let result = await this.processor.runCommand(command, this.processor.state);
+				
+				// Apply success output template in transport layer
+				const commandSpec = this.processor.getManifest().commands[command.name];
+				if (commandSpec?.successOutput) {
+					const templateContext = {
+					input: command.args,
+					output: result,
+					state: this.processor.state,
+					original: command.args,
+					originalCommand: command.name
+					};
+					result = Evaluator.evaluateTemplate(commandSpec.successOutput, templateContext);
+				}
+				
 				StateManager.saveState(this.processor.state, this.contextFilePath, this.processor.getManifest());
-				console.log(formatResult(result.output));
-			}
-
-			// Check if the command requested exit
-			if (result.exit) {
-				this.rl.close();
-				return;
+				console.log(formatResult(result));
+			} catch (err) {
+				console.error(`❌ ${err}`);
 			}
 
 			this.rl.prompt();

@@ -1,13 +1,10 @@
 import { ParserUtils } from './Utils.js';
 
 export function parseFunctionStyle([, name, argsString], manifest) {
-   // Find the command in manifest
+    // Find the command in manifest
     const command = manifest.commands[name];
     if (!command) {
-        return {
-            error: `Unknown command: ${name}`,
-            command: null,
-        };
+        throw new Error(`Unknown command: ${name}`);
     }
 
     const parameters = command.parameters || {};
@@ -32,10 +29,7 @@ export function parseFunctionStyle([, name, argsString], manifest) {
             // Named parameter: key=value
             const [key, valueStr] = argPair.split('=', 2).map((s) => s.trim());
             if (!key || !valueStr) {
-                return {
-                    error: `Invalid named parameter: ${argPair}`,
-                    command: null,
-                };
+                throw new Error(`Invalid named parameter: ${argPair}`);
             }
 
             // Validate parameter exists
@@ -43,20 +37,14 @@ export function parseFunctionStyle([, name, argsString], manifest) {
                 (p) => p.toLowerCase() === key.toLowerCase(),
             );
             if (!paramName) {
-                return {
-                    error: `Unknown parameter: ${key}`,
-                    command: null,
-                };
+                throw new Error(`Unknown parameter: ${key}`);
             }
 
             args[paramName] = ParserUtils.normalizeValue(valueStr);
         } else {
             // Positional parameter
             if (positionalIndex >= requiredParams.length) {
-                return {
-                    error: `Unexpected positional parameter: ${argPair}. All required parameters already provided.`,
-                    command: null,
-                };
+                throw new Error(`Unexpected positional parameter: ${argPair}. All required parameters already provided.`); // THROW!
             }
 
             const param = requiredParams[positionalIndex];
@@ -66,10 +54,7 @@ export function parseFunctionStyle([, name, argsString], manifest) {
     }
 
     return {
-        error: null,
-        command: {
-            name: command.name,
-            args: args, // Raw parsed args - no validation/normalization
-        },
+        name: command.name,
+        args: args,
     };
 }

@@ -49,7 +49,7 @@ class ElectronCommandHandler {
 			// The command from UI is already parsed as an object
 			// We'll pass it through the processor to handle state management properly
 			let result = await this.commandProcessor.runCommand(command);
-			return result;
+			return { error: null, output: result }
 		} catch (error) {
 			return { error: error.message, output: null };
 		}

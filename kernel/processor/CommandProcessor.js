@@ -21,7 +21,7 @@ export class CommandProcessor {
   }
 
   /**
-   * Process a command through the preparation pipeline (synchronous)
+   * Process a command through the preparation pipeline
    * @returns fully processed command object ready for execution
    * @throws error if validation fails
    */
@@ -41,20 +41,14 @@ export class CommandProcessor {
     
     // Validate (always happens)
     const validatedArgs = Validator.validateAll(command.name, processedArgs, parameters);
-    if (validatedArgs.error) {
-      throw new Error(validatedArgs.error);
-    }
 
     // Return fully processed command
     return {
       ...command,
-      args: validatedArgs.args,
+      args: validatedArgs,
     };
   }
 
-  /**
-   * Run a command through full pipeline including execution and side effects
-   */
   async runCommand(command, state = null, chainContext = null) {
     // Initialize chain context if this is the first command in a chain
     const isChainStart = !chainContext;
@@ -65,63 +59,42 @@ export class CommandProcessor {
       };
     }
 
-    try {
-      const commandSpec = this.manifest.commands[command.name];
-      
-      // Use provided state or internal state
-      const effectiveState = state !== null && state !== undefined ? state : this.state;
+    const commandSpec = this.manifest.commands[command.name];
+    
+    // Use provided state or internal state
+    const effectiveState = state !== null && state !== undefined ? state : this.state;
 
-      // STEP 1: Process command through preparation pipeline
-      const processedCommand = this.processCommand(command, effectiveState);
+    // Process command through preparation pipeline
+    const processedCommand = this.processCommand(command, effectiveState);
 
-      // STEP 2: Execute command
-      const result = await this.handler.handleCommand(processedCommand);
+    // Execute command
+    const result = await this.handler.handleCommand(processedCommand); 
+    
+    // Build template context (for side effects and chaining)
+    const templateContext = {
+      input: processedCommand.args,
+      output: result,
+      state: effectiveState,
+      previous: chainContext.previousCommand.name,
+      original: chainContext.originalCommand.args,
+      originalCommand: chainContext.originalCommand.name
+    };
 
-      // Build unified template context
-      const templateContext = {
-        input: processedCommand.args,
-        output: result.output,
-        state: effectiveState,
-        previous: chainContext.previousCommand.name,
-        original: chainContext.originalCommand.args,
-        originalCommand: chainContext.originalCommand.name
-      };
+    // Apply side effects
+    this.state = StateManager.applySideEffects(processedCommand, commandSpec, effectiveState, templateContext);
 
-      // STEP 3: Apply success output template if command successful
-      if (!result.error && commandSpec.successOutput) {
-        result.output = Evaluator.evaluateTemplate(commandSpec.successOutput, templateContext);
+    // Handle command chaining
+    if (commandSpec?.next) {
+      const nextCommand = this.constructNextCommand(commandSpec.next, templateContext);
+      if (nextCommand) {
+        return await this.runCommand(nextCommand, state, {
+          originalCommand: chainContext.originalCommand,
+          previousCommand: command
+        });
       }
-
-      // STEP 4: Apply side effects if command successful
-      if (!result.error) {
-        this.state = StateManager.applySideEffects(processedCommand, commandSpec, effectiveState, templateContext);
-      }
-
-      // STEP 5: Handle command chaining if command successful
-      if (!result.error && commandSpec?.next) {
-        const nextCommand = this.constructNextCommand(
-          commandSpec.next, 
-          templateContext // Pass the same unified context
-        );
-        
-        if (nextCommand) {
-          // Recursively run with same state but updated context
-          return await this.runCommand(nextCommand, state, {
-            originalCommand: chainContext.originalCommand,
-            previousCommand: command
-          });
-        }
-      }
-
-      return result;
-
-    } catch (error) {
-      const contextInfo = isChainStart ? '' : ` in chain starting with '${chainContext.originalCommand.name}'`;
-      return {
-        error: `Command '${command.name}' failed${contextInfo}: ${error.message}`,
-        output: null,
-      };
     }
+
+    return result;
   }
 
   /**

@@ -13,7 +13,6 @@ export class Evaluator {
      */
     static evaluateTemplate(template, contexts = {}) {
         const { input = {}, output = {}, state = new Map() } = contexts;
-        
         return template.replace(
             /\{\{([^{}]+)\}\}/g,
             (_, expression) => {

@@ -32,8 +32,8 @@ export class Validator {
    * Find the appropriate type handler for a value and spec
    */
   static findTypeHandler(value, spec) {
-    for (const typeName of Validator.typeOrder) {  // Use Validator.typeOrder
-      const handler = Validator.types[typeName];   // Use Validator.types
+    for (const typeName of Validator.typeOrder) {
+      const handler = Validator.types[typeName];
       if (handler && handler.accepts(value, spec)) {
         return handler;
       }
@@ -53,7 +53,7 @@ export class Validator {
       throw new Error(`Missing required parameter: ${paramName}`);
     }
 
-    const handler = Validator.findTypeHandler(value, paramSpec);  // Use Validator.
+    const handler = Validator.findTypeHandler(value, paramSpec);
     
     // Validate and normalize using the type handler
     const normalizedValue = handler.validate(value, paramSpec);
@@ -67,32 +67,23 @@ export class Validator {
   }
 
   /**
-   * Main validation entry point - wraps everything in error/output format
+   * Main validation entry point - throws on error, returns validated args on success
    */
   static validateAll(commandName, args, parameters) {
-    try {
-      // Check for unknown parameters
-      Validator.validateUnknownParameters(args, parameters);  // Use Validator.
-      
-      const validatedArgs = {};
-      
-      // Process each parameter
-      for (const [paramName, paramSpec] of Object.entries(parameters)) {
-        try {
-          const value = Validator.validateParameter(paramName, args[paramName], paramSpec);  // Use Validator.
-          if (value !== undefined) {
-            validatedArgs[paramName] = value;
-          }
-        } catch (error) {
-          throw new Error(`Parameter '${paramName}': ${error.message}`);
-        }
+    // Check for unknown parameters
+    Validator.validateUnknownParameters(args, parameters);
+    
+    const validatedArgs = {};
+    
+    // Process each parameter
+    for (const [paramName, paramSpec] of Object.entries(parameters)) {
+      const value = Validator.validateParameter(paramName, args[paramName], paramSpec);
+      if (value !== undefined) {
+        validatedArgs[paramName] = value;
       }
-
-      return { error: null, args: validatedArgs };
-      
-    } catch (error) {
-      return { error: error.message, args: null };
     }
+
+    return validatedArgs;
   }
 
   /**

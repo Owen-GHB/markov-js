@@ -31,7 +31,8 @@ export class CLI {
 			HelpHandler, 
 			formatResult, 
 			CommandParser,
-			StateManager
+			StateManager,
+			Evaluator
 		} = await import(exportsUrl);
 		const manifest = manifestReader(this.commandRoot);
 		this.parser = new CommandParser(manifest);
@@ -74,29 +75,28 @@ export class CLI {
 			process.exit(0);
 		}
 
-		// Process the command using the shared processor
-		const parsedCommand = this.parser.parse(input);
-		let result;
-		if (parsedCommand.error) {
-			result = parsedCommand;
-		} else {
-			const command = parsedCommand.command;
-			result = await this.processor.runCommand(command, this.processor.state);
-		}
-
-		if (result.error) {
-			console.error(`❌ ${result.error}`);
-			process.exit(1);
-		}
-
-		if (result.output) {
+		try {
+			const command = this.parser.parse(input);
+			let result = await this.processor.runCommand(command, this.processor.state);
+			
+			// Apply success output template in transport layer
+			const commandSpec = this.processor.getManifest().commands[command.name];
+			if (commandSpec?.successOutput) {
+				const templateContext = {
+				input: command.args,
+				output: result,
+				state: this.processor.state,
+				original: command.args,
+				originalCommand: command.name
+				};
+				result = Evaluator.evaluateTemplate(commandSpec.successOutput, templateContext);
+			}
+			
 			StateManager.saveState(this.processor.state, this.contextFilePath, manifest);
-			console.log(formatResult(result.output));
-		}
-
-		// Check if the command requested exit
-		if (result.exit) {
-			process.exit(0);
+			console.log(formatResult(result));
+		} catch (err) {
+			console.error(`❌ ${err}`);
+			process.exit(1);
 		}
 	}
 }

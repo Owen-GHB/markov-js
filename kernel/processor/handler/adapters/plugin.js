@@ -18,22 +18,11 @@ export class PluginAdapter {
         const { args = {} } = command;
         const sourcePath = commandSpec.source || './';
 
-        try {
-            const method = await this.resourceLoader.getResourceMethod(sourcePath, commandSpec.methodName);           
-            const methodArgs = await this.buildMethodArguments(args, commandSpec);           
-            const result = await method(...methodArgs);
-            
-            return {
-                error: null,
-                output: result,
-            };
-        } catch (error) {
-            const sourceInfo = commandSpec.source ? `from source '${commandSpec.source}'` : 'from default project root';
-            return {
-                error: `Failed to execute plugin method '${commandSpec.methodName}' ${sourceInfo}: ${error.message}`,
-                output: null,
-            };
-        }
+        const method = await this.resourceLoader.getResourceMethod(sourcePath, commandSpec.methodName);           
+        const methodArgs = await this.buildMethodArguments(args, commandSpec);           
+        const result = await method(...methodArgs);
+        
+        return result;
     }
 
     /**

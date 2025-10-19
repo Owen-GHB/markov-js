@@ -4,12 +4,8 @@
       "setState": {
         "servedUIDir": "{{input.servedUIDir}}",
         "serverPort": "{{input.serverPort}}",
-        "apiEndpoint": "{{input.apiEndpoint}}",
-        "isServerRunning": true,
-        "currentMode": "http",
-        "lastOperation": "started_http_on_port_{{input.serverPort}}"
+        "apiEndpoint": "{{input.apiEndpoint}}"
       }
-    },
-    "successOutput": "🌐 HTTP server running!\n   UI: http://localhost:{{input.serverPort}}/\n   API: http://localhost:{{input.serverPort}}{{input.apiEndpoint}}\n   Serving: {{input.servedUIDir}}"
+    }  
   }
 }

@@ -7,7 +7,6 @@
     "electronPreloadPath": "./electron-preload.js",
     "windowWidth": 1200,
     "windowHeight": 800,
-    "showDevTools": true,
-    "isElectronRunning": false
+    "showDevTools": true
   }
 }

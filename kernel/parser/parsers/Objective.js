@@ -4,10 +4,7 @@ export function parseObjectStyle([, name, argsString], manifest) {
     // Find the command in manifest
     const command = manifest.commands[name];
     if (!command) {
-        return {
-            error: `Unknown command: ${name}`,
-            command: null,
-        };
+        throw new Error(`Unknown command: ${name}`);
     }
 
     const parameters = command.parameters || {};
@@ -26,10 +23,7 @@ export function parseObjectStyle([, name, argsString], manifest) {
             );
             args = JSON.parse(wrappedArgsString);
         } catch (fallbackError) {
-            return {
-                error: `Invalid object syntax: ${argsString}`,
-                command: null,
-            };
+            throw new Error(`Invalid object syntax: ${argsString}`);
         }
     }
 
@@ -50,10 +44,7 @@ export function parseObjectStyle([, name, argsString], manifest) {
             } else if (types.includes('string')) {
                 parsedValue = String(args);
             } else {
-                return {
-                    error: `Parameter ${paramName} must be ${singleParam.type}`,
-                    command: null,
-                };
+                throw new Error(`Parameter ${paramName} must be ${singleParam.type}`);
             }
 
             // Apply transform rule
@@ -70,10 +61,7 @@ export function parseObjectStyle([, name, argsString], manifest) {
                 args = { [paramName]: parsedValue };
             }
         } else {
-            return {
-                error: `Expected object or single value for ${commandName} with transform`,
-                command: null,
-            };
+            throw new Error(`Expected object or single value for ${command.name} with transform`); 
         }
     }
 
@@ -81,10 +69,7 @@ export function parseObjectStyle([, name, argsString], manifest) {
     args = ParserUtils.normalizeArgs(args);
 
     return {
-        error: null,
-        command: {
-            name: command.name,
-            args: args, // Raw parsed args - no validation/normalization
-        },
+        name: command.name,
+        args: args,
     };
 }

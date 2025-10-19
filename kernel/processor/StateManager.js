@@ -94,8 +94,7 @@ static applyState(args, parameters, state = null) {
 	 * Apply side effects to state based on command manifest
 	 */
 	static applySideEffects(command, commandSpec, state, context = {}) {
-	if (!commandSpec?.sideEffects) return;
-
+	if (!commandSpec?.sideEffects) return state;
 	// Handle setState with unified template context
 	if (commandSpec.sideEffects.setState) {
 		for (const [key, rule] of Object.entries(commandSpec.sideEffects.setState)) {

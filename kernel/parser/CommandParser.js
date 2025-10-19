@@ -1,4 +1,3 @@
-// File: processor/CommandParser.js
 import { parseObjectStyle } from './parsers/Objective.js';
 import { parseFunctionStyle } from './parsers/Functional.js';
 
@@ -30,14 +29,11 @@ export class CommandParser {
      * Parse a command string into a command object
      * @param {string} input - The command string to parse
      * @param {Object} context - Optional context with runtime state
-     * @returns {{error: string|null, command: Object|null}}
+     * @returns {Object} - Command object {name: string, args: Object}
      */
     parse(input) {
         if (!input || typeof input !== 'string') {
-            return {
-                error: 'Invalid input: must be a non-empty string',
-                command: null,
-            };
+            throw new Error('Invalid input: must be a non-empty string');
         }
 
         const trimmed = input.trim();
@@ -47,14 +43,12 @@ export class CommandParser {
             const commandObj = JSON.parse(trimmed);
             if (commandObj && typeof commandObj === 'object' && commandObj.name) {
                 // This is a valid JSON command object
-                return {
-                    error: null,
-                    command: commandObj,
-                };
+                return commandObj; // Return raw command object!
             }
         } catch (jsonError) {
             // Not a JSON command object, continue with string parsing
         }
+
         // Try CLI-style parsing first
         const cliMatch = trimmed.match(this.patterns.cliStyle);
         if (cliMatch) {
@@ -89,15 +83,12 @@ export class CommandParser {
             if (match) return parseFunctionStyle(match, this.manifest);
         }
 
-        return {
-            error: `Could not parse command: ${input}`,
-            command: null,
-        };
+        throw new Error(`Could not parse command: ${input}`);
     }
 
     parseCliStyle(command, argsString) {
         const spec = this.manifest.commands[command];
-        if (!spec) return { error: `Unknown command: ${command}`, command: null };
+        if (!spec) throw new Error(`Unknown command: ${command}`);
 
         const required = Object.entries(spec.parameters || {})
             .filter(([_, p]) => p.required)
@@ -118,17 +109,15 @@ export class CommandParser {
 
         // Map positional tokens to required parameters in order
         if (positional.length > required.length) {
-            return {
-                error: `Too many positional parameters for ${command}`,
-                command: null,
-            };
+            throw new Error(`Too many positional parameters for ${command}`);
         }
+
         const positionalPairs = required
             .slice(0, positional.length)
             .map((p, i) => `${p.name}="${positional[i]}"`);
 
         // Build final function-style string
-        const funcCall = `${command}(${[...positionalPairs, ...named].join(',')})`; // Remove space after comma
+        const funcCall = `${command}(${[...positionalPairs, ...named].join(',')})`;
         const match = funcCall.match(this.patterns.funcCall);
 
         return parseFunctionStyle(match, this.manifest);

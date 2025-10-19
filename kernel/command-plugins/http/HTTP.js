@@ -363,18 +363,19 @@ export class HTTPServer {
 	async executeCommandAndRespond(commandString, res) {
 		try {
 			// Process command using the shared processor
-			const parsedCommand = this.commandParser.parse(commandString);
-			let result;
-			if (parsedCommand.error) {
-				result = parsedCommand;
-			} else {
-				const command = parsedCommand.command;
-				result = await this.commandProcessor.runCommand(command);
+			const command = this.commandParser.parse(commandString);
+			const output = await this.commandProcessor.runCommand(command);
+			const result = {
+				output:output,
+				error:null
 			}
 			return this.sendResponse(res, result);
 		} catch (err) {
-			console.error('Command execution error:', err);
-			return this.sendErrorResponse(res, err.message, 500);
+			const result = {
+				output:null,
+				error:'Command execution error:', err
+			}
+			return this.sendErrorResponse(res, result, 500);
 		}
 	}
 

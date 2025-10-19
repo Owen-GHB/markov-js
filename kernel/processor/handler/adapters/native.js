@@ -15,46 +15,35 @@ export class NativeAdapter {
         const syncMethod = commandSpec.syncMethod === true;
 
         // Handle missing methodName - treat as internal command
-        if (!commandSpec.methodName) {
-            return { error: null, output: true };
-        }
+        if (!commandSpec.methodName) return true;
 
-        try {
-            const method = await this.resourceLoader.getResourceMethod(sourcePath, commandSpec.methodName);
-            
-            let result;
-            
-            if (syncMethod) {
-                if (method.constructor.name === 'AsyncFunction') {
-                    console.warn(`⚠️ Method '${commandSpec.methodName}' is declared as sync but is an async function. Falling back to async execution.`);
-                } else {
-                    if (combineArguments) {
-                        result = method(args);
-                    } else {
-                        const methodArgs = this.buildMethodArguments(args, commandSpec);
-                        result = method(...methodArgs);
-                    }
-                    return { error: null, output: result };
-                }
-            }
-            
-            // Default async execution (or fallback from above)
-            if (combineArguments) {
-                result = await method(args);
+        const method = await this.resourceLoader.getResourceMethod(sourcePath, commandSpec.methodName);
+        
+        let result;
+        
+        if (syncMethod) {
+            if (method.constructor.name === 'AsyncFunction') {
+                console.warn(`⚠️ Method '${commandSpec.methodName}' is declared as sync but is an async function. Falling back to async execution.`);
             } else {
-                const methodArgs = this.buildMethodArguments(args, commandSpec);
-                result = await method(...methodArgs);
+                if (combineArguments) {
+                    result = method(args);
+                } else {
+                    const methodArgs = this.buildMethodArguments(args, commandSpec);
+                    result = method(...methodArgs);
+                }
+                return result;
             }
-            
-            return { error: null, output: result };
-            
-        } catch (error) {
-            const sourceInfo = commandSpec.source ? `from source '${commandSpec.source}'` : 'from default project root';
-            return {
-                error: `Failed to execute native method '${commandSpec.methodName}' ${sourceInfo}: ${error.message}`,
-                output: null,
-            };
         }
+        
+        // Default async execution (or fallback from above)
+        if (combineArguments) {
+            result = await method(args);
+        } else {
+            const methodArgs = this.buildMethodArguments(args, commandSpec);
+            result = await method(...methodArgs);
+        }
+        
+        return result;
     }
 
     /**
