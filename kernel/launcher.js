@@ -1,8 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { loadManifest } from './loaders/manifestLoader.js';
-import { ResourceLoader } from './processor/handler/adapters/ResourceLoader.js';
+import { loadManifest } from './src/manifestReader.js';
+import { ResourceLoader } from './src/adapters/ResourceLoader.js';
 import { resolveSecurePath } from './utils/path-resolver.js';
 
 const __filename = fileURLToPath(import.meta.url);

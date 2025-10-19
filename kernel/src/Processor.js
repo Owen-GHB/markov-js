@@ -1,4 +1,4 @@
-import { CommandHandler } from './handler/CommandHandler.js';
+import { CommandHandler } from './Handler.js';
 import { StateManager } from './StateManager.js';
 import { Validator } from './Validator.js';
 import { Evaluator } from './Evaluator.js';
@@ -17,7 +17,6 @@ export class CommandProcessor {
 
     this.manifest = manifest;
     this.handler = new CommandHandler(commandRoot, projectRoot, manifest);
-    this.state = StateManager.createState(manifest); // Internal state for side effects
   }
 
   /**
@@ -31,13 +30,10 @@ export class CommandProcessor {
       throw new Error(`Unknown command: ${command.name}`);
     }
 
-    // Use provided state or internal state for processing
-    const processingState = state !== null && state !== undefined ? state : this.state;
-
     const parameters = commandSpec.parameters || {};
     
     // Apply state-dependent transformations
-    const processedArgs = StateManager.applyState(command.args, parameters, processingState);
+    const processedArgs = StateManager.applyState(command.args, parameters, state);
     
     // Validate (always happens)
     const validatedArgs = Validator.validateAll(command.name, processedArgs, parameters);
