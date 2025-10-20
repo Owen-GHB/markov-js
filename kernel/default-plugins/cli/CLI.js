@@ -1,14 +1,7 @@
 import { importVertex } from './imports.js';
 
 export class CLI {
-  constructor(kernelPath, commandRoot, projectRoot, contextFilePath) {
-    if (!contextFilePath) {
-      throw new Error('CLI requires a contextFilePath property');
-    }
-    if (!kernelPath) {
-      throw new Error('CLI requires a kernelPath property');
-    }
-    
+  constructor(kernelPath, commandRoot, projectRoot, contextFilePath) {    
     this.contextFilePath = contextFilePath;
     this.kernelPath = kernelPath;
     this.commandRoot = commandRoot;

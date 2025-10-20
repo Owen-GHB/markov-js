@@ -17,12 +17,6 @@ const __dirname = path.dirname(__filename);
 export async function start(kernelPath, commandRoot, projectRoot, servedui, electronPreloadPath) {
     // Since Electron needs to be launched as a separate process, we spawn electron using npx
     // which will run electron-main.js. The electron-main.js will now use dynamic kernel loading.
-    console.log('Launching Electron...');
-    console.log(`  Kernel Path: ${kernelPath}`);
-    console.log(`  Project Root: ${projectRoot}`);
-    console.log(`  Command Root: ${commandRoot}`);
-    console.log(`  Served UI: ${servedui}`);
-    console.log(`  Electron Preload Path: ${electronPreloadPath}`);
     return import('child_process')
         .then(({ spawn }) => {
             if (!kernelPath) {

@@ -54,11 +54,11 @@ export class ElectronApp {
         // Check if UI exists first, refuse to work if not
         if (!this.uiManager.hasServedUI('index.html', this.paths.servedUIDir)) {
             console.error(
-                "UI files not found. Please generate UI files first using 'node kernel.js --generate'",
+                "UI files not found.",
             );
             // Show error and close the window
             mainWindow.loadURL(
-                `data:text/html,<h1>UI Files Not Found</h1><p>Please generate UI files first using 'node kernel.js --generate'</p><p>The Electron app will close in 5 seconds.</p>`,
+                `data:text/html,<h1>UI Files Not Found</h1><p>The Electron app will close in 5 seconds.</p>`,
             );
 
             // Close the window after a delay to let the user see the error
@@ -106,20 +106,6 @@ export class ElectronApp {
     }
 
     async start(servedUIDir, electronPreloadPath, executor) {
-        // Validate parameters
-        if (!servedUIDir) {
-            console.error('❌ servedUIDir path must be provided');
-            process.exit(1);
-        }
-        if (!electronPreloadPath) {
-            console.error('❌ electronPreloadPath path must be provided');
-            process.exit(1);
-        }
-        if (!executor) {
-            console.error('❌ executor must be provided');
-            process.exit(1);
-        }
-
         // Store executor and paths
         this.executor = executor;
         this.paths = { servedUIDir, electronPreloadPath };

@@ -10,19 +10,6 @@ export class HTTPServer {
 	}
 
 	start(port, servedUIDir, apiEndpoint, executor) {
-		// Validate parameters
-		if (typeof port !== 'number' || port <= 0) {
-			throw new Error('port parameter must be a positive number');
-		}
-
-		if (servedUIDir && typeof servedUIDir !== 'string') {
-			throw new Error('servedUIDir parameter must be a string if provided');
-		}
-
-		if (apiEndpoint && typeof apiEndpoint !== 'string') {
-			throw new Error('apiEndpoint parameter must be a string if provided');
-		}
-
 		// Initialize properties with explicit parameters
 		this.port = port;
 		this.staticDir = servedUIDir;
@@ -61,16 +48,6 @@ export class HTTPServer {
 			});
 
 			server.listen(this.port, () => {
-				console.log(`🔗 HTTP server running on port ${this.port}`);
-				if (this.staticDir) {
-					console.log(`   Serving static files from: ${this.staticDir}`);
-				}
-				console.log(
-					`   API available at: http://localhost:${this.port}${this.apiEndpoint}`,
-				);
-				if (this.staticDir) {
-					console.log(`   UI available at: http://localhost:${this.port}/`);
-				}
 				resolve(server);
 			});
 
