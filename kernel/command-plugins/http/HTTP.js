@@ -1,15 +1,15 @@
 import { URL } from 'url';
 import http from 'http';
-import fs from 'fs';
-import path from 'path';
 import busboy from 'busboy';
+import { StaticServer } from './StaticServer.js';
 
 export class HTTPServer {
 	constructor() {
-		this.runner = null; // Will be initialized in start method
+		this.executor = null;
+		this.staticServer = null;
 	}
 
-	start(port, servedUIDir, apiEndpoint, runner, parser) {
+	start(port, servedUIDir, apiEndpoint, executor) {
 		// Validate parameters
 		if (typeof port !== 'number' || port <= 0) {
 			throw new Error('port parameter must be a positive number');
@@ -23,21 +23,12 @@ export class HTTPServer {
 			throw new Error('apiEndpoint parameter must be a string if provided');
 		}
 
-		if (
-			!runner ||
-			typeof runner.runCommand !== 'function'
-		) {
-			throw new Error(
-				'runner parameter must be a valid command runner instance',
-			);
-		}
-
 		// Initialize properties with explicit parameters
 		this.port = port;
 		this.staticDir = servedUIDir;
 		this.apiEndpoint = apiEndpoint;
-		this.runner = runner;
-		this.parser = parser;
+		this.executor = executor;
+		this.staticServer = new StaticServer(servedUIDir);
 
 		return new Promise((resolve, reject) => {
 			const server = http.createServer(async (req, res) => {
@@ -60,7 +51,7 @@ export class HTTPServer {
 
 				// Serve static files if directory is configured
 				if (this.staticDir) {
-					await this.handleStaticRequest(req, res);
+					await this.staticServer.handleStaticRequest(req, res);
 					return;
 				}
 
@@ -108,13 +99,18 @@ export class HTTPServer {
 			if (req.method === 'GET') {
 				commandString = parsedUrl.searchParams.get('command');
 				if (!commandString) {
-					// Fallback to 'json' parameter to maintain backward compatibility
 					commandString = parsedUrl.searchParams.get('json');
 				}
 				if (commandString) {
-					return await this.executeCommandAndRespond(commandString, res);
+					try {
+						// Parse JSON command object
+						const result = await this.executor.executeCommand(commandString);
+						this.sendSuccessResponse(res, result);
+					} catch (err) {
+						this.sendErrorResponse(res, err, 500);
+					}
+					return;
 				}
-				// If no command parameter, return 400
 				return this.sendErrorResponse(res, "Missing 'command' parameter", 400);
 			}
 
@@ -127,27 +123,24 @@ export class HTTPServer {
 
 						if (contentType.includes('application/x-www-form-urlencoded')) {
 							const params = new URLSearchParams(body);
-							commandString = params.get('command') || params.get('json'); // backward compatibility
+							commandString = params.get('command') || params.get('json');
 						} else if (contentType.includes('application/json')) {
 							const json = JSON.parse(body);
-							commandString = json?.command || json?.json; // backward compatibility
+							commandString = json?.command || json?.json;
 						}
 
 						if (commandString) {
-							await this.executeCommandAndRespond(commandString, res);
+							try {
+								const result = await this.executor.executeCommand(commandString);
+								this.sendSuccessResponse(res, result);
+							} catch (err) {
+								this.sendErrorResponse(res, err, 500);
+							}
 						} else {
-							this.sendErrorResponse(
-								res,
-								"Missing 'command' in request body",
-								400,
-							);
+							this.sendErrorResponse(res, "Missing 'command' in request body", 400);
 						}
 					} catch (err) {
-						this.sendErrorResponse(
-							res,
-							`Invalid POST body: ${err.message}`,
-							400,
-						);
+						this.sendErrorResponse(res, `Invalid POST body: ${err.message}`, 400);
 					}
 				});
 				return;
@@ -160,9 +153,6 @@ export class HTTPServer {
 		}
 	}
 
-	/**
-	 * Handle multipart form data with file uploads
-	 */
 	async handleMultipartRequest(req, res) {
 		return new Promise((resolve, reject) => {
 			const bb = busboy({
@@ -195,11 +185,11 @@ export class HTTPServer {
 
 				file.on('end', () => {
 					formData.files.push({
-						fieldName: name,
-						filename,
-						mimeType,
-						data: Buffer.concat(chunks),
-						size: Buffer.concat(chunks).length,
+					fieldName: name,
+					filename,
+					mimeType,
+					data: Buffer.concat(chunks),
+					size: Buffer.concat(chunks).length,
 					});
 				});
 
@@ -211,43 +201,33 @@ export class HTTPServer {
 			// When all parts are processed
 			bb.on('close', async () => {
 				try {
-					// Extract command from form fields
 					const commandString = formData.fields.command || formData.fields.json;
 
 					if (!commandString) {
-						this.sendErrorResponse(
-							res,
-							"Missing 'command' field in form data",
-							400,
-						);
+						this.sendErrorResponse(res, "Missing 'command' field in form data", 400);
 						return resolve();
 					}
 
-					// Convert files to blob format for your system
-					const commandWithFiles = await this.injectFilesIntoCommand(
-						commandString,
-						formData.files,
-					);
+					const fileArgs = {};
+					formData.files.forEach(file => {
+						fileArgs[file.fieldName] = file.data;
+					});
 
-					// Execute the command
-					await this.executeCommandAndRespond(commandWithFiles, res);
+					try {
+    					const result = await this.executor.executeCommand(commandString, fileArgs);
+						this.sendSuccessResponse(res, result);
+					} catch (err) {
+						this.sendErrorResponse(res, err, 500);
+					}
 					resolve();
 				} catch (error) {
-					this.sendErrorResponse(
-						res,
-						`Error processing multipart request: ${error.message}`,
-						500,
-					);
+					this.sendErrorResponse(res, `Error processing multipart request: ${error.message}`, 500);
 					resolve();
 				}
 			});
 
 			bb.on('error', (err) => {
-				this.sendErrorResponse(
-					res,
-					`Multipart parsing error: ${err.message}`,
-					400,
-				);
+				this.sendErrorResponse(res, `Multipart parsing error: ${err.message}`, 400);
 				resolve();
 			});
 
@@ -257,133 +237,16 @@ export class HTTPServer {
 	}
 
 	/**
-	 * Inject uploaded files into the command structure
-	 */
-	async injectFilesIntoCommand(commandString, files) {
-		try {
-			// Parse the original command
-			const commandName = this.parser.extractCommandName(commandString);
-			const commandSpec = this.runner.getManifest().commands[commandName];
-			const command = this.parser.parseCommand(commandString, commandSpec);
-
-			// If no files, return original command
-			if (files.length === 0) {
-				return commandString;
-			}
-
-			if (!commandSpec) {
-				throw new Error(`Unknown command: ${commandName}`);
-			}
-
-			// Create file data based on parameter type
-			const fileDataMap = new Map();
-			const fileParametersWithType = Object.entries(
-				commandSpec.parameters || {},
-			)
-				.filter(
-					([paramName, paramSpec]) =>
-						paramSpec.type &&
-						(paramSpec.type.includes('blob') ||
-							paramSpec.type.includes('buffer')),
-				)
-				.map(([paramName, paramSpec]) => ({
-					name: paramName,
-					type: paramSpec.type,
-				}));
-
-			if (fileParametersWithType.length === 0) {
-				throw new Error(
-					`Command '${commandName}' does not accept file uploads, but ${files.length} file(s) were provided`,
-				);
-			}
-
-			// Validate file/parameter count mismatch
-			if (files.length !== fileParametersWithType.length) {
-				const expectedTypes = fileParametersWithType.map(
-					(p) => `${p.name} (${p.type.includes('buffer') ? 'buffer' : 'blob'})`,
-				);
-				throw new Error(
-					`File parameter mismatch: command '${commandName}' expects ` +
-						`${fileParametersWithType.length} file parameter(s) but received ${files.length} file(s). ` +
-						`Expected parameters: ${expectedTypes.join(', ')}`,
-				);
-			}
-
-			// Handle single parameter with multiple files (not allowed for either blob or buffer)
-			const hasSingleFileParam = fileParametersWithType.length === 1;
-
-			if (files.length > 1 && hasSingleFileParam) {
-				const paramType = fileParametersWithType[0].type.includes('buffer') ? 'buffer' : 'blob';
-				throw new Error(
-					`${paramType.charAt(0).toUpperCase() + paramType.slice(1)} parameter '${fileParametersWithType[0].name}' cannot accept multiple files. ` +
-					`Received ${files.length} files but only one ${paramType} parameter expected.`,
-				);
-			}
-
-			// Now create the file data
-			files.forEach((file, index) => {
-				const paramInfo = fileParametersWithType[index];
-				if (!paramInfo) return;
-
-				if (paramInfo.type.includes('buffer')) {
-					// For buffer: just the raw Buffer data, no metadata
-					fileDataMap.set(paramInfo.name, file.data);
-				} else {
-					// For blob: full metadata object
-					fileDataMap.set(paramInfo.name, {
-						type: 'blob',
-						name: file.filename,
-						mimeType: file.mimeType,
-						data: file.data,
-						size: file.size,
-						encoding: file.encoding || 'binary',
-					});
-				}
-			});
-
-			// Inject files
-			for (const [paramName, fileData] of fileDataMap) {
-				command.args[paramName] = fileData;
-			}
-			// Convert back to string for execution
-			return JSON.stringify(command);
-		} catch (error) {
-			throw new Error(`Failed to inject files into command: ${error.message}`);
-		}
-	}
-
-	async executeCommandAndRespond(commandString, res) {
-		try {
-			// Process command using the shared processor
-			const commandName = this.parser.extractCommandName(commandString);
-			const commandSpec = this.runner.getManifest().commands[commandName];
-			const command = this.parser.parseCommand(commandString, commandSpec);
-			const output = await this.runner.runCommand(command, commandSpec);
-			const result = {
-				output:output,
-				error:null
-			}
-			return this.sendResponse(res, result);
-		} catch (err) {
-			const result = {
-				output:null,
-				error:'Command execution error:', err
-			}
-			return this.sendErrorResponse(res, result, 500);
-		}
-	}
-
-	/**
 	 * Send a response with appropriate status code
 	 * @param {Object} res - HTTP response object
-	 * @param {Object} result - Command result object
+	 * @param {Object} output - Command result object
 	 * @param {number} defaultStatusCode - Default status code if not in result
 	 */
-	sendResponse(res, result) {
-		if (result.error) {
-			return this.sendErrorResponse(res, result.error, 400);
-		}
-
+	sendSuccessResponse(res, output) {
+		const result = {
+			output: output,
+			error: null
+		};
 		res.writeHead(200, { 'Content-Type': 'application/json' });
 		res.end(JSON.stringify(result));
 	}
@@ -391,123 +254,15 @@ export class HTTPServer {
 	/**
 	 * Send an error response
 	 * @param {Object} res - HTTP response object
-	 * @param {string} errorMessage - Error message
+	 * @param {string} error - Error message
 	 * @param {number} statusCode - HTTP status code
 	 */
-	sendErrorResponse(res, errorMessage, statusCode = 400) {
-		res.writeHead(statusCode, { 'Content-Type': 'application/json' });
-		res.end(JSON.stringify({ error: errorMessage }));
-	}
-
-	async handleStaticRequest(req, res) {
-		// Check if static directory is configured
-		if (!this.staticDir) {
-			return this.sendErrorResponse(
-				res,
-				'Static file serving not configured',
-				404,
-			);
-		}
-
-		// Check if the static directory exists and has index.html
-		const indexPath = path.join(this.staticDir, 'index.html');
-		if (!fs.existsSync(this.staticDir) || !fs.existsSync(indexPath)) {
-			return this.sendErrorResponse(
-				res,
-				`Directory '${this.staticDir}' does not exist or is missing index.html. Please generate UI files first using 'node kernel.js --generate'`,
-				404,
-			);
-		}
-
-		// Remove query parameters and normalize path
-		const url = new URL(req.url, `http://${req.headers.host}`);
-		let filePath = url.pathname;
-
-		// Default to index.html for root path
-		if (filePath === '/' || filePath === '') {
-			filePath = '/index.html';
-		}
-
-		// Resolve to absolute path and prevent directory traversal
-		const safePath = path.normalize(filePath).replace(/^(\.\.[\/\\])+/, '');
-		const fullPath = path.join(this.staticDir, safePath);
-
-		// Check if the requested path is within the static directory
-		if (!fullPath.startsWith(this.staticDir)) {
-			res.writeHead(403, { 'Content-Type': 'application/json' });
-			res.end(JSON.stringify({ error: 'Forbidden' }));
-			return;
-		}
-
-		// Check if file exists
-		if (!fs.existsSync(fullPath)) {
-			// Try index.html for SPA routing
-			const indexPath = path.join(this.staticDir, 'index.html');
-			if (fs.existsSync(indexPath)) {
-				this.serveFile(indexPath, res);
-				return;
-			}
-
-			res.writeHead(404, { 'Content-Type': 'application/json' });
-			res.end(JSON.stringify({ error: 'File not found' }));
-			return;
-		}
-
-		this.serveFile(fullPath, res);
-	}
-
-	serveFile(filePath, res) {
-		const ext = path.extname(filePath).toLowerCase();
-		const contentType = this.getContentType(ext);
-
-		fs.readFile(filePath, (err, content) => {
-			if (err) {
-				res.writeHead(500);
-				res.end('Server Error');
-			} else {
-				res.writeHead(200, { 'Content-Type': contentType });
-				res.end(content);
-			}
-		});
-	}
-
-	getContentType(ext) {
-		const types = {
-			'.html': 'text/html',
-			'.css': 'text/css',
-			'.js': 'application/javascript',
-			'.json': 'application/json',
-			'.png': 'image/png',
-			'.jpg': 'image/jpeg',
-			'.jpeg': 'image/jpeg',
-			'.gif': 'image/gif',
-			'.svg': 'image/svg+xml',
-			'.ico': 'image/x-icon',
+	sendErrorResponse(res, error, statusCode = 400) {
+		const result = {
+			output: null,
+			error: error.message || error
 		};
-		return types[ext] || 'application/octet-stream';
-	}
-
-	async respond(jsonString, res) {
-		if (typeof jsonString === 'undefined') {
-			res.writeHead(400, { 'Content-Type': 'application/json' });
-			res.end(JSON.stringify({ error: "Missing 'json' parameter" }));
-			return;
-		}
-
-		try {
-			const result = await this.apiHandler.handleInput(jsonString);
-
-			if (result.error) {
-				res.writeHead(400, { 'Content-Type': 'application/json' });
-				res.end(JSON.stringify({ error: result.error }));
-				return;
-			}
-
-			res.writeHead(200, { 'Content-Type': 'application/json' });
-			res.end(JSON.stringify(result));
-		} catch (err) {
-			res.writeHead(500, { 'Content-Type': 'application/json' });
-			res.end(JSON.stringify({ error: err.message }));
-		}
+		res.writeHead(statusCode, { 'Content-Type': 'application/json' });
+		res.end(JSON.stringify(result));
 	}
 }

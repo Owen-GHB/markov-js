@@ -1,6 +1,5 @@
 import { HTTPServer } from './HTTP.js';
-import path from 'path';
-import { pathToFileURL } from 'url';
+import { HTTPExecutor } from './HTTPExecutor.js';
 
 /**
  * HTTP plugin wrapper
@@ -33,26 +32,16 @@ export async function start(
 	servedUIDir,
 	apiEndpoint,
 ) {
-	const exportsUrl = pathToFileURL(path.join(kernelPath, 'exports.js')).href;
-	const { manifestReader, Runner, Parser } = await import(
-		exportsUrl
-	);
-	const manifest = manifestReader(projectRoot);
-	const runner = new Runner(
-		commandRoot,
-		projectRoot,
-		manifest,
-	);
-
 	const httpServer = getHttpInstance();
+	const executor = new HTTPExecutor(kernelPath, commandRoot, projectRoot);
+	await executor.init();
 
 	// Start the server but don't return the server object
-	await httpServer.start(
+	httpServer.start(
 		serverPort,
 		servedUIDir,
 		apiEndpoint,
-		runner,
-		Parser,
+		executor
 	);
 
 	// Return a clean success message instead of the server object

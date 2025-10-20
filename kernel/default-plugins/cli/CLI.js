@@ -1,101 +1,69 @@
-// File: default-plugins/cli/CLI.js
-
-import path from 'path';
-import { pathToFileURL } from 'url';
+import { CLIExecutor } from './CLIExecutor.js';
 
 export class CLI {
-	constructor(kernelPath, commandRoot, projectRoot, contextFilePath) {
-		if (!contextFilePath) {
-			throw new Error('CLI requires a contextFilePath property');
-		}
+  constructor(kernelPath, commandRoot, projectRoot, contextFilePath) {
+    if (!contextFilePath) {
+      throw new Error('CLI requires a contextFilePath property');
+    }
+    if (!kernelPath) {
+      throw new Error('CLI requires a kernelPath property');
+    }
+    
+    this.contextFilePath = contextFilePath;
+    this.kernelPath = kernelPath;
+    this.commandRoot = commandRoot;
+    this.projectRoot = projectRoot;
+    
+    this.executor = null;
+  }
 
-		if (!kernelPath) {
-			throw new Error('CLI requires a kernelPath property');
-		}
-		this.processor = null;
-		this.contextFilePath = contextFilePath;
-		this.kernelPath = kernelPath;
-		this.commandRoot = commandRoot;
-		this.projectRoot = projectRoot;	
-	}
+  async run(args) {
+    // Initialize executor
+    this.executor = new CLIExecutor(this.kernelPath, this.commandRoot, this.projectRoot, this.contextFilePath);
+    await this.executor.init();
+    
+    // Access kernel components DIRECTLY
+    const { kernel, manifest, state } = this.executor;
 
-	/**
-	 * Run the CLI with provided arguments
-	 * @param {string[]} args - Command line arguments
-	 */
-	async run(args) {
-		const exportsUrl = pathToFileURL(path.join(this.kernelPath, 'exports.js')).href;
-		const { 
-			manifestReader, 
-			Runner, 
-			HelpHandler, 
-			formatResult, 
-			Parser,
-			StateManager,
-			Evaluator
-		} = await import(exportsUrl);
-		const manifest = manifestReader(this.commandRoot);
-		this.processor = new Runner(
-			this.commandRoot,
-			this.projectRoot,
-			manifest
-		);
-		this.processor.state = StateManager.loadState(this.contextFilePath, manifest);
+    if (args.length === 0) {
+      console.log(kernel.HelpHandler.formatGeneralHelp(manifest));
+      process.exit(0);
+    }
 
-		if (args.length === 0) {
-			// Show help when no arguments provided using HelpHandler
-			console.log(HelpHandler.formatGeneralHelp(manifest));
-			process.exit(0);
-		}
+    const input = args.join(' ');
 
-		// Join all arguments into a single command string for parsing
-		const input = args.join(' ');
+    if (kernel.HelpHandler.isHelpCommand(input)) {
+      const helpArgs = kernel.HelpHandler.getHelpCommandArgs(input);
+      if (helpArgs.command) {
+        const cmd = manifest.commands[helpArgs.command];
+        if (!cmd) {
+          console.error(`❌ Unknown command: ${helpArgs.command}`);
+          console.log(kernel.HelpHandler.formatGeneralHelp(manifest));
+          process.exit(1);
+        }
+        console.log(kernel.HelpHandler.formatCommandHelp(cmd));
+      } else {
+        console.log(kernel.HelpHandler.formatGeneralHelp(manifest));
+      }
+      process.exit(0);
+    }
 
-		// Handle help command using HelpHandler
-		if (HelpHandler.isHelpCommand(input)) {
-			const helpArgs = HelpHandler.getHelpCommandArgs(input);
-			if (helpArgs.command) {
-				const cmd = manifest.commands[helpArgs.command];
-				if (!cmd) {
-					console.error(`❌ Unknown command: ${helpArgs.command}`);
-					console.log(HelpHandler.formatGeneralHelp(manifest));
-					process.exit(1);
-				}
-				console.log(HelpHandler.formatCommandHelp(cmd));
-			} else {
-				console.log(HelpHandler.formatGeneralHelp(manifest));
-			}
-			process.exit(0);
-		}
+    if (kernel.HelpHandler.isExitCommand(input)) {
+      console.log('Goodbye!');
+      process.exit(0);
+    }
 
-		// Handle exit command
-		if (HelpHandler.isExitCommand(input)) {
-			console.log('Goodbye!');
-			process.exit(0);
-		}
-
-		try {
-			const commandName = Parser.extractCommandName(input);
-			const commandSpec = manifest.commands[commandName];
-			const command = Parser.parseCommand(input, commandSpec);
-			let result = await this.processor.runCommand(command, commandSpec, this.processor.state);
-			
-			if (commandSpec?.successOutput) {
-				const templateContext = {
-					input: command.args,
-					output: result,
-					state: this.processor.state,
-					original: command.args,
-					originalCommand: command.name
-				};
-				result = Evaluator.evaluateTemplate(commandSpec.successOutput, templateContext);
-			}
-			
-			StateManager.saveState(this.processor.state, this.contextFilePath, manifest);
-			console.log(formatResult(result));
-		} catch (err) {
-			console.error(`❌ ${err}`);
-			process.exit(1);
-		}
-	}
+    try {
+      // Use executor ONLY for command execution
+      const result = await this.executor.executeCommand(input);
+      
+      // Transport handles state persistence directly
+      kernel.StateManager.saveState(state, this.contextFilePath, manifest);
+      
+      console.log(kernel.formatResult(result));
+    } catch (err) {
+      console.error(`❌ ${err}`);
+      process.exit(1);
+    }
+  }
 }

@@ -1,0 +1,54 @@
+import path from 'path';
+import { pathToFileURL } from 'url';
+
+export class HTTPExecutor {
+  constructor(kernelPath, commandRoot, projectRoot) {
+    this.kernelPath = kernelPath;
+    this.commandRoot = commandRoot;
+    this.projectRoot = projectRoot;
+    
+    // These will be set in init()
+    this.kernel = null;    // All kernel exports
+    this.manifest = null;  // Loaded manifest
+    this.runner = null;    // Command runner
+  }
+  
+  async init() {
+    // Proper path resolution
+    const exportsPath = path.join(this.kernelPath, 'exports.js');
+    const exportsUrl = pathToFileURL(exportsPath).href;
+    
+    // Single dynamic import
+    this.kernel = await import(exportsUrl);
+    
+    // Initialize core components
+    this.manifest = this.kernel.manifestReader(this.projectRoot);
+    this.runner = new this.kernel.Runner(this.commandRoot, this.projectRoot, this.manifest);
+  }
+  
+  /**
+   * Execute command with optional file arguments
+   * @param {string} commandString - JSON command string from HTTP request
+   * @param {Object} fileArgs - File arguments object {fieldName: fileData} (optional)
+   * @returns {Promise<any>} - Command execution result
+   */
+  async executeCommand(commandString, fileArgs = null) {
+    try {
+      // Parse JSON command string internally
+      const commandObject = JSON.parse(commandString);
+      
+      // Merge file args if provided
+      if (fileArgs && typeof fileArgs === 'object' && Object.keys(fileArgs).length > 0) {
+        commandObject.args = { ...commandObject.args, ...fileArgs };
+      }
+      
+      // Execute the command
+      const commandSpec = this.manifest.commands[commandObject.name];
+      const result = await this.runner.runCommand(commandObject, commandSpec);
+      return result;
+      
+    } catch (error) {
+      throw new Error(`HTTP command execution failed: ${error.message}`);
+    }
+  }
+}

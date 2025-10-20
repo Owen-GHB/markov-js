@@ -1,227 +1,157 @@
-// File: default-plugins/repl/REPL.js
-
 import readline from 'readline';
 import fs from 'fs';
-import path from 'path';
-import { pathToFileURL } from 'url';
+import { REPLExecutor } from './REPLExecutor.js';
 
 export class REPL {
-	constructor() {
-		// These will be initialized in the start method
-		this.runner = null;
-		this.maxHistory = 100;
-		this.history = [];
-		this.historyFilePath = null;
-		this.manifest = null;
-	}
+  constructor() {
+    this.executor = null;
+    this.rl = null;
+    this.history = [];
+    this.historyFilePath = null;
+    this.maxHistory = 100;
+  }
 
-	async initialize(kernelPath, commandRoot, projectRoot, contextFilePath, historyFilePath, maxHistory) {
-		this.kernelPath = kernelPath;
-		this.commandRoot = commandRoot;
-		this.projectRoot = projectRoot;
-		this.contextFilePath = contextFilePath;
-		
-		this.maxHistory = maxHistory;
-		this.historyFilePath = historyFilePath;
-		const exportsUrl = pathToFileURL(path.join(kernelPath, 'exports.js')).href;
-		const { manifestReader, Runner, Parser } = await import(exportsUrl);
-		const manifest = manifestReader(this.commandRoot);
-		this.manifest = manifestReader(this.commandRoot);
-		this.runner = new Runner(
-			this.commandRoot,
-			this.projectRoot,
-			manifest
-		);
-		this.loadHistory();
-	}
+  async start(kernelPath, commandRoot, projectRoot, contextFilePath, historyFilePath, maxHistory) {
+    // Store REPL-specific config
+    this.historyFilePath = historyFilePath;
+    this.maxHistory = maxHistory;
 
-	async start(kernelPath, commandRoot, projectRoot, contextFilePath, historyFilePath, maxHistory) {
-		// Validate parameters
-		if (contextFilePath && typeof contextFilePath !== 'string') {
-			throw new Error('contextFilePath parameter must be a string if provided');
-		}
-		if (historyFilePath && typeof historyFilePath !== 'string') {
-			throw new Error('historyFilePath parameter must be a string if provided');
-		}
-		if (maxHistory && (typeof maxHistory !== 'number' || maxHistory <= 0)) {
-			throw new Error('maxHistory parameter must be a positive number if provided');
-		}
-		if (!kernelPath || typeof kernelPath !== 'string') {
-			throw new Error('REPL requires a kernelPath parameter');
-		}
-		if (!projectRoot || typeof projectRoot !== 'string') {
-			throw new Error('REPL requires a projectRoot parameter');
-		}
+    // Initialize executor (SAME as CLI)
+    this.executor = new REPLExecutor(kernelPath, commandRoot, projectRoot, contextFilePath);
+    await this.executor.init();
+    
+    // Access kernel components DIRECTLY
+    const { kernel, manifest, state } = this.executor;
 
-		// Initialize with provided path and config values at the beginning of start
-		const { 
-			HelpHandler, 
-			formatResult, 
-			StateManager, 
-			Evaluator 
-		} = await import(pathToFileURL(path.join(kernelPath, 'exports.js')).href);		
-		await this.initialize(kernelPath, commandRoot, projectRoot, contextFilePath, historyFilePath, maxHistory);
-		this.runner.state = StateManager.loadState(this.contextFilePath,  this.manifest);
+    // Load history (REPL handles this itself)
+    this.loadHistory();
 
-		// Initialize REPL instance
-		this.rl = readline.createInterface({
-			input: process.stdin,
-			output: process.stdout,
-			prompt:  this.manifest.prompt || '> ', // Use prompt from manifest or default fallback
-			completer: (line) => this.commandCompleter(line),
-		});
+    // Initialize REPL instance
+    this.rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+      prompt: manifest.prompt || '> ',
+      completer: (line) => this.commandCompleter(line),
+    });
 
-		// Load saved history into readline's history array for up/down navigation
-		this.rl.history = [...this.history].reverse(); // Reverse to match readline's order (newest first)
+    // Load saved history into readline
+    this.rl.history = [...this.history].reverse();
 
-		// Display welcome message and prompt
-		console.log(
-			`🔗 ${this.manifest.name} - ${ this.manifest.description}`,
-		);
-		console.log(
-			'='.repeat(Math.max(this.manifest.name.length + 2, 40)),
-		);
-		console.log(
-			'Type "help()" for available commands or "exit()" to quit.',
-		);
-		console.log('');
+    // Display welcome message
+    console.log(`🔗 ${manifest.name} - ${manifest.description}`);
+    console.log('='.repeat(Math.max(manifest.name.length + 2, 40)));
+    console.log('Type "help()" for available commands or "exit()" to quit.');
+    console.log('');
 
-		this.rl.prompt();
+    this.rl.prompt();
 
-		// Handle line input
-		this.rl.on('line', async (input) => {
-			input = input.trim();
+    // Handle line input
+    this.rl.on('line', async (input) => {
+      input = input.trim();
 
-			// Handle empty input
-			if (!input) {
-				this.rl.prompt();
-				return;
-			}
+      if (!input) {
+        this.rl.prompt();
+        return;
+      }
 
-			// Add command to history
-			this.addToHistory(input);
+      // Add command to history (REPL handles this itself)
+      this.addToHistory(input);
 
-			// Handle help command using HelpHandler
-			if (HelpHandler.isHelpCommand(input)) {
-				const helpArgs = HelpHandler.getHelpCommandArgs(input);
-				if (helpArgs.command) {
-					const cmd = this.manifest.commands[helpArgs.command];
-					if (!cmd) {
-						console.error(`❌ Unknown command: ${helpArgs.command}`);
-					} else {
-						console.log(HelpHandler.formatCommandHelp(cmd));
-					}
-				} else {
-					console.log(HelpHandler.formatGeneralHelp(this.manifest));
-				}
-				this.rl.prompt();
-				return;
-			}
+      // Handle help command using DIRECT kernel access
+      if (kernel.HelpHandler.isHelpCommand(input)) {
+        const helpArgs = kernel.HelpHandler.getHelpCommandArgs(input);
+        if (helpArgs.command) {
+          const cmd = manifest.commands[helpArgs.command];
+          if (!cmd) {
+            console.error(`❌ Unknown command: ${helpArgs.command}`);
+          } else {
+            console.log(kernel.HelpHandler.formatCommandHelp(cmd));
+          }
+        } else {
+          console.log(kernel.HelpHandler.formatGeneralHelp(manifest));
+        }
+        this.rl.prompt();
+        return;
+      }
 
-			// Handle exit command
-			if (HelpHandler.isExitCommand(input)) {
-				console.log('Goodbye!');
-				this.rl.close();
-				return;
-			}
+      // Handle exit command
+      if (kernel.HelpHandler.isExitCommand(input)) {
+        console.log('Goodbye!');
+        this.rl.close();
+        return;
+      }
 
-			try {	
-				const commandName = Parser.extractCommandName(input);
-				const commandSpec = this.manifest.commands[commandName];
-				const command = Parser.parseCommand(input, commandSpec);
-				let result = await this.runner.runCommand(command, commandSpec, this.runner.state);
-				
-				if (commandSpec?.successOutput) {
-					const templateContext = {
-					input: command.args,
-					output: result,
-					state: this.runner.state,
-					original: command.args,
-					originalCommand: command.name
-					};
-					result = Evaluator.evaluateTemplate(commandSpec.successOutput, templateContext);
-				}
-				
-				StateManager.saveState(this.runner.state, this.contextFilePath, this.manifest);
-				console.log(formatResult(result));
-			} catch (err) {
-				console.error(`❌ ${err}`);
-			}
+      try {
+        // Use executor ONLY for command execution
+        const result = await this.executor.executeCommand(input);
+        console.log(kernel.formatResult(result));
+      } catch (err) {
+        console.error(`❌ ${err}`);
+      }
 
-			this.rl.prompt();
-		});
+      this.rl.prompt();
+    });
 
-		this.rl.on('close', () => {
-			StateManager.saveState(this.runner.state, this.contextFilePath, this.manifest);
-			process.exit(0);
-		});
+    this.rl.on('close', () => {
+      // Transport handles state persistence directly
+      kernel.StateManager.saveState(state, contextFilePath, manifest);
+      this.saveHistory(); // REPL handles its own history saving
+      process.exit(0);
+    });
 
-		process.on('SIGINT', () => {
-			console.log('\nUse "exit" or Ctrl+D to quit.');
-			this.rl.prompt();
-		});
-	}
-	commandCompleter(line) {
-		// Include built-in commands in completion
-		const commands = [
-			...Object.keys(this.manifest.commands),
-			'help',
-			'exit',
-		];
-		const hits = commands.filter((c) => c.startsWith(line));
-		return [hits.length ? hits : commands, line];
-	}
+    process.on('SIGINT', () => {
+      console.log('\nUse "exit" or Ctrl+D to quit.');
+      this.rl.prompt();
+    });
+  }
 
-	addToHistory(input) {
-		if (input.trim()) {
-			// Add to history if it's not a duplicate of the last entry
-			if (
-				this.history.length === 0 ||
-				this.history[this.history.length - 1] !== input.trim()
-			) {
-				this.history.push(input.trim());
-				// Keep only the most recent maxHistory entries
-				if (this.history.length > this.maxHistory) {
-					this.history = this.history.slice(-this.maxHistory);
-				}
-				this.saveHistory();
-			}
-		}
-	}
+  // REPL-specific methods (stay in transport)
+  loadHistory() {
+    try {
+      if (fs.existsSync(this.historyFilePath)) {
+        const historyData = fs.readFileSync(this.historyFilePath, 'utf8');
+        const savedHistory = JSON.parse(historyData);
+        if (Array.isArray(savedHistory)) {
+          this.history = savedHistory.slice(-this.maxHistory);
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️ Could not load REPL history:', error.message);
+      this.history = [];
+    }
+  }
 
-	loadHistory() {
-		try {
-			if (fs.existsSync(this.historyFilePath)) {
-				const historyData = fs.readFileSync(this.historyFilePath, 'utf8');
-				const savedHistory = JSON.parse(historyData);
-				if (Array.isArray(savedHistory)) {
-					// Limit to maxHistory items
-					this.history = savedHistory.slice(-this.maxHistory);
-				}
-			}
-		} catch (error) {
-			console.warn(
-				'⚠️ Could not load REPL history, starting fresh:',
-				error.message,
-			);
-			this.history = [];
-		}
-	}
+  saveHistory() {
+    try {
+      const contextDir = this.historyFilePath.split('/').slice(0, -1).join('/');
+      if (!fs.existsSync(contextDir)) {
+        fs.mkdirSync(contextDir, { recursive: true });
+      }
+      fs.writeFileSync(this.historyFilePath, JSON.stringify(this.history, null, 2));
+    } catch (error) {
+      console.warn('⚠️ Could not save REPL history:', error.message);
+    }
+  }
 
-	saveHistory() {
-		try {
-			// Ensure context directory exists
-			const contextDir = path.dirname(this.historyFilePath);
-			if (!fs.existsSync(contextDir)) {
-				fs.mkdirSync(contextDir, { recursive: true });
-			}
+  addToHistory(input) {
+    if (input.trim()) {
+      if (this.history.length === 0 || this.history[this.history.length - 1] !== input.trim()) {
+        this.history.push(input.trim());
+        if (this.history.length > this.maxHistory) {
+          this.history = this.history.slice(-this.maxHistory);
+        }
+        this.saveHistory();
+      }
+    }
+  }
 
-			fs.writeFileSync(
-				this.historyFilePath,
-				JSON.stringify(this.history, null, 2),
-			);
-		} catch (error) {
-			console.warn('⚠️ Could not save REPL history:', error.message);
-		}
-	}
+  commandCompleter(line) {
+    const commands = [
+      ...Object.keys(this.executor.manifest.commands),
+      'help',
+      'exit',
+    ];
+    const hits = commands.filter((c) => c.startsWith(line));
+    return [hits.length ? hits : commands, line];
+  }
 }

@@ -10,32 +10,36 @@ let cliInstance = null;
 
 /**
  * Initialize and get the CLI instance
- * @param {string} contextFilePath - Path to context file for state persistence
  * @param {string} kernelPath - Path to kernel directory
+ * @param {string} commandRoot - Command root directory  
+ * @param {string} projectRoot - Project root directory
+ * @param {string} contextFilePath - Path to context file for state persistence
  * @returns {CLI} CLI plugin instance
  */
 function getCliInstance(kernelPath, commandRoot, projectRoot, contextFilePath) {
-	if (!cliInstance) {
-		cliInstance = new CLI(kernelPath, commandRoot, projectRoot, contextFilePath);
-	}
-	return cliInstance;
+  if (!cliInstance) {
+    cliInstance = new CLI(kernelPath, commandRoot, projectRoot, contextFilePath);
+  }
+  return cliInstance;
 }
 
 /**
  * Run the CLI plugin
- * @param {string} contextFilePath - Path to context file for state persistence
  * @param {string} kernelPath - Path to kernel directory
+ * @param {string} commandRoot - Command root directory
+ * @param {string} projectRoot - Project root directory  
+ * @param {string} contextFilePath - Path to context file for state persistence
  * @param {string[]} args - Command line arguments
  * @returns {Promise<void>}
  */
 export async function run(kernelPath, commandRoot, projectRoot, contextFilePath, args) {
-	const cli = getCliInstance(kernelPath, commandRoot, projectRoot, contextFilePath);
-	return await cli.run(args);
+  const cli = getCliInstance(kernelPath, commandRoot, projectRoot, contextFilePath);
+  return await cli.run(args);
 }
 
 /**
  * Expose the plugin's run method for direct usage
  */
 export default {
-	run,
+  run,
 };
