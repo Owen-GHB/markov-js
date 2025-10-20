@@ -1,5 +1,6 @@
 import { StateManager } from './StateManager.js';
 import { Validator } from './Validator.js';
+import { Parser } from './Parser.js';
 
 /**
  * Command processing wrapper

@@ -50,7 +50,7 @@ export class Parser {
 		const cliMatch = trimmed.match(PATTERNS.cliStyle);
 		if (cliMatch) {
 			if (
-				!commandSpec.parameters ||
+				commandSpec.parameters ||
 				Object.entries(commandSpec.parameters).every(([_, p]) => !p.required)
 			) {
 				return Parser.parseCliStyle(cliMatch[1], cliMatch[2], commandSpec);

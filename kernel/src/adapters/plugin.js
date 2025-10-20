@@ -28,7 +28,7 @@ export class PluginAdapter {
      * Build method arguments based on command spec parameter order
      */
     async buildMethodArguments(args, commandSpec) {
-        const methodArgs = [kernelPath, this.commandRoot, this.projectRoot];
+        const methodArgs = [kernelPath, this.projectRoot, this.projectRoot];
         
         // Add parameters in the order they appear in the command spec
         if (commandSpec.parameters) {

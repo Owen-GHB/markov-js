@@ -1,4 +1,4 @@
-import { CLIExecutor } from './CLIExecutor.js';
+import { importVertex } from './imports.js';
 
 export class CLI {
   constructor(kernelPath, commandRoot, projectRoot, contextFilePath) {
@@ -14,53 +14,53 @@ export class CLI {
     this.commandRoot = commandRoot;
     this.projectRoot = projectRoot;
     
+    this.kernel = null;
     this.executor = null;
   }
 
   async run(args) {
-    // Initialize executor
-    this.executor = new CLIExecutor(this.kernelPath, this.commandRoot, this.projectRoot, this.contextFilePath);
-    await this.executor.init();
+    // Initialize Vertex and kernel utilities
+    const Vertex = await importVertex(this.kernelPath);
+    this.kernel = new Vertex();
     
-    // Access kernel components DIRECTLY
-    const { kernel, manifest, state } = this.executor;
+    // Create executor first
+    this.executor = new this.kernel.Executor(this.commandRoot, this.projectRoot, this.contextFilePath);
+    
+    // Load initial state from disk and set it in executor's runner
+    const manifest = this.kernel.manifestReader(this.commandRoot);
+    this.executor.runner.state = this.kernel.StateManager.loadState(this.contextFilePath, manifest);
 
     if (args.length === 0) {
-      console.log(kernel.HelpHandler.formatGeneralHelp(manifest));
+      console.log(this.kernel.HelpHandler.formatGeneralHelp(manifest));
       process.exit(0);
     }
 
     const input = args.join(' ');
 
-    if (kernel.HelpHandler.isHelpCommand(input)) {
-      const helpArgs = kernel.HelpHandler.getHelpCommandArgs(input);
+    if (this.kernel.HelpHandler.isHelpCommand(input)) {
+      const helpArgs = this.kernel.HelpHandler.getHelpCommandArgs(input);
       if (helpArgs.command) {
         const cmd = manifest.commands[helpArgs.command];
         if (!cmd) {
           console.error(`❌ Unknown command: ${helpArgs.command}`);
-          console.log(kernel.HelpHandler.formatGeneralHelp(manifest));
+          console.log(this.kernel.HelpHandler.formatGeneralHelp(manifest));
           process.exit(1);
         }
-        console.log(kernel.HelpHandler.formatCommandHelp(cmd));
+        console.log(this.kernel.HelpHandler.formatCommandHelp(cmd));
       } else {
-        console.log(kernel.HelpHandler.formatGeneralHelp(manifest));
+        console.log(this.kernel.HelpHandler.formatGeneralHelp(manifest));
       }
       process.exit(0);
     }
 
-    if (kernel.HelpHandler.isExitCommand(input)) {
+    if (this.kernel.HelpHandler.isExitCommand(input)) {
       console.log('Goodbye!');
       process.exit(0);
     }
 
     try {
-      // Use executor ONLY for command execution
-      const result = await this.executor.executeCommand(input);
-      
-      // Transport handles state persistence directly
-      kernel.StateManager.saveState(state, this.contextFilePath, manifest);
-      
-      console.log(kernel.formatResult(result));
+      const result = await this.executor.executeCommand(input, 'successOutput');
+      console.log(this.kernel.formatResult(result));
     } catch (err) {
       console.error(`❌ ${err}`);
       process.exit(1);

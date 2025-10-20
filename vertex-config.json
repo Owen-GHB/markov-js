@@ -5,7 +5,7 @@
   "windowHeight": 800,
   "showDevTools": true,
   "apiEndpoint": "/api",
-  "serverPort": "8080",
+  "serverPort": 8080,
   "userTemplateDir": "./ejs-templates",
   "generatedUIDir": "./generated-ui",
   "contextFilePath": "./context/state.json",

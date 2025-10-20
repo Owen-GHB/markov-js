@@ -1,10 +1,12 @@
 import readline from 'readline';
 import fs from 'fs';
-import { REPLExecutor } from './REPLExecutor.js';
+import { importVertex } from './imports.js';
 
 export class REPL {
   constructor() {
+    this.kernel = null;
     this.executor = null;
+    this.manifest = null;
     this.rl = null;
     this.history = [];
     this.historyFilePath = null;
@@ -15,13 +17,19 @@ export class REPL {
     // Store REPL-specific config
     this.historyFilePath = historyFilePath;
     this.maxHistory = maxHistory;
+    this.contextFilePath = contextFilePath;
+    this.commandRoot = commandRoot;
 
-    // Initialize executor (SAME as CLI)
-    this.executor = new REPLExecutor(kernelPath, commandRoot, projectRoot, contextFilePath);
-    await this.executor.init();
+    // Initialize Vertex and kernel utilities
+    const Vertex = await importVertex(kernelPath);
+    this.kernel = new Vertex();
     
-    // Access kernel components DIRECTLY
-    const { kernel, manifest, state } = this.executor;
+    // Create executor first
+    this.executor = new this.kernel.Executor(commandRoot, projectRoot, contextFilePath);
+    
+    // Load initial state from disk and set it in executor's runner
+    this.manifest = this.kernel.manifestReader(commandRoot);
+    this.executor.runner.state = this.kernel.StateManager.loadState(contextFilePath, this.manifest);
 
     // Load history (REPL handles this itself)
     this.loadHistory();
@@ -30,7 +38,7 @@ export class REPL {
     this.rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout,
-      prompt: manifest.prompt || '> ',
+      prompt: this.manifest.prompt || '> ',
       completer: (line) => this.commandCompleter(line),
     });
 
@@ -38,8 +46,8 @@ export class REPL {
     this.rl.history = [...this.history].reverse();
 
     // Display welcome message
-    console.log(`🔗 ${manifest.name} - ${manifest.description}`);
-    console.log('='.repeat(Math.max(manifest.name.length + 2, 40)));
+    console.log(`🔗 ${this.manifest.name} - ${this.manifest.description}`);
+    console.log('='.repeat(Math.max(this.manifest.name.length + 2, 40)));
     console.log('Type "help()" for available commands or "exit()" to quit.');
     console.log('');
 
@@ -57,34 +65,33 @@ export class REPL {
       // Add command to history (REPL handles this itself)
       this.addToHistory(input);
 
-      // Handle help command using DIRECT kernel access
-      if (kernel.HelpHandler.isHelpCommand(input)) {
-        const helpArgs = kernel.HelpHandler.getHelpCommandArgs(input);
+      // Handle help command using kernel
+      if (this.kernel.HelpHandler.isHelpCommand(input)) {
+        const helpArgs = this.kernel.HelpHandler.getHelpCommandArgs(input);
         if (helpArgs.command) {
-          const cmd = manifest.commands[helpArgs.command];
+          const cmd = this.manifest.commands[helpArgs.command];
           if (!cmd) {
             console.error(`❌ Unknown command: ${helpArgs.command}`);
           } else {
-            console.log(kernel.HelpHandler.formatCommandHelp(cmd));
+            console.log(this.kernel.HelpHandler.formatCommandHelp(cmd));
           }
         } else {
-          console.log(kernel.HelpHandler.formatGeneralHelp(manifest));
+          console.log(this.kernel.HelpHandler.formatGeneralHelp(this.manifest));
         }
         this.rl.prompt();
         return;
       }
 
       // Handle exit command
-      if (kernel.HelpHandler.isExitCommand(input)) {
+      if (this.kernel.HelpHandler.isExitCommand(input)) {
         console.log('Goodbye!');
         this.rl.close();
         return;
       }
 
       try {
-        // Use executor ONLY for command execution
-        const result = await this.executor.executeCommand(input);
-        console.log(kernel.formatResult(result));
+        const result = await this.executor.executeCommand(input, 'successOutput');
+        console.log(this.kernel.formatResult(result));
       } catch (err) {
         console.error(`❌ ${err}`);
       }
@@ -93,8 +100,6 @@ export class REPL {
     });
 
     this.rl.on('close', () => {
-      // Transport handles state persistence directly
-      kernel.StateManager.saveState(state, contextFilePath, manifest);
       this.saveHistory(); // REPL handles its own history saving
       process.exit(0);
     });

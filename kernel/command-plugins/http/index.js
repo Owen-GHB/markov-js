@@ -1,18 +1,9 @@
 import { HTTPServer } from './HTTP.js';
-import { HTTPExecutor } from './HTTPExecutor.js';
-
-/**
- * HTTP plugin wrapper
- * Encapsulates the HTTP plugin instantiation and exposes functional interface
- */
+import { importVertex } from './imports.js';
 
 // Plugin instance (singleton)
 let httpInstance = null;
 
-/**
- * Initialize and get the HTTP instance
- * @returns {HTTPServer} HTTP plugin instance
- */
 function getHttpInstance() {
 	if (!httpInstance) {
 		httpInstance = new HTTPServer();
@@ -32,10 +23,12 @@ export async function start(
 	servedUIDir,
 	apiEndpoint,
 ) {
-	const httpServer = getHttpInstance();
-	const executor = new HTTPExecutor(kernelPath, commandRoot, projectRoot);
-	await executor.init();
+	const Vertex = await importVertex(kernelPath);
+	const kernel = new Vertex();
+	const executor = new kernel.Executor(commandRoot, projectRoot);
 
+	const httpServer = getHttpInstance();
+	
 	// Start the server but don't return the server object
 	httpServer.start(
 		serverPort,
@@ -48,9 +41,6 @@ export async function start(
 	return `HTTP server started on port ${serverPort}`;
 }
 
-/**
- * Expose the plugin's start method for direct usage
- */
 export default {
 	start,
 };
