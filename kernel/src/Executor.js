@@ -12,7 +12,7 @@ export class Executor {
     
     // Initialize core components
     this.manifest = manifestReader(commandRoot);
-    this.runner = new Runner(commandRoot, projectRoot, this.manifest);
+    this.runner = new Runner(commandRoot, projectRoot);
     
     // Load state if context file provided
     this.state = contextFilePath 
@@ -21,8 +21,10 @@ export class Executor {
   }
 
   async executeCommand(input, template = null) {
-    const commandObject = Processor.parseInput(input, this.manifest);
-    const commandSpec = this.manifest.commands[commandObject.name];
+    const processedInput = Processor.processInput(input, this.manifest);
+    const commandSpec = this.manifest.commands[processedInput.name];
+    const commandObject = Processor.processCommand(processedInput, commandSpec, this.state);
+
     
     // Execute command chain recursively
     const { result: chainResult, finalState } = await this.executeCommandChain(

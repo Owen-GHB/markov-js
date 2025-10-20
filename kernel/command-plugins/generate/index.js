@@ -3,6 +3,7 @@
 import { UI } from './UI.js';
 import path from 'path';
 import { pathToFileURL } from 'url';
+import { importVertex } from './imports.js';
 
 // Plugin instance (singleton)
 let generatorInstance = null;
@@ -23,9 +24,9 @@ function getGeneratorInstance() {
  * @returns {Promise<void>}
  */
 export async function run(kernelPath, commandRoot, projectRoot, userTemplateDir, generatedUIDir) {
-    const exportsUrl = pathToFileURL(path.join(kernelPath, 'exports.js')).href;
-	const { manifestReader } = await import(exportsUrl);
-	const manifest = manifestReader(projectRoot);
+    const Vertex = await importVertex(kernelPath);
+    const kernel = new Vertex();
+	const manifest = new kernel.manifestReader(projectRoot);
     
     const generator = getGeneratorInstance();
     return await generator.run(userTemplateDir, generatedUIDir, manifest);

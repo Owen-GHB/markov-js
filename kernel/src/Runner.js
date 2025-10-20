@@ -1,21 +1,15 @@
 import { Handler } from './Handler.js';
 import { StateManager } from './StateManager.js';
-import { Processor } from './Processor.js';
 import { Evaluator } from './Evaluator.js';
 
 /**
  * Stateless command processor - all state management handled by caller
  */
 export class Runner {
-	constructor(commandRoot, projectRoot, manifest) {
+	constructor(commandRoot, projectRoot) {
 		if (!projectRoot) {
 			throw new Error('Runner requires a projectRoot parameter');
 		}
-		if (!manifest || typeof manifest !== 'object') {
-			throw new Error('Runner requires a manifest object');
-		}
-
-		this.manifest = manifest;
 		this.handler = new Handler(commandRoot, projectRoot);
 	}
 
@@ -23,22 +17,15 @@ export class Runner {
 	 * Run a single command and return result with updated state and optional next command
 	 */
 	async runCommand(command, commandSpec, state, originalCommand = null) {
-		// Process command through preparation pipeline
-		const processedCommand = Processor.processCommand(
-			command,
-			commandSpec,
-			state,
-		);
-
 		// Execute command
 		const result = await this.handler.handleCommand(
-			processedCommand,
+			command,
 			commandSpec,
 		);
 
 		// Build template context for side effects and chaining
 		const templateContext = {
-			input: processedCommand.args,
+			input: command.args,
 			output: result,
 			state: state,
 			original: originalCommand ? originalCommand.args : command.args,
@@ -47,7 +34,7 @@ export class Runner {
 
 		// Apply side effects and get updated state
 		const updatedState = StateManager.applySideEffects(
-			processedCommand,
+			command,
 			commandSpec,
 			state,
 			templateContext,

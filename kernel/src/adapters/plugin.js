@@ -9,7 +9,6 @@ const kernelPath = path.resolve(__dirname, '../../');
 export class PluginAdapter {
     constructor(commandRoot, projectRoot) {
         this.resourceLoader = new ResourceLoader(commandRoot);
-        this.commandRoot = commandRoot;
         this.projectRoot = projectRoot;
     }
 
@@ -28,7 +27,10 @@ export class PluginAdapter {
      * Build method arguments based on command spec parameter order
      */
     async buildMethodArguments(args, commandSpec) {
-        const methodArgs = [kernelPath, this.projectRoot, this.projectRoot];
+        // kernel plugin uses project root as its own command root in the 2nd argument
+        // we needed the command root to load resources from the plugin folder
+        // this could be done better
+        const methodArgs = [kernelPath, this.projectRoot, this.projectRoot]; 
         
         // Add parameters in the order they appear in the command spec
         if (commandSpec.parameters) {

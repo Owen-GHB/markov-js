@@ -12,18 +12,18 @@ export class Processor {
 	 * @param {Object} manifest - The manifest for command lookup
 	 * @returns {Object} - Normalized command object
 	 */
-	static parseInput(input, manifest) {
+	static processInput(input, manifest) {
 		// Handle object input
 		if (typeof input === 'object' && input !== null) {
 			if (Array.isArray(input)) {
-				return this.parseInputArray(input, manifest);
+				return this.processArray(input, manifest);
 			}
 			return this.validateCommandObject(input); // Already a command object
 		}
 
 		// Handle string input
 		if (typeof input === 'string') {
-			return this.parseInputString(input, manifest);
+			return this.processString(input, manifest);
 		}
 
 		throw new Error(`Unsupported input type: ${typeof input}`);
@@ -32,7 +32,7 @@ export class Processor {
 	/**
 	 * Parse string input into command object
 	 */
-	static parseInputString(input, manifest) {
+	static processString(input, manifest) {
 		try {
 			// First try JSON parsing
 			const parsed = JSON.parse(input);
@@ -52,7 +52,7 @@ export class Processor {
 		throw new Error(`Invalid command string: ${input}`);
 	}
 
-  static parseInputArray(inputArray, manifest) {
+  static processArray(inputArray, manifest) {
     if (!Array.isArray(inputArray) || inputArray.length === 0) {
       throw new Error('Command array must be non-empty');
     }
@@ -63,7 +63,7 @@ export class Processor {
       if (typeof input === 'object' && input !== null && !input.name) {
         return { args: input }; // Wrap in command structure with empty name
       }
-      return this.parseInput(input, manifest);
+      return this.processInput(input, manifest);
     });
 
     // Merge all commands
@@ -97,16 +97,10 @@ export class Processor {
     if (!obj || typeof obj !== 'object') {
       throw new Error('Command must be an object');
     }
- 
-    // Ensure args exists and is an object
-    const args = obj.args || {};
-    if (typeof args !== 'object') {
-      throw new Error('Command args must be an object');
-    }
 
     return {
       name: obj.name,
-      args: args,
+      args: obj.args,
     };
   }
 
