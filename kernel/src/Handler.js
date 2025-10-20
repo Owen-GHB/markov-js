@@ -2,14 +2,14 @@ import { NativeAdapter } from './adapters/native.js';
 import { PluginAdapter } from './adapters/plugin.js';
 
 export class Handler {
-	constructor(commandRoot, projectRoot) {		
+	constructor(commandRoot, projectRoot) {
 		// Validate projectRoot parameter
 		if (projectRoot === null) {
 			throw new Error('Handler requires a projectRoot parameter');
 		}
 
 		this.projectRoot = projectRoot;
-		
+
 		// Create adapters
 		this.nativeAdapter = new NativeAdapter(commandRoot, projectRoot);
 		this.pluginAdapter = new PluginAdapter(commandRoot, projectRoot);
@@ -32,6 +32,8 @@ export class Handler {
 		}
 
 		// If we get here, it's an unknown command type
-		throw new Error(`Unknown command type '${commandSpec.commandType}' for command '${command.name}'`);
+		throw new Error(
+			`Unknown command type '${commandSpec.commandType}' for command '${command.name}'`,
+		);
 	}
 }

@@ -7,3 +7,4 @@ export { StateManager } from './src/StateManager.js';
 export { formatResult } from './src/utils/format.js';
 export { HelpHandler } from './src/utils/help.js';
 export { Evaluator } from './src/Evaluator.js';
+export { Processor } from './src/Processor.js';

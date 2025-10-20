@@ -32,23 +32,18 @@ export class HTTPExecutor {
    * @param {Object} fileArgs - File arguments object {fieldName: fileData} (optional)
    * @returns {Promise<any>} - Command execution result
    */
-  async executeCommand(commandString, fileArgs = null) {
+    async executeCommand(input) {
     try {
-      // Parse JSON command string internally
-      const commandObject = JSON.parse(commandString);
-      
-      // Merge file args if provided
-      if (fileArgs && typeof fileArgs === 'object' && Object.keys(fileArgs).length > 0) {
-        commandObject.args = { ...commandObject.args, ...fileArgs };
-      }
-      
-      // Execute the command
-      const commandSpec = this.manifest.commands[commandObject.name];
-      const result = await this.runner.runCommand(commandObject, commandSpec);
-      return result;
-      
+        // Use parseInput to handle both command string and file merging
+        const commandObject = this.kernel.Processor.parseInput(input, this.manifest);
+        
+        // Execute the command
+        const commandSpec = this.manifest.commands[commandObject.name];
+        const result = await this.runner.runCommand(commandObject, commandSpec);
+        return result;
+        
     } catch (error) {
-      throw new Error(`HTTP command execution failed: ${error.message}`);
+        throw new Error(`HTTP command execution failed: ${error.message}`);
     }
-  }
+    }
 }

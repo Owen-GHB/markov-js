@@ -208,13 +208,17 @@ export class HTTPServer {
 						return resolve();
 					}
 
+					// Build file args
 					const fileArgs = {};
 					formData.files.forEach(file => {
 						fileArgs[file.fieldName] = file.data;
 					});
 
+					// Create array input: [commandString, fileArgs] for parseInput to merge
+					const commandInput = [commandString, fileArgs];
+
 					try {
-    					const result = await this.executor.executeCommand(commandString, fileArgs);
+						const result = await this.executor.executeCommand(commandInput);
 						this.sendSuccessResponse(res, result);
 					} catch (err) {
 						this.sendErrorResponse(res, err, 500);
