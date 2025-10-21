@@ -1,9 +1,17 @@
 {
   "electron": {
-    "sideEffects": {
-      "setState": {
-        "servedUIDir": "{{input.servedui}}",
-        "electronPreloadPath": "{{input.electronPreloadPath}}"
+    "parameters": {
+      "commandRoot": {
+        "runtimeFallback": "commandRoot"
+      },
+      "projectRoot": {
+        "runtimeFallback": "projectRoot"
+      },
+      "servedui": {
+        "runtimeFallback": "servedUIDir"
+      },
+      "electronPreloadPath": {
+        "runtimeFallback": "electronPreloadPath"
       }
     },
     "successOutput": "🖥️ Electron desktop app launched!\n   UI: {{input.servedui}}\n   Preload: {{input.electronPreloadPath}}"

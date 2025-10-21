@@ -1,10 +1,23 @@
 {
   "generate": {
+    "description": "Generate web UI from contract using EJS templates",
     "examples": [
-      "generate()",
-      "generate(generatedUIDir=\"./dist\")",
-      "generate(userTemplateDir=\"./my-templates\", generatedUIDir=\"./public\")"
+      "generate(commandRoot=\"./command-plugins\", projectRoot=\".\", userTemplateDir=\"./my-templates\")",
+      "generate(commandRoot=\"./command-plugins\", projectRoot=\".\", generatedUIDir=\"./dist\")"
     ],
-    "notes": "Generates complete SPA with forms for all commands. Overwrites existing files by default."
+    "parameters": {
+      "commandRoot": {
+        "description": "Root directory for command manifests"
+      },
+      "projectRoot": {
+        "description": "Root directory for the project"
+      },
+      "userTemplateDir": {
+        "description": "Custom template directory (uses built-in if not provided)"
+      },
+      "generatedUIDir": {
+        "description": "Output directory for generated UI files"
+      }
+    }
   }
 }

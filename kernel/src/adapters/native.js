@@ -1,14 +1,22 @@
+import path from 'path';
+
 export class NativeAdapter {
+    constructor(projectRoot) {
+        this.projectRoot = projectRoot;
+    }
+
     /**
-     * Handle native method commands - pure execution logic
+     * Handle all command types with smart feature detection
      */
     async handle(resourceMethod, command, commandSpec) {
         const { args = {} } = command;
-        const combineArguments = commandSpec.combineArguments === true;
-        const syncMethod = commandSpec.syncMethod === true;
-
+        
         // Handle missing methodName - treat as internal command
         if (!commandSpec.methodName) return true;
+
+        const combineArguments = commandSpec.combineArguments === true;
+        const syncMethod = commandSpec.syncMethod === true;
+        const shouldResolvePaths = commandSpec.commandType === 'kernel-plugin';
 
         let result;
         
@@ -20,7 +28,7 @@ export class NativeAdapter {
                 if (combineArguments) {
                     result = resourceMethod(args);
                 } else {
-                    const methodArgs = this.buildMethodArguments(args, commandSpec);
+                    const methodArgs = this.buildMethodArguments(args, commandSpec, shouldResolvePaths);
                     result = resourceMethod(...methodArgs);
                 }
                 return result;
@@ -31,7 +39,7 @@ export class NativeAdapter {
         if (combineArguments) {
             result = await resourceMethod(args);
         } else {
-            const methodArgs = this.buildMethodArguments(args, commandSpec);
+            const methodArgs = this.buildMethodArguments(args, commandSpec, shouldResolvePaths);
             result = await resourceMethod(...methodArgs);
         }
         
@@ -39,20 +47,33 @@ export class NativeAdapter {
     }
 
     /**
-     * Build method arguments by destructuring args object into parameter order
+     * Build method arguments with optional path resolution
      */
-    buildMethodArguments(args, commandSpec) {
+    buildMethodArguments(args, commandSpec, shouldResolvePaths) {
         const methodArgs = [];
         
-        // Add parameters in the order they appear in the command spec
         if (commandSpec.parameters) {
             const paramNames = Object.keys(commandSpec.parameters);
             
             for (const paramName of paramNames) {
-                methodArgs.push(args[paramName]);
+                let value = args[paramName];
+                
+                // Only resolve paths for kernel plugins
+                if (shouldResolvePaths && this.shouldResolvePath(value)) {
+                    value = path.resolve(this.projectRoot, value);
+                }
+                
+                methodArgs.push(value);
             }
         }
         
         return methodArgs;
+    }
+
+    shouldResolvePath(value) {
+        if (!value || typeof value !== 'string') return false;
+        
+        // Resolve relative paths
+        return value.startsWith('./') || value.startsWith('../');
     }
 }

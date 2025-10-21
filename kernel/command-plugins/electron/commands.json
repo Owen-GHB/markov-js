@@ -1,20 +1,23 @@
 {
   "electron": {
     "commandType": "kernel-plugin",
-    "methodName": "start",
-    "description": "Launch Electron desktop application",
+    "methodName": "start", 
     "parameters": {
+      "commandRoot": {
+        "type": "string",
+        "required": true
+      },
+      "projectRoot": {
+        "type": "string",
+        "required": true
+      },
       "servedui": {
         "type": "string",
-        "required": true,
-        "runtimeFallback": "servedUIDir",
-        "description": "UI directory to load in Electron window"
+        "required": false
       },
       "electronPreloadPath": {
         "type": "string",
-        "required": true,
-        "runtimeFallback": "electronPreloadPath",
-        "description": "Path to Electron preload script"
+        "required": false
       }
     }
   }

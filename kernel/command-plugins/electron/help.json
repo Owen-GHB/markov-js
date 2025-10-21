@@ -1,10 +1,23 @@
 {
   "electron": {
+    "description": "Launch Electron desktop application",
     "examples": [
-      "electron()",
-      "electron(servedui=\"./dist\")",
-      "electron(servedui=\"./public\", electronPreloadPath=\"./preload.js\")"
+      "electron(commandRoot=\"./command-plugins\", projectRoot=\".\")",
+      "electron(commandRoot=\"./command-plugins\", projectRoot=\".\", servedui=\"./dist\")"
     ],
-    "notes": "Launches as separate process. Falls back gracefully if UI files missing. Requires Electron dependency."
+    "parameters": {
+      "commandRoot": {
+        "description": "Root directory for command manifests"
+      },
+      "projectRoot": {
+        "description": "Root directory for the project"
+      },
+      "servedui": {
+        "description": "UI directory to load in Electron window"
+      },
+      "electronPreloadPath": {
+        "description": "Path to Electron preload script"
+      }
+    }
   }
 }

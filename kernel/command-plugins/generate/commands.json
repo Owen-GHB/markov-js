@@ -2,19 +2,22 @@
   "generate": {
     "commandType": "kernel-plugin",
     "methodName": "run",
-    "description": "Generate web UI from contract using EJS templates",
     "parameters": {
+      "commandRoot": {
+        "type": "string",
+        "required": true
+      },
+      "projectRoot": {
+        "type": "string", 
+        "required": true
+      },
       "userTemplateDir": {
         "type": "string",
-        "required": true,
-        "runtimeFallback": "userTemplateDir",
-        "description": "Custom template directory (uses built-in if not provided)"
+        "required": false
       },
       "generatedUIDir": {
         "type": "string",
-        "required": true,
-        "runtimeFallback": "generatedUIDir",
-        "description": "Output directory for generated UI files"
+        "required": false
       }
     }
   }

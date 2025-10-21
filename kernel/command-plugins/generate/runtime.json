@@ -1,11 +1,19 @@
 {
   "generate": {
-    "sideEffects": {
-      "setState": {
-        "userTemplateDir": "{{input.userTemplateDir}}",
-        "generatedUIDir": "{{input.generatedUIDir}}"
+    "parameters": {
+      "commandRoot": {
+        "runtimeFallback": "commandRoot"
+      },
+      "projectRoot": {
+        "runtimeFallback": "projectRoot"
+      },
+      "userTemplateDir": {
+        "runtimeFallback": "userTemplateDir"
+      },
+      "generatedUIDir": {
+        "runtimeFallback": "generatedUIDir"
       }
     },
-    "successOutput": "🎨 UI generated successfully!\n   Output: {{input.generatedUIDir}}\n   Templates: {{input.userTemplateDir}} ? {{input.userTemplateDir}} : 'built-in'\n   Generation #{{state.uiGenerationCount}}"
+    "successOutput": "🎨 UI generated successfully!\n   Output: {{input.generatedUIDir}}\n   Templates: {{input.userTemplateDir}} ? {{input.userTemplateDir}} : 'built-in'"
   }
 }

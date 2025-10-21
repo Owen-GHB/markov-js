@@ -1,10 +1,26 @@
 {
-	"http": {
-		"examples": [
-			"http()",
-			"http(serverPort=3000)",
-			"http(servedUIDir=\"./dist\", apiEndpoint=\"/api/v1\")"
-		],
-		"notes": "Serves both static UI files and REST API. Requires UI files to be generated first."
-	}
+  "http": {
+    "description": "Start HTTP server serving UI and API",
+    "examples": [
+      "http(commandRoot=\"./command-plugins\", projectRoot=\".\", serverPort=3000)",
+      "http(commandRoot=\"./command-plugins\", projectRoot=\".\", servedUIDir=\"./dist\")"
+    ],
+    "parameters": {
+      "commandRoot": {
+        "description": "Root directory for command manifests"
+      },
+      "projectRoot": {
+        "description": "Root directory for the project"
+      },
+      "serverPort": {
+        "description": "Port number for the server"
+      },
+      "servedUIDir": {
+        "description": "Directory containing UI files to serve"
+      },
+      "apiEndpoint": {
+        "description": "API endpoint path"
+      }
+    }
+  }
 }

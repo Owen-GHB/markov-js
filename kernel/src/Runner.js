@@ -29,7 +29,8 @@ export class Runner {
 		command.args = validatedArgs;
 		if (!originalCommand) originalCommand = command;
         // Execute current command
-        const result = await this.handler.handleCommand(command, commandSpec);
+		const resourceMethod = await this.resolveResource(command, commandSpec);
+        const result = await this.handler.handleCommand(command, commandSpec, resourceMethod);
 
         // Build template context for chaining
         const templateContext = {

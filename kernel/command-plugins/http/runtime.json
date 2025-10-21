@@ -1,11 +1,21 @@
 {
   "http": {
-    "sideEffects": {
-      "setState": {
-        "servedUIDir": "{{input.servedUIDir}}",
-        "serverPort": "{{input.serverPort}}",
-        "apiEndpoint": "{{input.apiEndpoint}}"
+    "parameters": {
+      "commandRoot": {
+        "runtimeFallback": "commandRoot"
+      },
+      "projectRoot": {
+        "runtimeFallback": "projectRoot"
+      },
+      "serverPort": {
+        "runtimeFallback": "serverPort"
+      },
+      "servedUIDir": {
+        "runtimeFallback": "servedUIDir"
+      },
+      "apiEndpoint": {
+        "runtimeFallback": "apiEndpoint"
       }
-    }  
+    }
   }
 }
