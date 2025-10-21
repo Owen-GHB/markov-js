@@ -7,18 +7,14 @@ const __dirname = path.dirname(__filename);
 const kernelPath = path.resolve(__dirname, '../../');
 
 export class PluginAdapter {
-    constructor(commandRoot, projectRoot) {
-        this.resourceLoader = new ResourceLoader(commandRoot);
+    constructor(projectRoot) {
         this.projectRoot = projectRoot;
     }
 
-    async handleKernelPlugin(command, commandSpec) {
+    async handleKernelPlugin(resourceMethod, command, commandSpec) {
         const { args = {} } = command;
-        const sourcePath = commandSpec.source || './';
-
-        const method = await this.resourceLoader.getResourceMethod(sourcePath, commandSpec.methodName);           
         const methodArgs = await this.buildMethodArguments(args, commandSpec);          
-        const result = await method(...methodArgs);
+        const result = await resourceMethod(...methodArgs);
         
         return result;
     }

@@ -10,8 +10,7 @@
 		"nlp",
 		"cli"
 	],
-	"author": "Your Name",
-	"license": "GPL",
+	"author": "Gwilim Owen",
 	"dependencies": {
 		"readline": "^1.3.0"
 	},

@@ -60,7 +60,7 @@ export class Parser {
 		// Try object style first (backward compatible)
 		const objectMatch = trimmed.match(PATTERNS.objectCall);
 		if (objectMatch) {
-			return parseObjectStyle(objectMatch, commandSpec);
+			return parseObjectStyle(objectMatch);
 		}
 
 		// Try function style
@@ -108,9 +108,10 @@ export class Parser {
 			throw new Error(`Too many positional parameters for ${command}`);
 		}
 
+		// ✅ FIX: Remove quotes - just use the raw values
 		const positionalPairs = required
 			.slice(0, positional.length)
-			.map((p, i) => `${p.name}="${positional[i]}"`);
+			.map((p, i) => `${p.name}=${positional[i]}`);  // No quotes!
 
 		// Build final function-style string
 		const funcCall = `${command}(${[...positionalPairs, ...named].join(',')})`;

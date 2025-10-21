@@ -1,5 +1,3 @@
-import { StateManager } from './StateManager.js';
-import { Validator } from './Validator.js';
 import { Parser } from './Parser.js';
 
 /**
@@ -26,7 +24,7 @@ export class Processor {
 			return this.processString(input, manifest);
 		}
 
-		throw new Error(`Unsupported input type: ${typeof input}`);
+		throw new Error(`Processor error: Unsupported input type: ${typeof input}`);
 	}
 
 	/**
@@ -36,25 +34,21 @@ export class Processor {
 		try {
 			// First try JSON parsing
 			const parsed = JSON.parse(input);
-			if (parsed && typeof parsed === 'object') {
-				return this.validateCommandObject(parsed);
-			}
+			return this.validateCommandObject(parsed);
 		} catch {
 			// Fall back to command parser
 			const commandName = Parser.extractCommandName(input);
 			const commandSpec = manifest.commands[commandName];
 			if (!commandSpec) {
-				throw new Error(`Unknown command: ${commandName}`);
+				throw new Error(`Processor error: Unknown command: ${commandName}`);
 			}
 			return Parser.parseCommand(input, commandSpec);
 		}
-
-		throw new Error(`Invalid command string: ${input}`);
 	}
 
   static processArray(inputArray, manifest) {
     if (!Array.isArray(inputArray) || inputArray.length === 0) {
-      throw new Error('Command array must be non-empty');
+      throw new Error('Processor error: Command array must be non-empty');
     }
 
     // Parse each element
@@ -81,7 +75,7 @@ export class Processor {
 
     // Ensure we have a name from somewhere
     if (!baseCommand.name) {
-      throw new Error('No command name found in input array');
+      throw new Error('Processor error: No command name found in input array');
     }
 
     return {
@@ -90,39 +84,11 @@ export class Processor {
     };
   }
 
-  /**
-   * Validate that an object has required command structure
-   */
-  static validateCommandObject(obj) {
-    if (!obj || typeof obj !== 'object') {
-      throw new Error('Command must be an object');
-    }
-
-    return {
-      name: obj.name,
-      args: obj.args,
-    };
-  }
-
-	/**
-	 * Existing processCommand method remains unchanged
-	 */
-	static processCommand(command, commandSpec, state = null) {
-		const parameters = commandSpec.parameters || {};
-		const processedArgs = StateManager.applyState(
-			command.args,
-			parameters,
-			state,
-		);
-		const validatedArgs = Validator.validateAll(
-			command.name,
-			processedArgs,
-			parameters,
-		);
-
-		return {
-			...command,
-			args: validatedArgs,
-		};
+  static validateCommandObject(commandObj) {
+	if (commandObj.name) {
+		return commandObj;
+	} else {
+		throw new Error('Processor error: Missing command name');
 	}
+  }
 }

@@ -1,39 +1,63 @@
-import { NativeAdapter } from './adapters/native.js';
-import { PluginAdapter } from './adapters/plugin.js';
+import { ResourceLoader } from "./ResourceLoader.js";
+import { NativeAdapter } from "./adapters/native.js";
+import { PluginAdapter } from "./adapters/plugin.js";
 
 export class Handler {
-	constructor(commandRoot, projectRoot) {
-		// Validate projectRoot parameter
-		if (projectRoot === null) {
-			throw new Error('Handler requires a projectRoot parameter');
-		}
+    constructor(commandRoot, projectRoot) {
+        this.commandRoot = commandRoot;
+        this.projectRoot = projectRoot;
+        
+        // Two clear resource domains:
+        this.resourceLoader = new ResourceLoader(projectRoot);      // Native methods (user code)
+        this.kernelResourceLoader = new ResourceLoader(commandRoot); // Kernel plugins (system code)
+        
+        // Simple, focused adapters
+        this.nativeAdapter = new NativeAdapter();
+        this.pluginAdapter = new PluginAdapter(projectRoot);
+    }
 
-		this.projectRoot = projectRoot;
+    async handleCommand(command, commandSpec) {
+        // Handle internal commands first (no methodName)
+        if (!commandSpec.methodName) {
+            return true; // Internal command - just return success
+        }
 
-		// Create adapters
-		this.nativeAdapter = new NativeAdapter(commandRoot, projectRoot);
-		this.pluginAdapter = new PluginAdapter(commandRoot, projectRoot);
-	}
+        // Only load resources for commands that need them
+        const resource = await this.resolveResource(command, commandSpec);
+        
+        // Then delegate to appropriate adapter
+        if (commandSpec.commandType === 'native-method') {
+            return await this.nativeAdapter.handle(resource, command, commandSpec);
+        } else if (commandSpec.commandType === 'kernel-plugin') {
+            return await this.pluginAdapter.handle(resource, command, commandSpec);
+        }
+        
+        throw new Error(`Unknown command type: ${commandSpec.commandType}`);
+    }
 
-	/**
-	 * Handle a parsed command WITH commandSpec
-	 */
-	async handleCommand(command, commandSpec) {
-		if (!command || !commandSpec) return;
+    async resolveResource(command, commandSpec) {
+        // This should only be called for commands with methodName
+        if (!commandSpec.methodName) {
+            throw new Error(`Command ${command.name} has no methodName`);
+        }
 
-		// Handle native-method commands (including internal commands without methodName)
-		if (commandSpec.commandType === 'native-method') {
-			return await this.nativeAdapter.handleNativeMethod(command, commandSpec);
-		}
+        const sourcePath = commandSpec.source || './';
+        const resourceLoader = this.getResourceLoader(commandSpec.commandType);
+        
+        return await resourceLoader.getResourceMethod(
+            sourcePath, commandSpec.methodName
+        );
+    }
 
-		// Handle plugin commands using source system
-		if (commandSpec.commandType === 'kernel-plugin') {
-			return await this.pluginAdapter.handleKernelPlugin(command, commandSpec);
-		}
-
-		// If we get here, it's an unknown command type
-		throw new Error(
-			`Unknown command type '${commandSpec.commandType}' for command '${command.name}'`,
-		);
-	}
+    getResourceLoader(commandType) {
+        // Clear mapping:
+        switch (commandType) {
+            case 'native-method':
+                return this.resourceLoader;          // User's project code
+            case 'kernel-plugin':
+                return this.kernelResourceLoader;    // System plugin code
+            default:
+                throw new Error(`No resource loader for type: ${commandType}`);
+        }
+    }
 }

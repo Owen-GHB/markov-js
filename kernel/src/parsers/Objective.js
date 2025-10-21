@@ -1,10 +1,7 @@
-import { ParserUtils } from './Utils.js';
-
-export function parseObjectStyle([, name, argsString], commandSpec) {
-    const parameters = commandSpec.parameters || {};
-
+export function parseObjectStyle([, name, argsString]) {
     let args;
-    // Raw object parsing only
+    
+    // Pure JSON parsing only
     try {
         // Try parsing as JSON
         args = JSON.parse(argsString);
@@ -21,49 +18,12 @@ export function parseObjectStyle([, name, argsString], commandSpec) {
         }
     }
 
-    // Handle non-object inputs for parameters with transform rules
     if (typeof args !== 'object' || args === null) {
-        const paramEntries = Object.entries(parameters);
-        const singleParamEntry = paramEntries.find(
-            ([_, p]) => p.required && p.transform,
-        );
-        if (singleParamEntry) {
-            const [paramName, singleParam] = singleParamEntry;
-            const types = singleParam.type.split('|').map((t) => t.trim());
-            let parsedValue = args;
-
-            // Basic type parsing
-            if (types.includes('integer') && !isNaN(parseInt(args, 10))) {
-                parsedValue = parseInt(args, 10);
-            } else if (types.includes('string')) {
-                parsedValue = String(args);
-            } else {
-                throw new Error(`Parameter ${paramName} must be ${singleParam.type}`);
-            }
-
-            // Apply transform rule
-            if (singleParam.transform) {
-                const isInteger =
-                    types.includes('integer') && Number.isInteger(parsedValue);
-                args = isInteger
-                    ? singleParam.transform.then
-                    : singleParam.transform.else;
-                args[
-                    singleParam.transform.then.id || singleParam.transform.else.title
-                ] = parsedValue;
-            } else {
-                args = { [paramName]: parsedValue };
-            }
-        } else {
-            throw new Error(`Expected object or single value for ${commandSpec.name} with transform`); 
-        }
+        throw new Error(`Expected object for ${name}`);
     }
 
-    // Basic normalization only
-    args = ParserUtils.normalizeArgs(args);
-
     return {
-        name: commandSpec.name,
-        args: args,
+        name: name,
+        args: args, // Raw parsed values
     };
 }
