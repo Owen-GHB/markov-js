@@ -2,6 +2,7 @@ import { Handler } from './Handler.js';
 import { Evaluator } from './Evaluator.js';
 import { Validator } from './Validator.js';
 import { manifestReader } from './manifestReader.js';
+import { StateManager } from './StateManager.js';
 
 /**
  * Runs the command chain
@@ -16,9 +17,13 @@ export class Runner {
      * Run a command and handle full chain execution
      */
     async runCommand(command, commandSpec, originalCommand = null) {
+		const argsWithDefaults = StateManager.applyParameterDefaults(
+			command.args,
+			commandSpec.parameters
+		);
 		const validatedArgs = Validator.validateAll(
 			command.name, 
-			command.args, 
+			argsWithDefaults, 
 			commandSpec.parameters
 		);
 		command.args = validatedArgs;

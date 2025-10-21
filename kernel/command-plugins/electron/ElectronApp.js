@@ -33,7 +33,7 @@ class ElectronUIManager {
 export class ElectronApp {
     constructor(options = {}) {
         this.uiManager = new ElectronUIManager();
-        this.executor = null; // Will be initialized in start method
+        this.vertex = null; // Will be initialized in start method
         this.options = options;
         this.windowOptions = {
             width: options.width || 1200,
@@ -94,10 +94,9 @@ export class ElectronApp {
     }
 
     setupIPC() {
-        // IPC handler to execute commands via the executor
         ipcMain.handle('execute-command', async (event, command) => {
             try {
-				const result = await this.executor.executeCommand(command);
+				const result = await this.vertex.executeCommand(command);
                 return { error: null, output: result };
             } catch (error) {
                 return { error: error.message, output: null };
@@ -105,9 +104,8 @@ export class ElectronApp {
         });
     }
 
-    async start(servedUIDir, electronPreloadPath, executor) {
-        // Store executor and paths
-        this.executor = executor;
+    async start(servedUIDir, electronPreloadPath, vertex) {
+        this.vertex = vertex;
         this.paths = { servedUIDir, electronPreloadPath };
 
         // Update the preload path in webPreferences

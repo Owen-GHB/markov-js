@@ -3,7 +3,6 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { loadManifest } from './src/manifestReader.js';
 import { ResourceLoader } from './src/ResourceLoader.js';
-import { resolveSecurePath } from './src/utils/path-resolver.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -24,7 +23,7 @@ export async function launch(args, projectRoot) {
 	// Determine execution path
 	const kernelIndex = args.indexOf('--kernel');
 	const isKernelMode = kernelIndex !== -1;
-	const kernelCommandRoot = resolveSecurePath(__dirname, 'command-plugins');
+	const kernelCommandRoot = path.resolve(__dirname, 'command-plugins');
 
 	if (isKernelMode) {
 		// Kernel commands: use kernel's command-plugins as "command root"
@@ -65,7 +64,7 @@ async function executeCommandPath(
 	const manifest = loadManifest(kernelCommandRoot);
 
 	// Use default plugins (CLI/REPL)
-	const defaultPluginsDir = resolveSecurePath(__dirname, 'default-plugins');
+	const defaultPluginsDir = path.resolve(__dirname, 'default-plugins');
 	const loader = new ResourceLoader(defaultPluginsDir);
 
 	// Determine context with user config first, kernel defaults as fallback
@@ -76,7 +75,7 @@ async function executeCommandPath(
 
 	if (isKernelMode) {
 		// Kernel mode: use vertex-config.json in the user's project root
-		contextFilePath = resolveSecurePath(projectRoot, 'vertex-config.json');
+		contextFilePath = path.resolve(projectRoot, 'vertex-config.json');
 		commandRoot = kernelCommandRoot;
 
 		// For REPL settings, check user config first, then kernel manifest defaults
@@ -90,12 +89,12 @@ async function executeCommandPath(
 		commandRoot = projectRoot;
 
 		// Load user's config with fallback to kernel manifest
-		const userConfigPath = resolveSecurePath(projectRoot, 'vertex-config.json');
+		const userConfigPath = path.resolve(projectRoot, 'vertex-config.json');
 		const userConfig = loadUserConfig(userConfigPath);
 
 		contextFilePath =
 			userConfig.contextFilePath ||
-			resolveSecurePath(
+			path.resolve(
 				kernelCommandRoot,
 				'manifest.stateDefaults.contextFilePath',
 			);
@@ -112,7 +111,7 @@ async function executeCommandPath(
 			process.exit(1);
 		}
 		// Pass commandRoot so CLI/REPL load commands from the right place
-		return fn(__dirname, commandRoot, projectRoot, ...params);
+		return fn(commandRoot, projectRoot, ...params);
 	};
 
 	if (args.length === 0) {

@@ -5,16 +5,16 @@ import { StaticServer } from './StaticServer.js';
 
 export class HTTPServer {
 	constructor() {
-		this.executor = null;
+		this.vertex = null;
 		this.staticServer = null;
 	}
 
-	start(port, servedUIDir, apiEndpoint, executor) {
+	start(port, servedUIDir, apiEndpoint, vertex) {
 		// Initialize properties with explicit parameters
 		this.port = port;
 		this.staticDir = servedUIDir;
 		this.apiEndpoint = apiEndpoint;
-		this.executor = executor;
+		this.vertex = vertex;
 		this.staticServer = new StaticServer(servedUIDir);
 
 		return new Promise((resolve, reject) => {
@@ -81,7 +81,7 @@ export class HTTPServer {
 				if (commandString) {
 					try {
 						// Parse JSON command object
-						const result = await this.executor.executeCommand(commandString);
+						const result = await this.vertex.executeCommand(commandString);
 						this.sendSuccessResponse(res, result);
 					} catch (err) {
 						this.sendErrorResponse(res, err, 500);
@@ -108,7 +108,7 @@ export class HTTPServer {
 
 						if (commandString) {
 							try {
-								const result = await this.executor.executeCommand(commandString);
+								const result = await this.vertex.executeCommand(commandString);
 								this.sendSuccessResponse(res, result);
 							} catch (err) {
 								this.sendErrorResponse(res, err, 500);
@@ -195,7 +195,7 @@ export class HTTPServer {
 					const commandInput = [commandString, fileArgs];
 
 					try {
-						const result = await this.executor.executeCommand(commandInput);
+						const result = await this.vertex.executeCommand(commandInput);
 						this.sendSuccessResponse(res, result);
 					} catch (err) {
 						this.sendErrorResponse(res, err, 500);

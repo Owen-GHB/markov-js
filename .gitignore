@@ -1,42 +1,36 @@
-# Ignore everything in /data/models
-/data/models/
+# Ignore all data files and folders
+/data/
 
-# Ignore everything in /data/corpus
-/data/corpus/*
-
-# Except sample.txt
+# But keep specific sample file if needed
 !data/corpus/sample.txt
 
-# Dependency directories
-node_modules/
-jspm_packages/
+# Ignore all node_modules everywhere
+**/node_modules/
+
+# Ignore all stuff.py files anywhere
+**/stuff.py
+
+# Ignore dependency directories
+**/jspm_packages/
 
 # TypeScript cache
 *.tsbuildinfo
 
-# Optional npm cache directory
-.npm
-
-# Optional eslint cache
+# npm and eslint caches
+.npm/
 .eslintcache
 
-# Optional REPL history
+# REPL history
 .node_repl_history
 
-# Output of 'npm pack'
+# npm pack output
 *.tgz
 
-# Concatenated code for context window packing
+# Generated / temporary code
 full_codebase_combined.js
-
-#utility for generating context window
 concatenate_codebase.py
+concat.py
 
-# Generated UI
+# Generated or temporary UIs
 generated-ui/
 context/
-concat.py
-kernel/stuff.py
-external-plugins/stuff.py
-stuff.py
-data/ebooks/84.html

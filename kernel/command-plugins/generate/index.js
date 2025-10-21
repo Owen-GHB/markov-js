@@ -1,9 +1,7 @@
 // File: generate/index.js
 
 import { UI } from './UI.js';
-import path from 'path';
-import { pathToFileURL } from 'url';
-import { importVertex } from './imports.js';
+import { Vertex } from 'vertex-kernel';
 
 // Plugin instance (singleton)
 let generatorInstance = null;
@@ -23,10 +21,9 @@ function getGeneratorInstance() {
  * @param {string} projectRoot - Project root directory (defaults to cwd)
  * @returns {Promise<void>}
  */
-export async function run(kernelPath, commandRoot, projectRoot, userTemplateDir, generatedUIDir) {
-    const Vertex = await importVertex(kernelPath);
-    const kernel = new Vertex();
-	const manifest = new kernel.manifestReader(projectRoot);
+export async function run(commandRoot, projectRoot, userTemplateDir, generatedUIDir) {
+    const vertex = new Vertex(commandRoot, projectRoot);
+	const manifest = vertex.manifest;
     
     const generator = getGeneratorInstance();
     return await generator.run(userTemplateDir, generatedUIDir, manifest);

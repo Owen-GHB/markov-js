@@ -1,5 +1,5 @@
 import { HTTPServer } from './HTTP.js';
-import { importVertex } from './imports.js';
+import { Vertex } from 'vertex-kernel';
 
 // Plugin instance (singleton)
 let httpInstance = null;
@@ -16,16 +16,13 @@ function getHttpInstance() {
  * @returns {Promise<void>}
  */
 export async function start(
-	kernelPath,
 	commandRoot,
 	projectRoot,
 	serverPort,
 	servedUIDir,
 	apiEndpoint,
 ) {
-	const Vertex = await importVertex(kernelPath);
-	const kernel = new Vertex();
-	const executor = new kernel.Executor(commandRoot, projectRoot);
+	const vertex = new Vertex(commandRoot, projectRoot);
 
 	const httpServer = getHttpInstance();
 	
@@ -34,7 +31,7 @@ export async function start(
 		serverPort,
 		servedUIDir,
 		apiEndpoint,
-		executor
+		vertex
 	);
 
 	// Return a clean success message instead of the server object

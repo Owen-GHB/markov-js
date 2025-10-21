@@ -1,113 +1,94 @@
 import readline from 'readline';
 import fs from 'fs';
-import { importVertex } from './imports.js';
+import { Vertex } from 'vertex-kernel';
 
 export class REPL {
   constructor() {
-    this.kernel = null;
     this.executor = null;
-    this.manifest = null;
     this.rl = null;
     this.history = [];
     this.historyFilePath = null;
     this.maxHistory = 100;
   }
 
-  async start(kernelPath, commandRoot, projectRoot, contextFilePath, historyFilePath, maxHistory) {
-    // Store REPL-specific config
-    this.historyFilePath = historyFilePath;
-    this.maxHistory = maxHistory;
-    this.contextFilePath = contextFilePath;
-    this.commandRoot = commandRoot;
+  async start(commandRoot, projectRoot, contextFilePath, historyFilePath, maxHistory) {
+      // Store REPL-specific config
+      this.historyFilePath = historyFilePath;
+      this.maxHistory = maxHistory;
+      
+      // Create vertex instance
+      this.vertex = new Vertex(commandRoot, projectRoot, contextFilePath);
+      
+      // Get manifest for welcome message and completer
+      const manifest = this.vertex.manifest;
 
-    // Initialize Vertex and kernel utilities
-    const Vertex = await importVertex(kernelPath);
-    this.kernel = new Vertex();
-    
-    // Create executor first
-    this.executor = new this.kernel.Executor(commandRoot, projectRoot, contextFilePath);
-    
-    // Load initial state from disk and set it in executor's runner
-    this.manifest = this.kernel.manifestReader(commandRoot);
-    this.executor.runner.state = this.kernel.StateManager.loadState(contextFilePath, this.manifest);
+      // Load history
+      this.loadHistory();
 
-    // Load history (REPL handles this itself)
-    this.loadHistory();
+      // Initialize REPL instance
+      this.rl = readline.createInterface({
+          input: process.stdin,
+          output: process.stdout,
+          prompt: manifest.prompt || '> ',
+          completer: (line) => this.commandCompleter(line),
+      });
 
-    // Initialize REPL instance
-    this.rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout,
-      prompt: this.manifest.prompt || '> ',
-      completer: (line) => this.commandCompleter(line),
-    });
+      // Load saved history
+      this.rl.history = [...this.history].reverse();
 
-    // Load saved history into readline
-    this.rl.history = [...this.history].reverse();
+      // Display welcome message
+      console.log(`🔗 ${manifest.name} - ${manifest.description}`);
+      console.log('='.repeat(Math.max(manifest.name.length + 2, 40)));
+      console.log('Type "help" for available commands or "exit" to quit.');
+      console.log('');
 
-    // Display welcome message
-    console.log(`🔗 ${this.manifest.name} - ${this.manifest.description}`);
-    console.log('='.repeat(Math.max(this.manifest.name.length + 2, 40)));
-    console.log('Type "help()" for available commands or "exit()" to quit.');
-    console.log('');
+      this.rl.prompt();
 
-    this.rl.prompt();
+      // Handle line input - EVEN SIMPLER!
+      this.rl.on('line', async (input) => {
+          input = input.trim();
 
-    // Handle line input
-    this.rl.on('line', async (input) => {
-      input = input.trim();
-
-      if (!input) {
-        this.rl.prompt();
-        return;
-      }
-
-      // Add command to history (REPL handles this itself)
-      this.addToHistory(input);
-
-      // Handle help command using kernel
-      if (this.kernel.HelpHandler.isHelpCommand(input)) {
-        const helpArgs = this.kernel.HelpHandler.getHelpCommandArgs(input);
-        if (helpArgs.command) {
-          const cmd = this.manifest.commands[helpArgs.command];
-          if (!cmd) {
-            console.error(`❌ Unknown command: ${helpArgs.command}`);
-          } else {
-            console.log(this.kernel.HelpHandler.formatCommandHelp(cmd));
+          if (!input) {
+              this.rl.prompt();
+              return;
           }
-        } else {
-          console.log(this.kernel.HelpHandler.formatGeneralHelp(this.manifest));
-        }
-        this.rl.prompt();
-        return;
-      }
 
-      // Handle exit command
-      if (this.kernel.HelpHandler.isExitCommand(input)) {
-        console.log('Goodbye!');
-        this.rl.close();
-        return;
-      }
+          // Add to history
+          this.addToHistory(input);
 
-      try {
-        const result = await this.executor.executeCommand(input, 'successOutput');
-        console.log(this.kernel.formatResult(result));
-      } catch (err) {
-        console.error(`❌ ${err}`);
-      }
+          // Handle simple meta-commands
+          if (input === 'help' || input === 'help()') {
+              console.log(this.vertex.getHelpText()); // ✅ Built-in help!
+              this.rl.prompt();
+              return;
+          }
 
-      this.rl.prompt();
-    });
+          if (input === 'exit' || input === 'exit()') {
+              console.log('Goodbye!');
+              this.rl.close();
+              return;
+          }
 
-    this.rl.on('close', () => {
-      this.saveHistory(); // REPL handles its own history saving
-      process.exit(0);
-    });
+          // Everything else gets executed as a command
+          try {
+              const result = await this.vertex.executeCommand(input, 'successOutput');
+              console.log(result);
+          } catch (err) {
+              console.error(`❌ ${err}`);
+          }
 
-    process.on('SIGINT', () => {
-      console.log('\nUse "exit" or Ctrl+D to quit.');
-      this.rl.prompt();
-    });
+          this.rl.prompt();
+      });
+
+      this.rl.on('close', () => {
+          this.saveHistory();
+          process.exit(0);
+      });
+
+      process.on('SIGINT', () => {
+          console.log('\nUse "exit" or Ctrl+D to quit.');
+          this.rl.prompt();
+      });
   }
 
   // REPL-specific methods (stay in transport)

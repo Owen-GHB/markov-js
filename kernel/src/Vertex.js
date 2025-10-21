@@ -4,7 +4,7 @@ import { Runner } from './Runner.js';
 import { StateManager } from './StateManager.js';
 import { manifestReader } from './manifestReader.js';
 
-export class Executor {
+export class Vertex {
     constructor(commandRoot, projectRoot, contextFilePath = null) {
         this.commandRoot = commandRoot;
         this.projectRoot = projectRoot;
@@ -23,10 +23,10 @@ export class Executor {
     async executeCommand(input, template = null) {
         const processedInput = Processor.processInput(input, this.manifest);
         const commandSpec = this.manifest.commands[processedInput.name];
-        const processedArgs = StateManager.applyState(
-          processedInput.args,
-          commandSpec.parameters,
-          this.state,
+        const processedArgs = StateManager.applyRuntimeFallbacks(
+            processedInput.args,
+            commandSpec.parameters, 
+            this.state
         );
         const command = {
           name:processedInput.name,
@@ -72,5 +72,9 @@ export class Executor {
             StateManager.saveState(this.state, this.contextFilePath, this.manifest);
         }      
         return result;
+    }
+
+    getHelpText() {
+        return HelpHandler.formatGeneralHelp(this.manifest);
     }
 }

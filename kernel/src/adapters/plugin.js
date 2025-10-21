@@ -1,17 +1,12 @@
-import { ResourceLoader } from '../ResourceLoader.js';
 import path from 'path';
-import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const kernelPath = path.resolve(__dirname, '../../');
 
 export class PluginAdapter {
     constructor(projectRoot) {
         this.projectRoot = projectRoot;
     }
 
-    async handleKernelPlugin(resourceMethod, command, commandSpec) {
+    async handle(resourceMethod, command, commandSpec) {
         const { args = {} } = command;
         const methodArgs = await this.buildMethodArguments(args, commandSpec);          
         const result = await resourceMethod(...methodArgs);
@@ -26,7 +21,7 @@ export class PluginAdapter {
         // kernel plugin uses project root as its own command root in the 2nd argument
         // we needed the command root to load resources from the plugin folder
         // this could be done better
-        const methodArgs = [kernelPath, this.projectRoot, this.projectRoot]; 
+        const methodArgs = [this.projectRoot, this.projectRoot]; 
         
         // Add parameters in the order they appear in the command spec
         if (commandSpec.parameters) {

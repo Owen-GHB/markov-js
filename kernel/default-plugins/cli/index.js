@@ -16,9 +16,9 @@ let cliInstance = null;
  * @param {string} contextFilePath - Path to context file for state persistence
  * @returns {CLI} CLI plugin instance
  */
-function getCliInstance(kernelPath, commandRoot, projectRoot, contextFilePath) {
+function getCliInstance(commandRoot, projectRoot, contextFilePath) {
   if (!cliInstance) {
-    cliInstance = new CLI(kernelPath, commandRoot, projectRoot, contextFilePath);
+    cliInstance = new CLI(commandRoot, projectRoot, contextFilePath);
   }
   return cliInstance;
 }
@@ -32,8 +32,8 @@ function getCliInstance(kernelPath, commandRoot, projectRoot, contextFilePath) {
  * @param {string[]} args - Command line arguments
  * @returns {Promise<void>}
  */
-export async function run(kernelPath, commandRoot, projectRoot, contextFilePath, args) {
-  const cli = getCliInstance(kernelPath, commandRoot, projectRoot, contextFilePath);
+export async function run(commandRoot, projectRoot, contextFilePath, args) {
+  const cli = getCliInstance(commandRoot, projectRoot, contextFilePath);
   return await cli.run(args);
 }
 

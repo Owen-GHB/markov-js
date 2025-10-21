@@ -8,21 +8,16 @@ const __dirname = path.dirname(__filename);
 
 /**
  * Start the Electron plugin by launching electron-main.js via npx
- * @param {string} kernelPath - Path to the kernel directory
  * @param {string} projectRoot - Project root directory
  * @param {string} servedui - Directory for served UI files
  * @param {string} electronPreloadPath - Path to electron preload script
  * @returns {Promise<void>}
  */
-export async function start(kernelPath, commandRoot, projectRoot, servedui, electronPreloadPath) {
+export async function start(commandRoot, projectRoot, servedui, electronPreloadPath) {
     // Since Electron needs to be launched as a separate process, we spawn electron using npx
     // which will run electron-main.js. The electron-main.js will now use dynamic kernel loading.
     return import('child_process')
         .then(({ spawn }) => {
-            if (!kernelPath) {
-                throw new Error('kernelPath must be provided as a parameter');
-            }
-
             // Launch electron with the electron-main.js file and pass the required paths as arguments
             const electronMainPath = path.join(__dirname, 'electron-main.js');
             
@@ -33,8 +28,6 @@ export async function start(kernelPath, commandRoot, projectRoot, servedui, elec
                 projectRoot,
                 '--command-root',
                 commandRoot,
-                '--kernel-path',
-                kernelPath,
             ];
 
             // Add optional parameters if provided

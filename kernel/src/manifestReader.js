@@ -188,16 +188,16 @@ function loadJSONFile(projectRoot, filename, defaultValue = null) {
 /**
  * Validate that source path is within project root
  */
-function validateSourcePath(sourcePath, projectRoot) {
-	const resolvedPath = path.resolve(projectRoot, sourcePath);
-	const relativeToRoot = path.relative(projectRoot, resolvedPath);
-
-	// Prevent going outside project root
-	if (relativeToRoot.startsWith('..') || path.isAbsolute(relativeToRoot)) {
-		throw new Error(`Source path '${sourcePath}' must be within project root`);
-	}
-
-	return resolvedPath;
+function validateSourcePath(sourcePath, currentRoot) {
+    const resolvedPath = path.resolve(currentRoot, sourcePath);
+    const relativeToRoot = path.relative(currentRoot, resolvedPath);
+    
+    // Prevent going outside the current source's domain
+    if (relativeToRoot.startsWith('..') || path.isAbsolute(relativeToRoot)) {
+        throw new Error(`Source path '${sourcePath}' cannot escape its root directory`);
+    }
+    
+    return resolvedPath;
 }
 
 /**

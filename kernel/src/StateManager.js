@@ -65,14 +65,13 @@ export class StateManager {
 	}
 
 	/**
-	 * Apply state-dependent transformations to command arguments
+	 * Apply runtime fallbacks from state (user convenience feature)
 	 */
-	static applyState(args, parameters, state = null) {
-		if (!state) return args; // No state, no transformations
+	static applyRuntimeFallbacks(args, parameters, state = null) {
+		if (!state) return args;
 
 		const normalized = { ...args };
 
-		// Apply runtime fallbacks
 		for (const [paramName, paramSpec] of Object.entries(parameters)) {
 			if (
 				args[paramName] === undefined &&
@@ -83,7 +82,15 @@ export class StateManager {
 			}
 		}
 
-		// Apply default values
+		return normalized;
+	}
+
+	/**
+	 * Apply parameter defaults from command specification
+	 */
+	static applyParameterDefaults(args, parameters) {
+		const normalized = { ...args };
+
 		for (const [paramName, paramSpec] of Object.entries(parameters)) {
 			if (
 				normalized[paramName] === undefined &&

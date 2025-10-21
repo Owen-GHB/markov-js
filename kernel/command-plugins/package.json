@@ -1,0 +1,7 @@
+{
+  "name": "vertex-default-plugins", 
+  "type": "module",
+  "dependencies": {
+    "vertex-kernel": "*"
+  }
+}

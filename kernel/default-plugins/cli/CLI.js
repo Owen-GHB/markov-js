@@ -1,9 +1,8 @@
-import { importVertex } from './imports.js';
+import { Vertex } from 'vertex-kernel';
 
 export class CLI {
-  constructor(kernelPath, commandRoot, projectRoot, contextFilePath) {    
+  constructor(commandRoot, projectRoot, contextFilePath) {    
     this.contextFilePath = contextFilePath;
-    this.kernelPath = kernelPath;
     this.commandRoot = commandRoot;
     this.projectRoot = projectRoot;
     
@@ -12,51 +11,40 @@ export class CLI {
   }
 
   async run(args) {
-    // Initialize Vertex and kernel utilities
-    const Vertex = await importVertex(this.kernelPath);
-    this.kernel = new Vertex();
-    
-    // Create executor first
-    this.executor = new this.kernel.Executor(this.commandRoot, this.projectRoot, this.contextFilePath);
-    
-    // Load initial state from disk and set it in executor's runner
-    const manifest = this.kernel.manifestReader(this.commandRoot);
-    this.executor.runner.state = this.kernel.StateManager.loadState(this.contextFilePath, manifest);
-
-    if (args.length === 0) {
-      console.log(this.kernel.HelpHandler.formatGeneralHelp(manifest));
-      process.exit(0);
-    }
-
-    const input = args.join(' ');
-
-    if (this.kernel.HelpHandler.isHelpCommand(input)) {
-      const helpArgs = this.kernel.HelpHandler.getHelpCommandArgs(input);
-      if (helpArgs.command) {
-        const cmd = manifest.commands[helpArgs.command];
-        if (!cmd) {
-          console.error(`❌ Unknown command: ${helpArgs.command}`);
-          console.log(this.kernel.HelpHandler.formatGeneralHelp(manifest));
-          process.exit(1);
-        }
-        console.log(this.kernel.HelpHandler.formatCommandHelp(cmd));
-      } else {
-        console.log(this.kernel.HelpHandler.formatGeneralHelp(manifest));
+      this.vertex = new Vertex(this.commandRoot, this.projectRoot, this.contextFilePath);
+      
+      // Handle empty args or help commands
+      if (args.length === 0 || this.isHelpRequest(args)) {
+          console.log(this.vertex.getHelpText()); // ✅ Built-in help!
+          process.exit(0);
       }
-      process.exit(0);
-    }
 
-    if (this.kernel.HelpHandler.isExitCommand(input)) {
-      console.log('Goodbye!');
-      process.exit(0);
-    }
+      // Handle exit command
+      if (this.isExitCommand(args)) {
+          console.log('Goodbye!');
+          process.exit(0);
+      }
 
-    try {
-      const result = await this.executor.executeCommand(input, 'successOutput');
-      console.log(this.kernel.formatResult(result));
-    } catch (err) {
-      console.error(`❌ ${err}`);
-      process.exit(1);
-    }
+      // Execute command
+      const input = args.join(' ');
+      try {
+          const result = await this.vertex.executeCommand(input, 'successOutput');
+          console.log(result);
+      } catch (err) {
+          console.error(`❌ ${err}`);
+          process.exit(1);
+      }
+  }
+
+  // Simple help detection - no fancy parsing needed
+  isHelpRequest(args) {
+      const firstArg = args[0]?.toLowerCase();
+      return firstArg === 'help' || firstArg === '--help' || firstArg === '-h';
+  }
+
+  // Simple exit detection  
+  isExitCommand(args) {
+      const firstArg = args[0]?.toLowerCase();
+      return firstArg === 'exit' || firstArg === 'quit';
   }
 }

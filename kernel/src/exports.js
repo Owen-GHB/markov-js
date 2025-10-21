@@ -1,0 +1,1 @@
+export { Vertex } from './Vertex.js';
