@@ -3,12 +3,14 @@ import { Evaluator } from './Evaluator.js';
 import { Validator } from './Validator.js';
 import { manifestReader } from './manifestReader.js';
 import { StateManager } from './StateManager.js';
+import { ResourceLoader } from './ResourceLoader.js';
 
 /**
  * Runs the command chain
  */
 export class Runner {
     constructor(commandRoot, projectRoot) {
+		this.resourceLoader = new ResourceLoader(commandRoot);
         this.handler = new Handler(commandRoot, projectRoot);
         this.manifest = manifestReader(commandRoot); // Need manifest for next command lookup
     }
@@ -63,6 +65,17 @@ export class Runner {
 
         // End of chain, return final result
         return result;
+    }
+
+	async resolveResource(command, commandSpec) {
+        if (!commandSpec.methodName) {
+            throw new Error(`Command ${command.name} has no methodName`);
+        }
+
+        const sourcePath = commandSpec.source || './';
+        return await this.resourceLoader.getResourceMethod(
+            sourcePath, commandSpec.methodName
+        );
     }
 
     /**

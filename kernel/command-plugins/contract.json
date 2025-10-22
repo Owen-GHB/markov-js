@@ -5,7 +5,9 @@
   "sources": {
     "generate": "./generate",
     "http": "./http",
-    "electron": "./electron"
+    "electron": "./electron",
+    "cli": "./cli",
+    "repl": ".repl"
   },
   "stateDefaults": {
     "contextFilePath": "./context/state.json",

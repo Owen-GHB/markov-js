@@ -1,175 +1,94 @@
-import fs from 'fs';
-import path from 'path';
 import { fileURLToPath } from 'url';
-import { loadManifest } from './src/manifestReader.js';
-import { ResourceLoader } from './src/ResourceLoader.js';
+import path from 'path';
+import { Vertex } from './src/exports.js';
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 /**
- * Universal launch function that can handle both user app and kernel commands
- * @param {string[]} args - Command line arguments
- * @param {string} projectRoot - The project root directory
- * @returns {Promise<void>}
+ * Simplified Vertex-first launcher
  */
 export async function launch(args, projectRoot) {
-	// Check for --help first (meta-help above all helps)
-	if (args.includes('--help')) {
-		showMetaHelp();
-		return;
-	}
-
-	// Determine execution path
-	const kernelIndex = args.indexOf('--kernel');
-	const isKernelMode = kernelIndex !== -1;
-	const kernelCommandRoot = path.resolve(__dirname, 'command-plugins');
-
-	if (isKernelMode) {
-		// Kernel commands: use kernel's command-plugins as "command root"
-		const kernelArgs = args.slice(kernelIndex + 1);
-
-		return await executeCommandPath(
-			kernelArgs,
-			projectRoot,
-			kernelCommandRoot,
-			true,
-		);
-	} else {
-		// User app commands: use actual project root
-		return await executeCommandPath(
-			args,
-			projectRoot,
-			kernelCommandRoot,
-			false,
-		);
-	}
+    // Determine execution mode
+    const kernelIndex = args.indexOf('--kernel');
+    const isKernelMode = kernelIndex !== -1;
+    
+    // Handle --help at meta level
+    if (args.includes('--help')) {
+        showMetaHelp();
+        return;
+    }
+    
+    // Set up parameters based on mode
+    const kernelCommandRoot = path.resolve(__dirname, 'command-plugins');
+    const commandRoot = isKernelMode ? kernelCommandRoot : projectRoot;
+    
+    const vertex = new Vertex(kernelCommandRoot, projectRoot);
+    const { stateDefaults } = vertex.manifest;
+    
+    // Load user config with elegant fallback
+    const userConfigPath = path.resolve(projectRoot, 'vertex-config.json');
+    let userConfig = stateDefaults; // Start with manifest defaults
+    
+    try {
+        if (fs.existsSync(userConfigPath)) {
+            const configData = fs.readFileSync(userConfigPath, 'utf8');
+            userConfig = { ...stateDefaults, ...JSON.parse(configData) };
+        }
+    } catch {
+        // Silent fallback - already set to stateDefaults
+    }
+    
+    // Now userConfig contains the merged config (user values override defaults)
+    const contextFilePath = isKernelMode 
+        ? userConfigPath // Kernel mode uses the config file itself as context
+        : path.resolve(projectRoot, userConfig.contextFilePath);
+    
+    const replHistoryFilePath = isKernelMode 
+        ? null // No history for kernel mode
+        : path.resolve(projectRoot, userConfig.replHistoryFilePath);
+    
+    // Determine command and args
+    const commandName = args.length === 0 ? 'repl' : 'cli';
+    const commandArgs = {
+        commandRoot: commandRoot,
+        projectRoot: projectRoot,
+        contextFilePath: contextFilePath,
+        ...(args.length === 0 ? {
+            historyFilePath: replHistoryFilePath,
+            maxHistory: userConfig.maxReplHistory
+        } : {
+            args: isKernelMode ? args.slice(kernelIndex + 1) : args
+        })
+    };
+    
+    return await vertex.executeCommand({
+        name: commandName,
+        args: commandArgs
+    });
 }
 
 /**
- * Universal command execution path - works for both user app and kernel commands
- * @param {string[]} args - Command arguments
- * @param {string} stateRoot - Where to store state files
- * @param {string} commandRoot - Where to load commands/manifests from
- * @param {boolean} isKernelMode - Whether we're in kernel mode (affects context file path)
- * @returns {Promise<void>}
- */
-async function executeCommandPath(
-	args,
-	projectRoot,
-	kernelCommandRoot,
-	isKernelMode,
-) {
-	// Load manifest from the kernel command root for command definitions
-	const manifest = loadManifest(kernelCommandRoot);
-
-	// Use default plugins (CLI/REPL)
-	const defaultPluginsDir = path.resolve(__dirname, 'default-plugins');
-	const loader = new ResourceLoader(defaultPluginsDir);
-
-	// Determine context with user config first, kernel defaults as fallback
-	let contextFilePath;
-	let commandRoot;
-	let replHistoryFilePath;
-	let maxHistory;
-
-	if (isKernelMode) {
-		// Kernel mode: use vertex-config.json in the user's project root
-		contextFilePath = path.resolve(projectRoot, 'vertex-config.json');
-		commandRoot = kernelCommandRoot;
-
-		// For REPL settings, check user config first, then kernel manifest defaults
-		const userConfig = loadUserConfig(contextFilePath);
-		replHistoryFilePath =
-			userConfig.replHistoryFilePath ||
-			manifest.stateDefaults.replHistoryFilePath;
-		maxHistory = userConfig.maxHistory || manifest.stateDefaults.maxHistory;
-	} else {
-		// Application mode: user's project is command root
-		commandRoot = projectRoot;
-
-		// Load user's config with fallback to kernel manifest
-		const userConfigPath = path.resolve(projectRoot, 'vertex-config.json');
-		const userConfig = loadUserConfig(userConfigPath);
-
-		contextFilePath =
-			userConfig.contextFilePath ||
-			path.resolve(
-				kernelCommandRoot,
-				'manifest.stateDefaults.contextFilePath',
-			);
-		replHistoryFilePath =
-			userConfig.replHistoryFilePath ||
-			manifest.stateDefaults.replHistoryFilePath;
-		maxHistory = userConfig.maxHistory || manifest.stateDefaults.maxHistory;
-	}
-
-	const run = async (plugin, method, ...params) => {
-		const fn = await loader.getResourceMethod(plugin, method);
-		if (!fn) {
-			console.error(`❌ ${plugin}.${method} not found or invalid`);
-			process.exit(1);
-		}
-		// Pass commandRoot so CLI/REPL load commands from the right place
-		return fn(commandRoot, projectRoot, ...params);
-	};
-
-	if (args.length === 0) {
-		// REPL mode with proper config hierarchy
-		return run(
-			'repl',
-			'start',
-			contextFilePath,
-			replHistoryFilePath,
-			maxHistory,
-		);
-	}
-
-	// CLI mode
-	return run('cli', 'run', contextFilePath, args);
-}
-
-/**
- * Load user configuration with graceful fallback to empty object
- */
-function loadUserConfig(configPath) {
-	try {
-		if (fs.existsSync(configPath)) {
-			const configData = fs.readFileSync(configPath, 'utf8');
-			return JSON.parse(configData);
-		}
-	} catch (error) {
-		console.warn(
-			`⚠️ Could not load user config from ${configPath}:`,
-			error.message,
-		);
-	}
-	return {};
-}
-
-/**
- * Show the meta-help that sits above both help systems
+ * Show the meta-help
  */
 function showMetaHelp() {
-	console.log(`
+    console.log(`
 🧠 Vertex Application Host
 ===============================================
 
 USAGE:
-  [your-entrypoint.js] [app-commands...]           # Run application commands
-  [your-entrypoint.js] --kernel [kernel-commands...] # Run kernel commands
+  [your-entrypoint.js] [app-commands...]           # Run user application commands
+  [your-entrypoint.js] --kernel [kernel-commands...] # Run kernel management commands
   [your-entrypoint.js] --help                      # Show this help
 
 EXAMPLES:
-  [your-entrypoint.js] --kernel help               # Kernel help
-  [your-entrypoint.js] help                        # Application help
+  [your-entrypoint.js] --kernel help               # Kernel help (via kernel CLI)
+  [your-entrypoint.js] help                        # Application help (via user CLI)
 
 META-HELP:
-  • Application commands operate on the hosted application
-  • Kernel commands manage the Vertex application hosting kernel
-  • Use 'help' for application command help
-  • Use '--kernel help' for kernel command help
+  • User commands operate on your application domain
+  • Kernel commands manage the Vertex hosting system
+  • Both interfaces are bootstrapped by Vertex itself
   `);
 }
-
-// Note: This file is not meant to be run directly. Use a project-specific entry point.

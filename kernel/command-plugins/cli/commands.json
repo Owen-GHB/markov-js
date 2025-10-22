@@ -1,0 +1,24 @@
+{
+  "cli": {
+    "commandType": "native-method",
+    "methodName": "run",
+    "parameters": {
+      "commandRoot": {
+        "type": "string",
+        "required": true
+      },
+      "projectRoot": {
+        "type": "string", 
+        "required": true
+      },
+      "contextFilePath": {
+        "type": "string",
+        "required": true
+      },
+      "args": {
+        "type": "array",
+        "required": false
+      }
+    }
+  }
+}

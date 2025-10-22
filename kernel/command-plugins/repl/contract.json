@@ -1,0 +1,12 @@
+{
+  "name": "repl-plugin", 
+  "version": "0.0.0",
+  "description": "Read-Eval-Print Loop Interface",
+  "stateDefaults": {
+    "commandRoot": "./",
+    "projectRoot": "./",
+    "contextFilePath": "./context/state.json",
+    "replHistoryFilePath": "./context/repl-history.txt",
+    "maxReplHistory": 100
+  }
+}

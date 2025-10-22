@@ -1,0 +1,28 @@
+{
+  "repl": {
+    "commandType": "native-method", 
+    "methodName": "start",
+    "parameters": {
+      "commandRoot": {
+        "type": "string",
+        "required": true
+      },
+      "projectRoot": {
+        "type": "string",
+        "required": true
+      },
+      "contextFilePath": {
+        "type": "string",
+        "required": true
+      },
+      "historyFilePath": {
+        "type": "string",
+        "required": true
+      },
+      "maxHistory": {
+        "type": "integer", 
+        "required": false
+      }
+    }
+  }
+}

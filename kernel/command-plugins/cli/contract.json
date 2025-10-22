@@ -1,0 +1,10 @@
+{
+  "name": "cli-plugin",
+  "version": "0.0.0",
+  "description": "Command Line Interface",
+  "stateDefaults": {
+    "commandRoot": "./",
+    "projectRoot": "./",
+    "contextFilePath": "./context/state.json"
+  }
+}
