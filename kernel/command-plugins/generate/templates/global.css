@@ -212,63 +212,63 @@ textarea {
 
 /* File Input Styles */
 .blob-field {
-    margin-bottom: 1.5rem;
+	margin-bottom: 1.5rem;
 }
 
 .file-input {
-    width: 100%;
-    padding: 0.5rem;
-    border: 2px dashed #ccc;
-    border-radius: 4px;
-    background: #fafafa;
-    cursor: pointer;
+	width: 100%;
+	padding: 0.5rem;
+	border: 2px dashed #ccc;
+	border-radius: 4px;
+	background: #fafafa;
+	cursor: pointer;
 }
 
 .file-input:hover {
-    border-color: #007acc;
-    background: #f0f8ff;
+	border-color: #007acc;
+	background: #f0f8ff;
 }
 
 .file-input:focus {
-    outline: none;
-    border-color: #007acc;
-    box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
+	outline: none;
+	border-color: #007acc;
+	box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2);
 }
 
 .file-info {
-    margin-top: 0.5rem;
-    padding: 0.5rem;
-    background: #f8f9fa;
-    border-radius: 4px;
-    border-left: 3px solid #007acc;
+	margin-top: 0.5rem;
+	padding: 0.5rem;
+	background: #f8f9fa;
+	border-radius: 4px;
+	border-left: 3px solid #007acc;
 }
 
 .file-info .file-name {
-    font-weight: bold;
-    color: #333;
+	font-weight: bold;
+	color: #333;
 }
 
 .file-info .file-size {
-    color: #666;
-    font-size: 0.9em;
+	color: #666;
+	font-size: 0.9em;
 }
 
 .constraints {
-    margin-top: 0.5rem;
-    font-size: 0.8rem;
-    color: #666;
+	margin-top: 0.5rem;
+	font-size: 0.8rem;
+	color: #666;
 }
 
 .constraints small {
-    display: block;
-    margin: 0.2rem 0;
+	display: block;
+	margin: 0.2rem 0;
 }
 
 .required {
-    color: #e74c3c;
+	color: #e74c3c;
 }
 
 .json-hint {
-    color: #666;
-    font-style: italic;
+	color: #666;
+	font-style: italic;
 }

@@ -1,7 +1,6 @@
 {
   "generate": {
     "name": "generate",
-    "commandType": "native-method",
     "methodName": "generateText",
     "combineArguments": true,
     "parameters": {
@@ -41,7 +40,6 @@
   },
   "train": {
     "name": "train",
-    "commandType": "native-method",
     "methodName": "trainModel",
     "combineArguments": true,
     "parameters": {

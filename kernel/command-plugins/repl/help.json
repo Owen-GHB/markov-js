@@ -1,25 +1,23 @@
 {
-  "repl": {
-    "description": "Read-Eval-Print Loop Interface",
-    "examples": [
-      "repl()"
-    ],
-    "parameters": {
-      "commandRoot": {
-        "description": "[Internal] Root directory for command manifests"
-      },
-      "projectRoot": {
-        "description": "[Internal] Root directory for the project"
-      },
-      "contextFilePath": {
-        "description": "[Internal] Path to context file for state persistence"
-      },
-      "historyFilePath": {
-        "description": "[Internal] Path to REPL history file"
-      },
-      "maxHistory": {
-        "description": "[Internal] Maximum number of history entries to keep"
-      }
-    }
-  }
+	"repl": {
+		"description": "Read-Eval-Print Loop Interface",
+		"examples": ["repl()"],
+		"parameters": {
+			"commandRoot": {
+				"description": "[Internal] Root directory for command manifests"
+			},
+			"projectRoot": {
+				"description": "[Internal] Root directory for the project"
+			},
+			"contextFilePath": {
+				"description": "[Internal] Path to context file for state persistence"
+			},
+			"historyFilePath": {
+				"description": "[Internal] Path to REPL history file"
+			},
+			"maxHistory": {
+				"description": "[Internal] Maximum number of history entries to keep"
+			}
+		}
+	}
 }

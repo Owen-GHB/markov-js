@@ -1,21 +1,21 @@
 {
-  "repl": {
-    "parameters": {
-      "commandRoot": {
-        "runtimeFallback": "commandRoot"
-      },
-      "projectRoot": {
-        "runtimeFallback": "projectRoot"
-      },
-      "contextFilePath": {
-        "runtimeFallback": "contextFilePath"
-      },
-      "historyFilePath": {
-        "runtimeFallback": "replHistoryFilePath"
-      },
-      "maxHistory": {
-        "runtimeFallback": "maxReplHistory"
-      }
-    }
-  }
+	"repl": {
+		"parameters": {
+			"commandRoot": {
+				"runtimeFallback": "commandRoot"
+			},
+			"projectRoot": {
+				"runtimeFallback": "projectRoot"
+			},
+			"contextFilePath": {
+				"runtimeFallback": "contextFilePath"
+			},
+			"historyFilePath": {
+				"runtimeFallback": "replHistoryFilePath"
+			},
+			"maxHistory": {
+				"runtimeFallback": "maxReplHistory"
+			}
+		}
+	}
 }

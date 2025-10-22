@@ -114,10 +114,18 @@ export class HTTPServer {
 								this.sendErrorResponse(res, err, 500);
 							}
 						} else {
-							this.sendErrorResponse(res, "Missing 'command' in request body", 400);
+							this.sendErrorResponse(
+								res,
+								"Missing 'command' in request body",
+								400,
+							);
 						}
 					} catch (err) {
-						this.sendErrorResponse(res, `Invalid POST body: ${err.message}`, 400);
+						this.sendErrorResponse(
+							res,
+							`Invalid POST body: ${err.message}`,
+							400,
+						);
 					}
 				});
 				return;
@@ -162,11 +170,11 @@ export class HTTPServer {
 
 				file.on('end', () => {
 					formData.files.push({
-					fieldName: name,
-					filename,
-					mimeType,
-					data: Buffer.concat(chunks),
-					size: Buffer.concat(chunks).length,
+						fieldName: name,
+						filename,
+						mimeType,
+						data: Buffer.concat(chunks),
+						size: Buffer.concat(chunks).length,
 					});
 				});
 
@@ -181,13 +189,17 @@ export class HTTPServer {
 					const commandString = formData.fields.command || formData.fields.json;
 
 					if (!commandString) {
-						this.sendErrorResponse(res, "Missing 'command' field in form data", 400);
+						this.sendErrorResponse(
+							res,
+							"Missing 'command' field in form data",
+							400,
+						);
 						return resolve();
 					}
 
 					// Build file args
 					const fileArgs = {};
-					formData.files.forEach(file => {
+					formData.files.forEach((file) => {
 						fileArgs[file.fieldName] = file.data;
 					});
 
@@ -202,13 +214,21 @@ export class HTTPServer {
 					}
 					resolve();
 				} catch (error) {
-					this.sendErrorResponse(res, `Error processing multipart request: ${error.message}`, 500);
+					this.sendErrorResponse(
+						res,
+						`Error processing multipart request: ${error.message}`,
+						500,
+					);
 					resolve();
 				}
 			});
 
 			bb.on('error', (err) => {
-				this.sendErrorResponse(res, `Multipart parsing error: ${err.message}`, 400);
+				this.sendErrorResponse(
+					res,
+					`Multipart parsing error: ${err.message}`,
+					400,
+				);
 				resolve();
 			});
 
@@ -226,7 +246,7 @@ export class HTTPServer {
 	sendSuccessResponse(res, output) {
 		const result = {
 			output: output,
-			error: null
+			error: null,
 		};
 		res.writeHead(200, { 'Content-Type': 'application/json' });
 		res.end(JSON.stringify(result));
@@ -241,7 +261,7 @@ export class HTTPServer {
 	sendErrorResponse(res, error, statusCode = 400) {
 		const result = {
 			output: null,
-			error: error.message || error
+			error: error.message || error,
 		};
 		res.writeHead(statusCode, { 'Content-Type': 'application/json' });
 		res.end(JSON.stringify(result));

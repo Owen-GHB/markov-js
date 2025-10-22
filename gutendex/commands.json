@@ -1,7 +1,6 @@
 {
   "pgb_download": {
     "name": "pgb_download",
-    "commandType": "native-method",
     "methodName": "downloadBookBuffer",
     "combineArguments": true,
     "parameters": {
@@ -17,7 +16,6 @@
   },
   "pgb_info": {
     "name": "pgb_info",
-    "commandType": "native-method",
     "methodName": "getGutenbergInfo",
     "combineArguments": true,
     "parameters": {
@@ -29,7 +27,6 @@
   },
   "pgb_search": {
     "name": "pgb_search",
-    "commandType": "native-method",
     "methodName": "searchGutenberg",
     "combineArguments": true,
     "parameters": {

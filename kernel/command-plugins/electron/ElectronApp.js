@@ -6,145 +6,146 @@ import path from 'path';
  * Manages the UI for the Electron application, including checking and loading
  */
 class ElectronUIManager {
-    /**
-     * Check if the served UI directory exists and has required files
-     * @param {string} filename - The UI filename to check (default: 'index.html')
-     * @param {Object} paths - Paths object containing required paths
-     * @returns {boolean} True if the served UI directory exists and has the file
-     */
-    hasServedUI(filename = 'index.html', servedUIDir) {
-        const servedDir = servedUIDir;
-        const indexPath = path.join(servedDir, filename);
-        return fs.existsSync(servedDir) && fs.existsSync(indexPath);
-    }
+	/**
+	 * Check if the served UI directory exists and has required files
+	 * @param {string} filename - The UI filename to check (default: 'index.html')
+	 * @param {Object} paths - Paths object containing required paths
+	 * @returns {boolean} True if the served UI directory exists and has the file
+	 */
+	hasServedUI(filename = 'index.html', servedUIDir) {
+		const servedDir = servedUIDir;
+		const indexPath = path.join(servedDir, filename);
+		return fs.existsSync(servedDir) && fs.existsSync(indexPath);
+	}
 
-    /**
-     * Get the UI file path from the served UI directory
-     * @param {string} filename - The UI filename (default: 'index.html')
-     * @param {Object} paths - Paths object containing required paths
-     * @returns {string} The path to the UI file
-     */
-    getUIPath(filename = 'index.html', servedUIDir) {
-        const servedDir = servedUIDir;
-        return path.join(servedDir, filename);
-    }
+	/**
+	 * Get the UI file path from the served UI directory
+	 * @param {string} filename - The UI filename (default: 'index.html')
+	 * @param {Object} paths - Paths object containing required paths
+	 * @returns {string} The path to the UI file
+	 */
+	getUIPath(filename = 'index.html', servedUIDir) {
+		const servedDir = servedUIDir;
+		return path.join(servedDir, filename);
+	}
 }
 
 export class ElectronApp {
-    constructor(options = {}) {
-        this.uiManager = new ElectronUIManager();
-        this.vertex = null; // Will be initialized in start method
-        this.options = options;
-        this.windowOptions = {
-            width: options.width || 1200,
-            height: options.height || 800,
-            webPreferences: {
-                nodeIntegration: false,
-                contextIsolation: true,
-                preload: options.preloadPath || null, // Will be set in start method
-            },
-            ...options.windowOptions,
-        };
-        this.showDevTools = options.showDevTools !== false; // Default to true unless explicitly disabled
-    }
+	constructor(options = {}) {
+		this.uiManager = new ElectronUIManager();
+		this.vertex = null; // Will be initialized in start method
+		this.options = options;
+		this.windowOptions = {
+			width: options.width || 1200,
+			height: options.height || 800,
+			webPreferences: {
+				nodeIntegration: false,
+				contextIsolation: true,
+				preload: options.preloadPath || null, // Will be set in start method
+			},
+			...options.windowOptions,
+		};
+		this.showDevTools = options.showDevTools !== false; // Default to true unless explicitly disabled
+	}
 
-    createWindow() {
-        const mainWindow = new BrowserWindow(this.windowOptions);
+	createWindow() {
+		const mainWindow = new BrowserWindow(this.windowOptions);
 
-        // Check if UI exists first, refuse to work if not
-        if (!this.uiManager.hasServedUI('index.html', this.paths.servedUIDir)) {
-            console.error(
-                "UI files not found.",
-            );
-            // Show error and close the window
-            mainWindow.loadURL(
-                `data:text/html,<h1>UI Files Not Found</h1><p>The Electron app will close in 5 seconds.</p>`,
-            );
+		// Check if UI exists first, refuse to work if not
+		if (!this.uiManager.hasServedUI('index.html', this.paths.servedUIDir)) {
+			console.error('UI files not found.');
+			// Show error and close the window
+			mainWindow.loadURL(
+				`data:text/html,<h1>UI Files Not Found</h1><p>The Electron app will close in 5 seconds.</p>`,
+			);
 
-            // Close the window after a delay to let the user see the error
-            setTimeout(() => {
-                mainWindow.close();
-                if (BrowserWindow.getAllWindows().length === 0) {
-                    app.quit();
-                }
-            }, 5000);
+			// Close the window after a delay to let the user see the error
+			setTimeout(() => {
+				mainWindow.close();
+				if (BrowserWindow.getAllWindows().length === 0) {
+					app.quit();
+				}
+			}, 5000);
 
-            return mainWindow;
-        }
+			return mainWindow;
+		}
 
-        // Load the UI from the served UI directory
-        try {
-            const uiPath = this.uiManager.getUIPath('index.html', this.paths.servedUIDir);
-            // Load the generated UI
-            mainWindow.loadFile(uiPath);
-        } catch (err) {
-            console.error('Failed to load UI:', err);
-            // Load an error page
-            mainWindow.loadURL(
-                `data:text/html,<h1>UI Loading Failed</h1><p>${err.message}</p>`,
-            );
-        }
+		// Load the UI from the served UI directory
+		try {
+			const uiPath = this.uiManager.getUIPath(
+				'index.html',
+				this.paths.servedUIDir,
+			);
+			// Load the generated UI
+			mainWindow.loadFile(uiPath);
+		} catch (err) {
+			console.error('Failed to load UI:', err);
+			// Load an error page
+			mainWindow.loadURL(
+				`data:text/html,<h1>UI Loading Failed</h1><p>${err.message}</p>`,
+			);
+		}
 
-        // Open the DevTools if specified
-        if (this.showDevTools) {
-            mainWindow.webContents.openDevTools();
-        }
+		// Open the DevTools if specified
+		if (this.showDevTools) {
+			mainWindow.webContents.openDevTools();
+		}
 
-        return mainWindow;
-    }
+		return mainWindow;
+	}
 
-    setupIPC() {
-        ipcMain.handle('execute-command', async (event, command) => {
-            try {
+	setupIPC() {
+		ipcMain.handle('execute-command', async (event, command) => {
+			try {
 				const result = await this.vertex.executeCommand(command);
-                return { error: null, output: result };
-            } catch (error) {
-                return { error: error.message, output: null };
-            }
-        });
-    }
+				return { error: null, output: result };
+			} catch (error) {
+				return { error: error.message, output: null };
+			}
+		});
+	}
 
-    async start(servedUIDir, electronPreloadPath, vertex) {
-        this.vertex = vertex;
-        this.paths = { servedUIDir, electronPreloadPath };
+	async start(servedUIDir, electronPreloadPath, vertex) {
+		this.vertex = vertex;
+		this.paths = { servedUIDir, electronPreloadPath };
 
-        // Update the preload path in webPreferences
-        this.windowOptions.webPreferences.preload = electronPreloadPath;
+		// Update the preload path in webPreferences
+		this.windowOptions.webPreferences.preload = electronPreloadPath;
 
-        // Ensure preload script exists
-        if (
-            this.windowOptions.webPreferences.preload &&
-            !fs.existsSync(this.windowOptions.webPreferences.preload)
-        ) {
-            console.error(
-                `Preload script not found at: ${this.windowOptions.webPreferences.preload}`,
-            );
-            console.error('This may cause IPC to not work properly.');
-        }
+		// Ensure preload script exists
+		if (
+			this.windowOptions.webPreferences.preload &&
+			!fs.existsSync(this.windowOptions.webPreferences.preload)
+		) {
+			console.error(
+				`Preload script not found at: ${this.windowOptions.webPreferences.preload}`,
+			);
+			console.error('This may cause IPC to not work properly.');
+		}
 
-        this.setupIPC();
+		this.setupIPC();
 
-        // This method will be called when Electron has finished
-        // initialization and is ready to create browser windows.
-        app.whenReady().then(() => {
-            this.createWindow();
+		// This method will be called when Electron has finished
+		// initialization and is ready to create browser windows.
+		app.whenReady().then(() => {
+			this.createWindow();
 
-            app.on('activate', () => {
-                // On macOS it's common to re-create a window in the app when the
-                // dock icon is clicked and there are no other windows open.
-                if (BrowserWindow.getAllWindows().length === 0) {
-                    this.createWindow();
-                }
-            });
-        });
+			app.on('activate', () => {
+				// On macOS it's common to re-create a window in the app when the
+				// dock icon is clicked and there are no other windows open.
+				if (BrowserWindow.getAllWindows().length === 0) {
+					this.createWindow();
+				}
+			});
+		});
 
-        // Quit when all windows are closed, except on macOS. There, it's common
-        // for applications and their menu bar to stay active until the user quits
-        // explicitly with Cmd + Q.
-        app.on('window-all-closed', () => {
-            if (process.platform !== 'darwin') {
-                app.quit();
-            }
-        });
-    }
+		// Quit when all windows are closed, except on macOS. There, it's common
+		// for applications and their menu bar to stay active until the user quits
+		// explicitly with Cmd + Q.
+		app.on('window-all-closed', () => {
+			if (process.platform !== 'darwin') {
+				app.quit();
+			}
+		});
+	}
 }

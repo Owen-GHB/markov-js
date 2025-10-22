@@ -7,6 +7,7 @@ import booleanType from './types/boolean.js';
 import arrayType from './types/array.js';
 import objectType from './types/object.js';
 import stringType from './types/string.js';
+import localPathType from './types/localPath.js';
 
 // Define types object with explicit order
 const types = {
@@ -18,6 +19,7 @@ const types = {
 	array: arrayType,
 	object: objectType,
 	string: stringType,
+	localPath: localPathType,
 };
 
 // Maintain order for type union resolution

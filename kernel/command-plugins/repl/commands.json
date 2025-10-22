@@ -1,28 +1,23 @@
 {
-  "repl": {
-    "commandType": "native-method", 
-    "methodName": "start",
-    "parameters": {
-      "commandRoot": {
-        "type": "string",
-        "required": true
-      },
-      "projectRoot": {
-        "type": "string",
-        "required": true
-      },
-      "contextFilePath": {
-        "type": "string",
-        "required": true
-      },
-      "historyFilePath": {
-        "type": "string",
-        "required": true
-      },
-      "maxHistory": {
-        "type": "integer", 
-        "required": false
-      }
-    }
-  }
+	"repl": {
+		"methodName": "start",
+		"parameters": {
+			"commandRoot": {
+				"type": "localPath",
+				"required": true
+			},
+			"contextFilePath": {
+				"type": "localPath",
+				"required": true
+			},
+			"historyFilePath": {
+				"type": "localPath",
+				"required": true
+			},
+			"maxHistory": {
+				"type": "integer",
+				"required": false
+			}
+		}
+	}
 }

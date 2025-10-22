@@ -1,24 +1,23 @@
 {
-  "electron": {
-    "commandType": "kernel-plugin",
-    "methodName": "start", 
-    "parameters": {
-      "commandRoot": {
-        "type": "string",
-        "required": true
-      },
-      "projectRoot": {
-        "type": "string",
-        "required": true
-      },
-      "servedui": {
-        "type": "string",
-        "required": false
-      },
-      "electronPreloadPath": {
-        "type": "string",
-        "required": false
-      }
-    }
-  }
+	"electron": {
+		"methodName": "start",
+		"parameters": {
+			"commandRoot": {
+				"type": "localPath",
+				"required": true
+			},
+			"projectRoot": {
+				"type": "localPath",
+				"required": true
+			},
+			"servedui": {
+				"type": "localPath",
+				"required": false
+			},
+			"electronPreloadPath": {
+				"type": "localPath",
+				"required": false
+			}
+		}
+	}
 }

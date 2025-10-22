@@ -1,23 +1,20 @@
 {
-  "cli": {
-    "description": "Command Line Interface",
-    "examples": [
-      "cli(args=[\"help\"])",
-      "cli(args=[\"generate\", \"userTemplateDir=./templates\"])"
-    ],
-    "parameters": {
-      "commandRoot": {
-        "description": "[Internal] Root directory for command manifests"
-      },
-      "projectRoot": {
-        "description": "[Internal] Root directory for the project"
-      },
-      "contextFilePath": {
-        "description": "[Internal] Path to context file for state persistence"
-      },
-      "args": {
-        "description": "Command line arguments to execute"
-      }
-    }
-  }
+	"cli": {
+		"description": "Command Line Interface",
+		"examples": [
+			"cli(args=[\"help\"])",
+			"cli(args=[\"generate\", \"userTemplateDir=./templates\"])"
+		],
+		"parameters": {
+			"commandRoot": {
+				"description": "Root directory for command manifests"
+			},
+			"contextFilePath": {
+				"description": "Path to context file for state persistence"
+			},
+			"args": {
+				"description": "Command line arguments to execute"
+			}
+		}
+	}
 }

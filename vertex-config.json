@@ -1,13 +1,13 @@
 {
   "commandRoot": "./",
-  "projectRoot": "./",
   "contextFilePath": "./context/state.json",
+  "replHistoryFilePath": "./context/repl-history.txt",
+  "maxReplHistory": 100,
+  "projectRoot": "./",
   "servedUIDir": "./generated-ui",
   "electronPreloadPath": "./electron-preload.js",
   "serverPort": "8080",
   "apiEndpoint": "/api",
   "userTemplateDir": "./ejs-templates",
-  "generatedUIDir": "./generated-ui",
-  "replHistoryFilePath": "./context/repl-history.txt",
-  "maxReplHistory": 100
+  "generatedUIDir": "./generated-ui"
 }

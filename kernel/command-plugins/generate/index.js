@@ -7,10 +7,10 @@ import { Vertex } from 'vertex-kernel';
 let generatorInstance = null;
 
 function getGeneratorInstance() {
-    if (!generatorInstance) {
-        generatorInstance = new UI();
-    }
-    return generatorInstance;
+	if (!generatorInstance) {
+		generatorInstance = new UI();
+	}
+	return generatorInstance;
 }
 
 /**
@@ -18,17 +18,16 @@ function getGeneratorInstance() {
  * @param {string} userTemplateDir - Directory for user templates
  * @param {string} generatedUIDir - Directory for generated UI output
  * @param {string} kernelPath - Path to kernel directory
- * @param {string} projectRoot - Project root directory (defaults to cwd)
  * @returns {Promise<void>}
  */
-export async function run(commandRoot, projectRoot, userTemplateDir, generatedUIDir) {
-    const vertex = new Vertex(commandRoot, projectRoot);
+export async function run(commandRoot, userTemplateDir, generatedUIDir) {
+	const vertex = new Vertex({ commandRoot: commandRoot });
 	const manifest = vertex.manifest;
-    
-    const generator = getGeneratorInstance();
-    return await generator.run(userTemplateDir, generatedUIDir, manifest);
+
+	const generator = getGeneratorInstance();
+	return await generator.run(userTemplateDir, generatedUIDir, manifest);
 }
 
 export default {
-    run,
+	run,
 };

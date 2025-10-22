@@ -1,15 +1,12 @@
 {
-  "cli": {
-    "parameters": {
-      "commandRoot": {
-        "runtimeFallback": "commandRoot"
-      },
-      "projectRoot": {
-        "runtimeFallback": "projectRoot"
-      },
-        "contextFilePath": {
-        "runtimeFallback": "contextFilePath"
-      }
-    }
-  }
+	"cli": {
+		"parameters": {
+			"commandRoot": {
+				"runtimeFallback": "commandRoot"
+			},
+			"contextFilePath": {
+				"runtimeFallback": "contextFilePath"
+			}
+		}
+	}
 }

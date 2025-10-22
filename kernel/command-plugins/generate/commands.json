@@ -1,24 +1,19 @@
 {
-  "generate": {
-    "commandType": "kernel-plugin",
-    "methodName": "run",
-    "parameters": {
-      "commandRoot": {
-        "type": "string",
-        "required": true
-      },
-      "projectRoot": {
-        "type": "string", 
-        "required": true
-      },
-      "userTemplateDir": {
-        "type": "string",
-        "required": false
-      },
-      "generatedUIDir": {
-        "type": "string",
-        "required": false
-      }
-    }
-  }
+	"generate": {
+		"methodName": "run",
+		"parameters": {
+			"commandRoot": {
+				"type": "localPath",
+				"required": true
+			},
+			"userTemplateDir": {
+				"type": "localPath",
+				"required": false
+			},
+			"generatedUIDir": {
+				"type": "localPath",
+				"required": false
+			}
+		}
+	}
 }

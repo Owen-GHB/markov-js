@@ -1,17 +1,17 @@
 {
-  "name": "vertex-command-plugins",
-  "version": "0.0.0", 
-  "description": "Universal Command Engine - Plugin Ecosystem",
-  "sources": {
-    "generate": "./generate",
-    "http": "./http",
-    "electron": "./electron",
-    "cli": "./cli",
-    "repl": "./repl"
-  },
-  "stateDefaults": {
-    "contextFilePath": "./context/state.json",
-    "replHistoryFilePath": "./context/repl-history.txt",
-    "maxReplHistory": 100
-  }
+	"name": "vertex-command-plugins",
+	"version": "0.0.0",
+	"description": "Universal Command Engine - Plugin Ecosystem",
+	"sources": {
+		"generate": "./generate",
+		"http": "./http",
+		"electron": "./electron",
+		"cli": "./cli",
+		"repl": "./repl"
+	},
+	"stateDefaults": {
+		"contextFilePath": "./context/state.json",
+		"replHistoryFilePath": "./context/repl-history.txt",
+		"maxReplHistory": 100
+	}
 }

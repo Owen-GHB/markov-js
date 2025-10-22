@@ -6,14 +6,32 @@ import path from 'path';
  */
 export function loadManifest(projectRoot) {
 	try {
-		// 1. Recursive merge per file type (parent wins)
-		const contracts = mergeFilesRecursive(projectRoot, 'contract.json');
-		const commands = mergeFilesRecursive(projectRoot, 'commands.json', {});
-		const help = mergeFilesRecursive(projectRoot, 'help.json', {});
-		const runtime = mergeFilesRecursive(projectRoot, 'runtime.json', {});
-		const routes = mergeFilesRecursive(projectRoot, 'routes.json', {});
+		// Start recursion with projectRoot as both ultimate and current root
+		const contracts = mergeFilesRecursive(
+			projectRoot,
+			projectRoot,
+			'contract.json',
+		);
+		const commands = mergeFilesRecursive(
+			projectRoot,
+			projectRoot,
+			'commands.json',
+			{},
+		);
+		const help = mergeFilesRecursive(projectRoot, projectRoot, 'help.json', {});
+		const runtime = mergeFilesRecursive(
+			projectRoot,
+			projectRoot,
+			'runtime.json',
+			{},
+		);
+		const routes = mergeFilesRecursive(
+			projectRoot,
+			projectRoot,
+			'routes.json',
+			{},
+		);
 
-		// 2. Combine everything into final manifest
 		return combineManifest(contracts, commands, help, runtime, routes);
 	} catch (error) {
 		throw new Error(`Failed to load manifest: ${error.message}`);
@@ -21,32 +39,34 @@ export function loadManifest(projectRoot) {
 }
 
 function mergeFilesRecursive(
-	projectRoot,
+	projectRoot, // Ultimate root (never changes)
+	currentRoot, // Current level being processed
 	filename,
 	defaultValue = null,
-	parentRoot = null,
+	parentRoot = null, // Immediate parent
 ) {
-	const current = loadJSONFile(projectRoot, filename, defaultValue) || {};
+	const current = loadJSONFile(currentRoot, filename, defaultValue) || {};
 	let merged = { ...current };
 
 	// Transform paths if this is commands.json and we're in a child
 	if (filename === 'commands.json' && parentRoot) {
-		merged = transformCommandSources(merged, projectRoot, parentRoot);
+		merged = transformCommandSources(merged, currentRoot, projectRoot);
 	}
 
-	const contract = loadJSONFile(projectRoot, 'contract.json');
+	const contract = loadJSONFile(currentRoot, 'contract.json');
 
 	if (contract && contract.sources) {
 		for (const sourcePath of Object.values(contract.sources)) {
 			try {
-				const resolvedPath = validateSourcePath(sourcePath, projectRoot);
+				const resolvedPath = validateSourcePath(sourcePath, currentRoot);
 				if (fs.existsSync(resolvedPath)) {
 					const childData = mergeFilesRecursive(
-						resolvedPath,
+						projectRoot, // Pass through unchanged
+						resolvedPath, // Child becomes new currentRoot
 						filename,
 						defaultValue,
-						projectRoot,
-					); // Pass current as parent
+						currentRoot, // CURRENT becomes parent to children
+					);
 					merged = deepMerge(childData, merged);
 				}
 			} catch (error) {
@@ -60,31 +80,42 @@ function mergeFilesRecursive(
 	return merged;
 }
 
-function transformCommandSources(commands, childRoot, parentRoot) {
+function transformCommandSources(commands, childRoot, projectRoot) {
 	const transformed = {};
 
 	for (const [commandName, commandSpec] of Object.entries(commands)) {
 		transformed[commandName] = {
 			...commandSpec,
-			source: resolveSourcePath(commandSpec.source, childRoot, parentRoot),
+			source: resolveSourcePath(commandSpec.source, childRoot, projectRoot),
 		};
 	}
 
 	return transformed;
 }
 
-function resolveSourcePath(childSource, childRoot, parentRoot) {
+function resolveSourcePath(childSource, childRoot, projectRoot) {
 	if (!childSource) {
-		// No source specified - default to source directory relative to parent
-		return path.relative(parentRoot, childRoot);
+		// Always resolve relative to projectRoot
+		return path.relative(projectRoot, childRoot);
 	}
 
 	if (childSource.startsWith('./') || childSource.startsWith('../')) {
-		// Relative path in child → resolve relative to parent
-		return path.join(path.relative(parentRoot, childRoot), childSource);
+		// Resolve relative to current context, then make relative to projectRoot
+		const absolutePath = path.resolve(childRoot, childSource);
+		return path.relative(projectRoot, absolutePath);
 	}
 
-	// Absolute/NPM package → pass through unchanged
+	// Simple name → resolve relative to current context, then make relative to projectRoot
+	if (
+		!path.isAbsolute(childSource) &&
+		!childSource.includes('/') &&
+		!childSource.includes('\\')
+	) {
+		const absolutePath = path.resolve(childRoot, childSource);
+		return path.relative(projectRoot, absolutePath);
+	}
+
+	// Absolute/NPM package - pass through unchanged
 	return childSource;
 }
 
@@ -189,15 +220,17 @@ function loadJSONFile(projectRoot, filename, defaultValue = null) {
  * Validate that source path is within project root
  */
 function validateSourcePath(sourcePath, currentRoot) {
-    const resolvedPath = path.resolve(currentRoot, sourcePath);
-    const relativeToRoot = path.relative(currentRoot, resolvedPath);
-    
-    // Prevent going outside the current source's domain
-    if (relativeToRoot.startsWith('..') || path.isAbsolute(relativeToRoot)) {
-        throw new Error(`Source path '${sourcePath}' cannot escape its root directory`);
-    }
-    
-    return resolvedPath;
+	const resolvedPath = path.resolve(currentRoot, sourcePath);
+	const relativeToRoot = path.relative(currentRoot, resolvedPath);
+
+	// Prevent going outside the current source's domain
+	if (relativeToRoot.startsWith('..') || path.isAbsolute(relativeToRoot)) {
+		throw new Error(
+			`Source path '${sourcePath}' cannot escape its root directory`,
+		);
+	}
+
+	return resolvedPath;
 }
 
 /**

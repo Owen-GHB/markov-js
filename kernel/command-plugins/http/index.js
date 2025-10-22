@@ -17,12 +17,11 @@ function getHttpInstance() {
  */
 export async function start(
 	commandRoot,
-	projectRoot,
 	serverPort,
 	servedUIDir,
 	apiEndpoint,
 ) {
-	const vertex = new Vertex(commandRoot, projectRoot);
+	const vertex = new Vertex({ commandRoot });
 
 	const httpServer = getHttpInstance();
 	

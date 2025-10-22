@@ -1,28 +1,23 @@
 {
-  "http": {
-    "commandType": "kernel-plugin", 
-    "methodName": "start",
-    "parameters": {
-      "commandRoot": {
-        "type": "string",
-        "required": true
-      },
-      "projectRoot": {
-        "type": "string",
-        "required": true
-      },
-      "serverPort": {
-        "type": "integer",
-        "required": false
-      },
-      "servedUIDir": {
-        "type": "string",
-        "required": false
-      },
-      "apiEndpoint": {
-        "type": "string", 
-        "required": false
-      }
-    }
-  }
+	"http": {
+		"methodName": "start",
+		"parameters": {
+			"commandRoot": {
+				"type": "localPath",
+				"required": true
+			},
+			"serverPort": {
+				"type": "integer",
+				"required": false
+			},
+			"servedUIDir": {
+				"type": "localPath",
+				"required": false
+			},
+			"apiEndpoint": {
+				"type": "string",
+				"required": false
+			}
+		}
+	}
 }

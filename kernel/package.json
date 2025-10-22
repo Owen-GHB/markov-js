@@ -1,11 +1,11 @@
 {
-  "name": "vertex",
-  "version": "1.0.0", 
-  "type": "module",
-  "bin": {
-    "vertex": "./main.js"
-  },
-  "dependencies": {
-    "vertex-kernel": "*"
-  }
+	"name": "vertex",
+	"version": "1.0.0",
+	"type": "module",
+	"bin": {
+		"vertex": "./main.js"
+	},
+	"dependencies": {
+		"vertex-kernel": "*"
+	}
 }

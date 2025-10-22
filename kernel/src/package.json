@@ -1,10 +1,10 @@
 {
-  "name": "vertex-kernel",
-  "version": "0.0.0",
-  "type": "module",
-  "main": "exports.js",
-  "exports": {
-    ".": "./exports.js",
-    "./package.json": "./package.json"
-  }
+	"name": "vertex-kernel",
+	"version": "0.0.0",
+	"type": "module",
+	"main": "exports.js",
+	"exports": {
+		".": "./exports.js",
+		"./package.json": "./package.json"
+	}
 }

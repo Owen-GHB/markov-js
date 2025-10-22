@@ -1,11 +1,11 @@
 {
-  "set": {
-    "examples": [
-      "set(\"serverPort\", 3000)",
-      "set(configstate=\"servedUIDir\", value=\"./dist\")",
-      "set({configstate: \"electron.showDevTools\", value: false})",
-      "set(\"userTemplateDir\", \"./custom-templates\", persist=false)"
-    ],
-    "notes": "Dynamically modifies kernel state. Supports nested keys with dot notation. Changes are persisted by default. Use persist=false for temporary changes."
-  }
+	"set": {
+		"examples": [
+			"set(\"serverPort\", 3000)",
+			"set(configstate=\"servedUIDir\", value=\"./dist\")",
+			"set({configstate: \"electron.showDevTools\", value: false})",
+			"set(\"userTemplateDir\", \"./custom-templates\", persist=false)"
+		],
+		"notes": "Dynamically modifies kernel state. Supports nested keys with dot notation. Changes are persisted by default. Use persist=false for temporary changes."
+	}
 }

@@ -1,11 +1,11 @@
 {
-  "name": "electron-plugin",
-  "version": "0.0.0", 
-  "description": "Electron Desktop Application",
-  "stateDefaults": {
-    "commandRoot": "./",
-    "projectRoot": "./",
-    "servedUIDir": "./generated-ui",
-    "electronPreloadPath": "./electron-preload.js"
-  }
+	"name": "electron-plugin",
+	"version": "0.0.0",
+	"description": "Electron Desktop Application",
+	"stateDefaults": {
+		"commandRoot": "./",
+		"projectRoot": "./",
+		"servedUIDir": "./generated-ui",
+		"electronPreloadPath": "./electron-preload.js"
+	}
 }

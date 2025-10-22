@@ -1,7 +1,6 @@
 {
   "delete": {
     "name": "delete",
-    "commandType": "native-method",
     "methodName": "deleteModelFile",
     "parameters": {
       "modelName": {
@@ -12,19 +11,16 @@
   },
   "listCorpus": {
     "name": "listCorpus",
-    "commandType": "native-method",
     "methodName": "listCorpusFiles",
     "parameters": {}
   },
   "listModels": {
     "name": "listModels",
-    "commandType": "native-method",
     "methodName": "listAvailableModels",
     "parameters": {}
   },
   "uploadFile": {
     "name": "uploadFile",
-    "commandType": "native-method",
     "methodName": "uploadCorpusFile",
     "parameters": {
       "file": {
@@ -41,7 +37,6 @@
   },
   "saveModel": {
     "name": "saveModel",
-    "commandType": "native-method",
     "methodName": "saveModelFile",
     "parameters" :{
       "file": {

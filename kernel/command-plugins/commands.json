@@ -1,24 +1,24 @@
 {
-  "set": {
-    "commandType": "native-method",
-    "description": "Set kernel state values at runtime",
-    "parameters": {
-      "configstate": {
-        "type": "string",
-        "required": true,
-        "description": "State key to set (supports dot notation for nested objects)"
-      },
-      "value": {
-        "type": "string|integer|number|boolean|array|object",
-        "required": true,
-        "description": "Value to set (auto-converted from string if needed)"
-      },
-      "persist": {
-        "type": "boolean",
-        "required": false,
-        "default": true,
-        "description": "Whether to persist the change to context file"
-      }
-    }
-  }
+	"set": {
+		"commandType": "native-method",
+		"description": "Set kernel state values at runtime",
+		"parameters": {
+			"configstate": {
+				"type": "string",
+				"required": true,
+				"description": "State key to set (supports dot notation for nested objects)"
+			},
+			"value": {
+				"type": "string|integer|number|boolean|array|object",
+				"required": true,
+				"description": "Value to set (auto-converted from string if needed)"
+			},
+			"persist": {
+				"type": "boolean",
+				"required": false,
+				"default": true,
+				"description": "Whether to persist the change to context file"
+			}
+		}
+	}
 }

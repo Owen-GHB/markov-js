@@ -1,19 +1,16 @@
 {
-  "generate": {
-    "parameters": {
-      "commandRoot": {
-        "runtimeFallback": "commandRoot"
-      },
-      "projectRoot": {
-        "runtimeFallback": "projectRoot"
-      },
-      "userTemplateDir": {
-        "runtimeFallback": "userTemplateDir"
-      },
-      "generatedUIDir": {
-        "runtimeFallback": "generatedUIDir"
-      }
-    },
-    "successOutput": "🎨 UI generated successfully!\n   Output: {{input.generatedUIDir}}\n   Templates: {{input.userTemplateDir}} ? {{input.userTemplateDir}} : 'built-in'"
-  }
+	"generate": {
+		"parameters": {
+			"commandRoot": {
+				"runtimeFallback": "commandRoot"
+			},
+			"userTemplateDir": {
+				"runtimeFallback": "userTemplateDir"
+			},
+			"generatedUIDir": {
+				"runtimeFallback": "generatedUIDir"
+			}
+		},
+		"successOutput": "🎨 UI generated successfully!\n   Output: {{input.generatedUIDir}}\n   Templates: {{input.userTemplateDir}} ? {{input.userTemplateDir}} : 'built-in'"
+	}
 }

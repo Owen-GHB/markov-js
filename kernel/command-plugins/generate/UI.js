@@ -13,12 +13,12 @@ export class UI {
 		this.__dirname = path.dirname(fileURLToPath(import.meta.url));
 	}
 
-	    /**
-     * Generate the complete SPA from manifests using EJS templates
-     * @param {string} userTemplateDir - Directory for user templates  
-     * @param {string} generatedUIDir - Directory for generated UI output
-     * @param {Object} manifest - The contract manifest with global and command information
-     */
+	/**
+	 * Generate the complete SPA from manifests using EJS templates
+	 * @param {string} userTemplateDir - Directory for user templates
+	 * @param {string} generatedUIDir - Directory for generated UI output
+	 * @param {Object} manifest - The contract manifest with global and command information
+	 */
 	async run(userTemplateDir, generatedUIDir, manifest) {
 		try {
 			const outputDir = generatedUIDir;
@@ -103,7 +103,7 @@ export class UI {
 	async generateCommandForms(commandManifests, globalManifest, templateDir) {
 		const initialState = globalManifest.stateDefaults || {};
 		const commandForms = [];
-		
+
 		for (const command of Object.values(commandManifests)) {
 			try {
 				const formHtml = await this.renderCommandForm(
@@ -113,11 +113,14 @@ export class UI {
 				);
 				commandForms.push(formHtml);
 			} catch (error) {
-				console.error(`Error generating form for command ${command.name}:`, error);
+				console.error(
+					`Error generating form for command ${command.name}:`,
+					error,
+				);
 				throw error;
 			}
 		}
-		
+
 		return commandForms;
 	}
 
@@ -164,7 +167,9 @@ export class UI {
 		const paramTemplatePath = path.join(templateDir, 'param-field.ejs');
 
 		if (!fs.existsSync(paramTemplatePath)) {
-			throw new Error(`Parameter field template not found: ${paramTemplatePath}`);
+			throw new Error(
+				`Parameter field template not found: ${paramTemplatePath}`,
+			);
 		}
 
 		const template = fs.readFileSync(paramTemplatePath, 'utf8');
@@ -181,7 +186,7 @@ export class UI {
 				param: param,
 				defaultValue: defaultValue,
 				// Make sure constraints are passed through
-				constraints: param.constraints || {}
+				constraints: param.constraints || {},
 			};
 
 			const fieldHtml = ejs.render(template, data);
@@ -242,7 +247,7 @@ export class UI {
 			htmlTitle: globalManifest.name || 'Command Interface',
 			pageHeader: globalManifest.description || 'Command Interface',
 			commandSelectorLabel: 'Select Command:',
-    		commands: Object.values(commandManifests),
+			commands: Object.values(commandManifests),
 			commandForms: commandForms.join('\n'),
 		};
 
@@ -274,13 +279,13 @@ export class UI {
 			if (!fs.existsSync(templatePath)) {
 				throw new Error(`JavaScript template not found: ${templatePath}`);
 			}
-			
+
 			const template = fs.readFileSync(templatePath, 'utf8');
 			const data = {
 				initialState: globalManifest.stateDefaults || {},
 				commands: commandManifests,
 			};
-			
+
 			combinedJS += ejs.render(template, data) + '\n\n';
 		}
 

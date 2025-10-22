@@ -111,7 +111,7 @@ export class Parser {
 		// ✅ FIX: Remove quotes - just use the raw values
 		const positionalPairs = required
 			.slice(0, positional.length)
-			.map((p, i) => `${p.name}=${positional[i]}`);  // No quotes!
+			.map((p, i) => `${p.name}=${positional[i]}`); // No quotes!
 
 		// Build final function-style string
 		const funcCall = `${command}(${[...positionalPairs, ...named].join(',')})`;

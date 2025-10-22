@@ -1,11 +1,10 @@
 {
-  "name": "generate-plugin",
-  "version": "0.0.0",
-  "description": "EJS-based UI Generation System", 
-  "stateDefaults": {
-    "commandRoot": "./",
-    "projectRoot": "./",
-    "userTemplateDir": "./ejs-templates",
-    "generatedUIDir": "./generated-ui"
-  }
+	"name": "generate-plugin",
+	"version": "0.0.0",
+	"description": "EJS-based UI Generation System",
+	"stateDefaults": {
+		"commandRoot": "./",
+		"userTemplateDir": "./ejs-templates",
+		"generatedUIDir": "./generated-ui"
+	}
 }

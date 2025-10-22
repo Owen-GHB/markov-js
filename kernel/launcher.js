@@ -9,53 +9,51 @@ const __dirname = path.dirname(__filename);
 /**
  * Simplified Vertex-first launcher
  */
-export async function launch(args, projectRoot) {
-    // Determine execution mode
-    const kernelIndex = args.indexOf('--kernel');
-    const isKernelMode = kernelIndex !== -1;
-    
-    // Handle --help at meta level
-    if (args.includes('--help')) {
-        showMetaHelp();
-        return;
-    }
-    
-    // Set up parameters based on mode
-    const kernelCommandRoot = path.resolve(__dirname, 'command-plugins');
-    const commandRoot = isKernelMode ? kernelCommandRoot : projectRoot;
-    
-    const vertex = new Vertex(kernelCommandRoot, projectRoot);
-    const { stateDefaults } = vertex.manifest;
-    
-    // Load user config with elegant fallback
-    const userConfigPath = path.resolve(projectRoot, 'vertex-config.json');
-    let userConfig = stateDefaults; // Start with manifest defaults
-    
-    try {
-        if (fs.existsSync(userConfigPath)) {
-            const configData = fs.readFileSync(userConfigPath, 'utf8');
-            userConfig = { ...stateDefaults, ...JSON.parse(configData) };
-        }
-    } catch {
-        // Silent fallback - already set to stateDefaults
-    }
-    
-    // Now userConfig contains the merged config (user values override defaults)
-    const contextFilePath = isKernelMode 
-        ? userConfigPath // Kernel mode uses the config file itself as context
-        : path.resolve(projectRoot, userConfig.contextFilePath);
-    
-    const replHistoryFilePath = isKernelMode 
-        ? null // No history for kernel mode
-        : path.resolve(projectRoot, userConfig.replHistoryFilePath);
-    
-    // Determine command and args
-    const commandName = args.length === 0 ? 'repl' : 'cli';
+export async function launch(args) {
+	// Determine execution mode
+	const kernelIndex = args.indexOf('--kernel');
+	const isKernelMode = kernelIndex !== -1;
+
+	// Handle --help at meta level
+	if (args.includes('--help')) {
+		showMetaHelp();
+		return;
+	}
+
+	// Set up parameters based on mode
+	const commandRoot = isKernelMode ? __dirname : process.cwd();
+
+	const vertex = new Vertex({ commandRoot: __dirname });
+	const { stateDefaults } = vertex.manifest;
+
+	// Load user config with elegant fallback
+	const userConfigPath = path.resolve(process.cwd(), 'vertex-config.json');
+	let userConfig = stateDefaults; // Start with manifest defaults
+
+	try {
+		if (fs.existsSync(userConfigPath)) {
+			const configData = fs.readFileSync(userConfigPath, 'utf8');
+			userConfig = { ...stateDefaults, ...JSON.parse(configData) };
+		}
+	} catch {
+		// Silent fallback - already set to stateDefaults
+	}
+
+	// Now userConfig contains the merged config (user values override defaults)
+	const contextFilePath = isKernelMode
+		? userConfigPath // Kernel mode uses the config file itself as context
+		: path.resolve(process.cwd(), userConfig.contextFilePath);
+
+	const replHistoryFilePath = isKernelMode
+		? null // No history for kernel mode
+		: path.resolve(process.cwd(), userConfig.replHistoryFilePath);
+
+	// Determine command and args
+	const commandName = args.length === 0 ? 'repl' : 'cli';
 	// Build base args that are always needed
 	const commandArgs = {
 		commandRoot: commandRoot,
-		projectRoot: projectRoot,
-		contextFilePath: contextFilePath
+		contextFilePath: contextFilePath,
 	};
 
 	// Add mode-specific args
@@ -67,18 +65,18 @@ export async function launch(args, projectRoot) {
 		// CLI mode
 		commandArgs.args = isKernelMode ? args.slice(kernelIndex + 1) : args;
 	}
-    
-    return await vertex.executeCommand({
-        name: commandName,
-        args: commandArgs
-    });
+
+	return await vertex.executeCommand({
+		name: commandName,
+		args: commandArgs,
+	});
 }
 
 /**
  * Show the meta-help
  */
 function showMetaHelp() {
-    console.log(`
+	console.log(`
 🧠 Vertex Application Host
 ===============================================
 

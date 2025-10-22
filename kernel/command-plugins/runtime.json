@@ -1,10 +1,10 @@
 {
-  "set": {
-    "sideEffects": {
-      "setState": {
-        "{{input.configstate}}": "{{input.value}}"
-      }
-    },
-    "successOutput": "✅ Set {{input.configstate}} = {{input.value}}"
-  }
+	"set": {
+		"sideEffects": {
+			"setState": {
+				"{{input.configstate}}": "{{input.value}}"
+			}
+		},
+		"successOutput": "✅ Set {{input.configstate}} = {{input.value}}"
+	}
 }

@@ -1,26 +1,23 @@
 {
-  "http": {
-    "description": "Start HTTP server serving UI and API",
-    "examples": [
-      "http(commandRoot=\"./command-plugins\", projectRoot=\".\", serverPort=3000)",
-      "http(commandRoot=\"./command-plugins\", projectRoot=\".\", servedUIDir=\"./dist\")"
-    ],
-    "parameters": {
-      "commandRoot": {
-        "description": "Root directory for command manifests"
-      },
-      "projectRoot": {
-        "description": "Root directory for the project"
-      },
-      "serverPort": {
-        "description": "Port number for the server"
-      },
-      "servedUIDir": {
-        "description": "Directory containing UI files to serve"
-      },
-      "apiEndpoint": {
-        "description": "API endpoint path"
-      }
-    }
-  }
+	"http": {
+		"description": "Start HTTP server serving UI and API",
+		"examples": [
+			"http(commandRoot=\"./command-plugins\", projectRoot=\".\", serverPort=3000)",
+			"http(commandRoot=\"./command-plugins\", projectRoot=\".\", servedUIDir=\"./dist\")"
+		],
+		"parameters": {
+			"commandRoot": {
+				"description": "Root directory for command manifests"
+			},
+			"serverPort": {
+				"description": "Port number for the server"
+			},
+			"servedUIDir": {
+				"description": "Directory containing UI files to serve"
+			},
+			"apiEndpoint": {
+				"description": "API endpoint path"
+			}
+		}
+	}
 }
