@@ -7,9 +7,9 @@ export class Handler {
     }
 
     async handleCommand(command, commandSpec, resourceMethod) {
-        // Handle internal commands first (no methodName)
-        if (!commandSpec.methodName) {
-            return true; // Internal command - just return success
+        // Handle state-only commands (no methodName) by returning success
+        if (!commandSpec.methodName || resourceMethod === null) {
+            return true; // No code for to execute - just return success
         }
 
         // Just execute - resource is already resolved!

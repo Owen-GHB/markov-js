@@ -1,6 +1,6 @@
 import { fileURLToPath } from 'url';
 import path from 'path';
-import { Vertex } from './src/exports.js';
+import { Vertex } from 'vertex-kernel';
 import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -51,17 +51,22 @@ export async function launch(args, projectRoot) {
     
     // Determine command and args
     const commandName = args.length === 0 ? 'repl' : 'cli';
-    const commandArgs = {
-        commandRoot: commandRoot,
-        projectRoot: projectRoot,
-        contextFilePath: contextFilePath,
-        ...(args.length === 0 ? {
-            historyFilePath: replHistoryFilePath,
-            maxHistory: userConfig.maxReplHistory
-        } : {
-            args: isKernelMode ? args.slice(kernelIndex + 1) : args
-        })
-    };
+	// Build base args that are always needed
+	const commandArgs = {
+		commandRoot: commandRoot,
+		projectRoot: projectRoot,
+		contextFilePath: contextFilePath
+	};
+
+	// Add mode-specific args
+	if (args.length === 0) {
+		// REPL mode
+		commandArgs.historyFilePath = replHistoryFilePath;
+		commandArgs.maxHistory = userConfig.maxReplHistory;
+	} else {
+		// CLI mode
+		commandArgs.args = isKernelMode ? args.slice(kernelIndex + 1) : args;
+	}
     
     return await vertex.executeCommand({
         name: commandName,

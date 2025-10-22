@@ -29,6 +29,7 @@ export class NativeAdapter {
                     result = resourceMethod(args);
                 } else {
                     const methodArgs = this.buildMethodArguments(args, commandSpec, shouldResolvePaths);
+                    console.log(methodArgs);
                     result = resourceMethod(...methodArgs);
                 }
                 return result;
@@ -59,6 +60,7 @@ export class NativeAdapter {
                 let value = args[paramName];
                 
                 // Only resolve paths for kernel plugins
+                
                 if (shouldResolvePaths && this.shouldResolvePath(value)) {
                     value = path.resolve(this.projectRoot, value);
                 }

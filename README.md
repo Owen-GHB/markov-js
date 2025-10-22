@@ -60,19 +60,19 @@ npm install --save-dev electron
 
 ```bash
 # Direct execution (REPL mode)
-node main.js
+vertex
 
 # Command-line execution
-node main.js <command> [args...]
+vertex <command> [args...]
 
 # Generate web UI
-node main.js --generate
+vertex --kernel generate
 
 # Serve web UI and API (now serves both UI and API like old --serve)
-node main.js --http
+vertex --kernel http
 
 # Launch Electron application
-node main.js --electron
+vertex --kernel electron
 ```
 
 ### Basic Commands
@@ -153,33 +153,33 @@ exit;
 
 ```bash
 # Train a 3rd-order Markov model
-node main.js train("sample.txt", "markov", order=3)
+vertex train("sample.txt", "markov", order=3)
 
 # Train a VLMM model with custom name
-node main.js train("poems.txt", "vlmm", modelName="poems_vlmm.json")
+vertex train("poems.txt", "vlmm", modelName="poems_vlmm.json")
 ```
 
 ### Generating Text
 
 ```bash
 # Basic generation
-node main.js generate("model.json")
+vertex generate("model.json")
 
 # Generate with specific parameters
-node main.js generate("model.json", length=50, temperature=1.2)
+vertex generate("model.json", length=50, temperature=1.2)
 
 # Generate with a prompt
-node main.js generate("model.json", prompt="The quick brown fox")
+vertex generate("model.json", prompt="The quick brown fox")
 ```
 
 ### Using the Web Interface
 
 ```bash
 # Generate the web UI
-node main.js --generate
+vertex --kernel generate
 
 # Serve both UI and API
-node main.js --http
+vertex --kernel http
 
 # Access at: http://localhost:8080/
 ```
@@ -188,14 +188,14 @@ node main.js --http
 
 ```bash
 # Launch Electron application
-node main.js --electron
+vertex --kernel electron
 ```
 
 ### Using the HTTP Server
 
 ```bash
 # Start HTTP server (serves both web UI and API)
-node main.js --http
+vertex --kernel http
 
 # Call API with JSON command
 curl -X POST http://localhost:8080/api \

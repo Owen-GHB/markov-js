@@ -3,6 +3,7 @@ import { Evaluator } from './Evaluator.js';
 import { Runner } from './Runner.js';
 import { StateManager } from './StateManager.js';
 import { manifestReader } from './manifestReader.js';
+import { HelpHandler } from './utils/help.js';
 
 export class Vertex {
     constructor(commandRoot, projectRoot, contextFilePath = null) {

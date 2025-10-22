@@ -1,5 +1,6 @@
 import readline from 'readline';
 import fs from 'fs';
+import path from 'path';
 import { Vertex } from 'vertex-kernel';
 
 export class REPL {
@@ -108,15 +109,15 @@ export class REPL {
   }
 
   saveHistory() {
-    try {
-      const contextDir = this.historyFilePath.split('/').slice(0, -1).join('/');
-      if (!fs.existsSync(contextDir)) {
-        fs.mkdirSync(contextDir, { recursive: true });
+      try {
+          const contextDir = path.dirname(this.historyFilePath);
+          if (!fs.existsSync(contextDir)) {
+              fs.mkdirSync(contextDir, { recursive: true });
+          }
+          fs.writeFileSync(this.historyFilePath, JSON.stringify(this.history, null, 2));
+      } catch (error) {
+          console.warn('⚠️ Could not save REPL history:', error.message);
       }
-      fs.writeFileSync(this.historyFilePath, JSON.stringify(this.history, null, 2));
-    } catch (error) {
-      console.warn('⚠️ Could not save REPL history:', error.message);
-    }
   }
 
   addToHistory(input) {

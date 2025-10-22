@@ -7,7 +7,7 @@
     "http": "./http",
     "electron": "./electron",
     "cli": "./cli",
-    "repl": ".repl"
+    "repl": "./repl"
   },
   "stateDefaults": {
     "contextFilePath": "./context/state.json",

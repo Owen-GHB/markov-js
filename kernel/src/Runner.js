@@ -11,7 +11,7 @@ import { ResourceLoader } from './ResourceLoader.js';
 export class Runner {
     constructor(commandRoot, projectRoot) {
 		this.resourceLoader = new ResourceLoader(commandRoot);
-        this.handler = new Handler(commandRoot, projectRoot);
+        this.handler = new Handler(projectRoot);
         this.manifest = manifestReader(commandRoot); // Need manifest for next command lookup
     }
 
@@ -30,6 +30,7 @@ export class Runner {
 		);
 		command.args = validatedArgs;
 		if (!originalCommand) originalCommand = command;
+		
         // Execute current command
 		const resourceMethod = await this.resolveResource(command, commandSpec);
         const result = await this.handler.handleCommand(command, commandSpec, resourceMethod);
@@ -69,7 +70,7 @@ export class Runner {
 
 	async resolveResource(command, commandSpec) {
         if (!commandSpec.methodName) {
-            throw new Error(`Command ${command.name} has no methodName`);
+            return null;
         }
 
         const sourcePath = commandSpec.source || './';
