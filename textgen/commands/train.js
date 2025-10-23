@@ -1,6 +1,4 @@
 import { Tokenizer } from '../models/Tokenizer.js';
-import { FileHandler } from '../io/FileHandler.js';
-import { ModelSerializer } from '../io/ModelSerializer.js';
 import { MarkovModel } from '../models/Markov/Model.js';
 import { VLMModel } from '../models/VLMM/Model.js';
 import { HMModel } from '../models/HMM/Model.js';
@@ -17,19 +15,14 @@ import { HMModel } from '../models/HMM/Model.js';
  * @returns {Promise<Object>} - The result of the training
  */
 export async function trainModel(params) {
-	const { file, modelType, order = 2 } = params || {};
-	const modelName = params?.modelName || `${file.replace(/\.[^/.]+$/, '')}.json`;
+	const { file, modelType, order = 2, modelName } = params || {};
 
 	if (!file) {
 		throw new Error('Training failed: file parameter is required');
 	}
 
 	const processor = new Tokenizer();
-	const fileHandler = new FileHandler();
-	const serializer = new ModelSerializer();
-
-	const text = await fileHandler.readTextFile(file);
-	const tokens = processor.tokenize(text, {
+	const tokens = processor.tokenize(file, {
 		method: 'word',
 		preservePunctuation: true,
 		preserveCase: false,
@@ -49,17 +42,23 @@ export async function trainModel(params) {
 		default:
 			throw new Error(`Unknown model type: ${modelType}`);
 	}
-	model.train(tokens);
-	await serializer.saveModel(model, modelName);
-
-	const stats = model.getStats();
 	
-	// Return data object instead of formatted string
+	model.train(tokens);
+
+	// Generate filename if not provided
+	let filename = modelName;
+	if (!filename) {
+		// Strip .txt extension and add .json
+		filename = modelName.replace(/\.txt$/, '') + '.json';
+	}
+	// Ensure .json extension
+	if (!filename.endsWith('.json')) {
+		filename += '.json';
+	}
+
+	// Return both model and filename for the chain
 	return {
-		file: file,
-		modelName: modelName,
-		vocabularySize: stats.vocabularySize,
-		modelType: modelType,
-		order: order
+		model: model,
+		filename: filename
 	};
 }

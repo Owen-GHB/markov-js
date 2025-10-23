@@ -4,7 +4,7 @@ import { GenerationContext } from '../models/Interfaces.js';
 /**
  * Generate text from a trained model
  * @param {Object} params - The parameters for generation
- * @param {string} params.modelName - Model file to use for generation
+ * @param {Object} params.modelData - Model data object for generation
  * @param {number} params.length - Maximum number of tokens to generate
  * @param {number} params.min_tokens - Minimum number of tokens to generate
  * @param {number} params.temperature - Randomness factor (0-2)
@@ -12,48 +12,18 @@ import { GenerationContext } from '../models/Interfaces.js';
  * @param {Array} params.stop - Stop tokens that end generation
  * @param {number} params.samples - Number of samples to generate
  * @param {boolean} params.allowRepetition - Allow immediate token repetition
- * @returns {Promise<Object>} - The result of the generation
+ * @returns {Promise<Object>} - The generation results as pure data
  */
 export async function generateText(params) {
-	const {
-		modelName,
-		length = 100,
-		temperature = 1.0,
-		samples = 1,
-		...rest
-	} = params || {};
-
-	if (!modelName) {
-		throw new Error('Generation failed: modelName is required');
-	}
-
-	const serializer = new ModelSerializer();
-	const model = await serializer.loadModel(modelName);
-
+	const { modelData, length = 100, temperature = 1.0, samples = 1, ...rest } = params || {};
+    const serializer = new ModelSerializer();
+    const model = await serializer.loadModel(modelData);
 	const context = new GenerationContext({
 		max_tokens: length,
 		temperature: temperature,
 		...rest,
 	});
-
-	const results =
-		samples === 1
-			? [model.generate(context)]
-			: model.generateSamples(samples, context);
-
-	const output = ['🎲 Generated text:', '─'.repeat(50)];
-	results.forEach((result, i) => {
-		if (result.error) {
-			output.push(`❌ Sample ${i + 1}: ${result.error}`);
-		} else {
-			output.push(
-				result.text,
-				`(Length: ${result.length} tokens)`,
-				'─'.repeat(50),
-			);
-			output.push(`(Finish reason: ${result.finish_reason})`);
-		}
-	});
-
-	return output.join('\n');
+	const result = model.generate(context);
+	// Return pure data object
+	return result
 }

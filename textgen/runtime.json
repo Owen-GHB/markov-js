@@ -1,14 +1,6 @@
 {
   "generate": {
-    "sideEffects": {
-      "setState": {
-        "currentModel": "{{input.modelName}}"
-      }
-    },
     "parameters": {
-      "modelName": {
-        "runtimeFallback": "currentModel"
-      },
       "length": {
         "default": 100,
         "min": 1

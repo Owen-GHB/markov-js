@@ -1,13 +1,93 @@
 {
-  "pgb_download": {
+  "generate": {
     "next": {
-      "fileOps/saveToCorpus": {
+      "fileOps/getModel": {
         "parameters": {
-          "buffer": {
-            "resolve": "{{output.buffer}}"
+          "path": {
+            "resolve": "./data/models/{{input.modelName}}"
+          }
+        }
+      }
+    }
+  },
+  "train": {
+    "next": {
+      "fileOps/getCorpus": {
+        "parameters": {
+          "path": {
+            "resolve": "./data/corpus/{{input.file}}"
+          }
+        }
+      }
+    }
+  },
+  "fileOps/getModel": {
+    "next": {
+      "textgen/generate": {
+        "parameters": {
+          "modelData": {
+            "resolve": "{{output.data}}"
+          },
+          "length": {
+            "resolve": "{{original.length}}"
+          },
+          "min_tokens": {
+            "resolve": "{{original.min_tokens}}"
+          },
+          "temperature": {
+            "resolve": "{{original.temperature}}"
+          },
+          "prompt": {
+            "resolve": "{{original.prompt}}"
+          },
+          "stop": {
+            "resolve": "{{original.stop}}"
+          },
+          "samples": {
+            "resolve": "{{original.samples}}"
+          },
+          "allowRepetition": {
+            "resolve": "{{original.allowRepetition}}"
+          }
+        }
+      }
+    }
+  },
+  "fileOps/getCorpus": {
+    "next": {
+      "textgen/train": {
+        "parameters": {
+          "file": {
+            "resolve": "{{output.data}}"
+          },
+          "modelType": {
+            "resolve": "{{original.modelType}}"
+          },
+          "order": {
+            "resolve": "{{original.order}}"
+          },
+          "modelName": {
+            "resolve": "{{original.modelName}}"
+          },
+          "caseSensitive": {
+            "resolve": "{{original.caseSensitive}}"
+          },
+          "trackStartStates": {
+            "resolve": "{{original.trackStartStates}}"
+          }
+        }
+      }
+    }
+  },
+  "textgen/train": {
+    "next": {
+      "fileOps/saveToModels": {
+        "parameters": {
+          "data": {
+            "resolve": "{{output.model}}"
           },
           "filename": {
-            "resolve": "{{output.filename}}"
+            "resolve": "{{input.modelName}}"
           }
         }
       }

@@ -5,59 +5,76 @@
  * - {{input}}, {{input.param}}, {{output}}, {{output.property}}, {{state.key}}
  * - Nested property access
  * - Multiple context sources
+ * - Raw value return for single interpolations (parameter resolution)
+ * - String return for multiple interpolations (display templates)
  */
 export class Evaluator {
 	/**
 	 * Template handler
 	 * Supports: {{input}}, {{input.param}}, {{output}}, {{output.property}}, {{state.key}}
+	 * Returns RAW VALUES for single interpolations, STRINGS for multiple interpolations
 	 */
 	static evaluateTemplate(template, contexts = {}) {
-		const { input = {}, output = {}, state = new Map() } = contexts;
+		// If template is exactly one interpolation with no other text, return raw value
+		const singleMatch = template.match(/^\{\{([^{}]+)\}\}$/);
+		if (singleMatch) {
+			const expression = singleMatch[1].trim();
+			return this.getRawValue(expression, contexts);
+		}
+		
+		// Otherwise, do string interpolation (existing logic)
 		return template.replace(/\{\{([^{}]+)\}\}/g, (_, expression) => {
 			const trimmed = expression.trim();
 
-			// Handle nested property access (input.param, output.property, state.key)
-			if (trimmed.includes('.')) {
-				const [contextName, ...pathParts] = trimmed.split('.');
-				const path = pathParts.join('.');
-
-				let context;
-				switch (contextName) {
-					case 'input':
-						context = input;
-						break;
-					case 'output':
-						context = output;
-						break;
-					case 'state':
-						context = state;
-						break;
-					default:
-						return ''; // Unknown context
-				}
-
-				// Navigate the object path
-				const value = this.getNestedValue(context, path);
-				return value !== undefined ? String(value) : '';
+			// Use the same flexible logic for both nested and simple properties
+			const rawValue = this.getRawValue(trimmed, contexts);
+			if (rawValue === undefined) {
+				return '';
 			}
-
-			// Handle direct context references (input, output)
-			switch (trimmed) {
-				case 'input':
-					return JSON.stringify(input);
-				case 'output':
-					return JSON.stringify(output);
-				default:
-					// Fallback to original behavior for simple values
-					let val = input[trimmed] || output[trimmed];
-					if (val === undefined && state.has && state.has(trimmed)) {
-						val = state.get(trimmed);
-					} else if (val === undefined && state[trimmed] !== undefined) {
-						val = state[trimmed];
-					}
-					return val !== undefined ? String(val) : '';
+			
+			// Convert to string for display
+			if (typeof rawValue === 'object' && rawValue !== null) {
+				return JSON.stringify(rawValue);
 			}
+			return String(rawValue);
 		});
+	}
+
+	/**
+	 * Get raw value from context (no string conversion)
+	 * Used for parameter resolution in chains
+	 */
+	static getRawValue(expression, contexts = {}) {
+		// Handle nested property access (original.length, output.data, etc.)
+		if (expression.includes('.')) {
+			const [contextName, ...pathParts] = expression.split('.');
+			const path = pathParts.join('.');
+			
+			// Get the context object by name - support ANY context
+			const context = contexts[contextName];
+			if (context === undefined) {
+				return undefined; // Unknown context
+			}
+			
+			// Navigate the object path and return raw value
+			return this.getNestedValue(context, path);
+		}
+		
+		// Handle direct context references (input, output, original, etc.)
+		// First check if it's a direct context reference
+		if (contexts[expression] !== undefined) {
+			return contexts[expression];
+		}
+		
+		// Fallback: check all context properties for this key
+		for (const contextName in contexts) {
+			const context = contexts[contextName];
+			if (context && typeof context === 'object' && context[expression] !== undefined) {
+				return context[expression];
+			}
+		}
+		
+		return undefined;
 	}
 
 	/**

@@ -4,8 +4,8 @@
     "methodName": "generateText",
     "combineArguments": true,
     "parameters": {
-      "modelName": {
-        "type": "string",
+      "modelData": {
+        "type": "object",
         "required": true
       },
       "length": {
@@ -57,7 +57,7 @@
       },
       "modelName": {
         "type": "string",
-        "required": false
+        "required": true
       },
       "caseSensitive": {
         "type": "boolean",

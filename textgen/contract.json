@@ -4,7 +4,6 @@
 	"description": "Markov chain text generation engine with multiple model types",
 	"prompt": "markov> ",
 	"stateDefaults": {
-		"currentModel": null,
 		"defaultCorpus": "sample.txt"
 	}
 }

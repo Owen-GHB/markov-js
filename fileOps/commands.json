@@ -27,5 +27,34 @@
         "description": "Filename to save as"
       }
     }
+  },
+  "getCorpus": {
+    "name": "getCorpus",
+    "methodName": "returnTextFromFile",
+    "combineArguments": true,
+    "parameters": {
+      "path": {
+        "type": "string", 
+        "required": true,
+        "description": "Path to text file relative to project root"
+      }
+    }
+  },
+  "saveToModels": {
+    "name": "saveToModels", 
+    "methodName": "saveObjectToModels",
+    "combineArguments": true,
+    "parameters": {
+      "data": {
+        "type": "object",
+        "required": true,
+        "description": "Model data object to save"
+      },
+      "filename": {
+        "type": "string",
+        "required": true, 
+        "description": "Model filename to save as"
+      }
+    }
   }
 }

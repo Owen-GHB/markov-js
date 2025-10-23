@@ -34,7 +34,7 @@ export class Vertex {
 		};
 
 		// Execute command chain
-		let result = await this.runner.runCommand(command, commandSpec, this.state);
+		let result = await this.runner.runCommand(command, commandSpec);
 
 		// Build template context for side effects
 		const templateContext = {
