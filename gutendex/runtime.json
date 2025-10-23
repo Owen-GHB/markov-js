@@ -1,36 +1,12 @@
 {
   "pgb_download": {
+    "successOutput": "📚 Downloaded \"{{output.bookInfo.title}}\" to {{output.filename}} ({{output.bytesWritten}} bytes)",
     "parameters": {
-      "id_or_title": {
-        "transform": {
-          "if": "integer",
-          "then": {
-            "id": "value"
-          },
-          "else": {
-            "title": "value"
-          }
-        }
-      },
       "file": {
         "default": null
       }
     }
   },
-  "pgb_info": {
-    "parameters": {
-      "id_or_title": {
-        "transform": {
-          "if": "integer",
-          "then": {
-            "id": "value"
-          },
-          "else": {
-            "title": "value"
-          }
-        }
-      }
-    }
-  },
+  "pgb_info": {},
   "pgb_search": {}
 }

@@ -1,0 +1,30 @@
+{
+  "getModel": {
+    "description": "Read and parse a JSON model file",
+    "syntax": "getModel(path)",
+    "examples": [
+      "getModel(\"./data/models/my_model.json\")",
+      "getModel({path: \"models/story.json\"})"
+    ],
+    "parameters": {
+      "path": {
+        "description": "Path to JSON file relative to project root"
+      }
+    }
+  },
+  "saveToCorpus": {
+    "description": "Save buffer data to corpus directory",
+    "syntax": "saveToCorpus(buffer, filename)",
+    "examples": [
+      "saveToCorpus(bufferData, \"my_corpus.txt\")"
+    ],
+    "parameters": {
+      "buffer": {
+        "description": "Buffer data to save"
+      },
+      "filename": {
+        "description": "Filename to save as"
+      }
+    }
+  }
+}

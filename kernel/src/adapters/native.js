@@ -21,7 +21,6 @@ export class NativeAdapter {
 					result = resourceMethod(args);
 				} else {
 					const methodArgs = this.buildMethodArguments(args, commandSpec);
-					console.log(methodArgs);
 					result = resourceMethod(...methodArgs);
 				}
 				return result;

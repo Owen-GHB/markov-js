@@ -11,5 +11,8 @@
 		"textgen": "./textgen",
 		"dataOps": "./dataOps",
 		"gutendex": "./gutendex"
+	},
+	"targets": {
+		"fileOps": "./fileOps"
 	}
 }

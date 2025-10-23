@@ -4,6 +4,7 @@ import { Runner } from './Runner.js';
 import { StateManager } from './StateManager.js';
 import { manifestReader } from './manifestReader.js';
 import { HelpHandler } from './utils/help.js';
+import { Specifier } from './Specifier.js';
 
 export class Vertex {
 	constructor(options = {}) {
@@ -21,7 +22,7 @@ export class Vertex {
 
 	async executeCommand(input) {
 		const processedInput = Processor.processInput(input, this.manifest);
-		const commandSpec = this.manifest.commands[processedInput.name];
+        const commandSpec = Specifier.specifyCommand(processedInput, this.manifest);
 		const processedArgs = StateManager.applyRuntimeFallbacks(
 			processedInput.args,
 			commandSpec.parameters,

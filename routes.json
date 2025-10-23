@@ -1,9 +1,9 @@
 {
   "pgb_download": {
     "next": {
-      "uploadFile": {
+      "fileOps/saveToCorpus": {
         "parameters": {
-          "file": {
+          "buffer": {
             "resolve": "{{output.buffer}}"
           },
           "filename": {

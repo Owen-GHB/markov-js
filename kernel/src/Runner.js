@@ -4,6 +4,7 @@ import { Validator } from './Validator.js';
 import { manifestReader } from './manifestReader.js';
 import { StateManager } from './StateManager.js';
 import { ResourceLoader } from './ResourceLoader.js';
+import { Specifier } from './Specifier.js';
 
 /**
  * Runs the command chain
@@ -58,7 +59,7 @@ export class Runner {
 
 		// If there's a next command, recursively execute the chain
 		if (nextCommand) {
-			const nextCommandSpec = this.manifest.commands[nextCommand.name];
+			const nextCommandSpec = Specifier.specifyCommand(nextCommand, this.manifest, true);
 			if (!nextCommandSpec) {
 				throw new Error(`Unknown next command: ${nextCommand.name}`);
 			}

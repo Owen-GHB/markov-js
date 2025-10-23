@@ -4,6 +4,7 @@ import fs from 'fs';
 
 export async function getJSON(url, depth = 0) {
 	if (depth > 5) throw new Error('Too many redirects');
+	console.log('sending request to '+url);
 
 	return new Promise((resolve, reject) => {
 		https
@@ -24,6 +25,7 @@ export async function getJSON(url, depth = 0) {
 				res.on('data', (chunk) => (data += chunk));
 				res.on('end', () => {
 					try {
+						console.log('response from '+url+' concluded');
 						resolve(JSON.parse(data));
 					} catch (err) {
 						reject(new Error('Invalid JSON response'));

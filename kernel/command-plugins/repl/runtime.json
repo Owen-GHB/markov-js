@@ -4,9 +4,6 @@
 			"commandRoot": {
 				"runtimeFallback": "commandRoot"
 			},
-			"projectRoot": {
-				"runtimeFallback": "projectRoot"
-			},
 			"contextFilePath": {
 				"runtimeFallback": "contextFilePath"
 			},

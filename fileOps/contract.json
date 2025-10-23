@@ -1,0 +1,6 @@
+{
+	"name": "fileOps",
+	"version": "0.0.0",
+	"description": "File operations for data management",
+	"prompt": "fileOps> "
+}

@@ -6,9 +6,6 @@
 			"commandRoot": {
 				"description": "[Internal] Root directory for command manifests"
 			},
-			"projectRoot": {
-				"description": "[Internal] Root directory for the project"
-			},
 			"contextFilePath": {
 				"description": "[Internal] Path to context file for state persistence"
 			},

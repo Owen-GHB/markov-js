@@ -1,0 +1,31 @@
+{
+  "getModel": {
+    "name": "getModel",
+    "methodName": "returnObjectFromJSONFile",
+    "combineArguments": true,
+    "parameters": {
+      "path": {
+        "type": "string", 
+        "required": true,
+        "description": "Path to JSON file relative to project root"
+      }
+    }
+  },
+  "saveToCorpus": {
+    "name": "saveToCorpus", 
+    "methodName": "saveBufferToCorpus",
+    "combineArguments": true,
+    "parameters": {
+      "buffer": {
+        "type": "buffer",
+        "required": true,
+        "description": "Buffer data to save"
+      },
+      "filename": {
+        "type": "string",
+        "required": true, 
+        "description": "Filename to save as"
+      }
+    }
+  }
+}
