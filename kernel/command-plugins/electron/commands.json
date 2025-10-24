@@ -6,13 +6,9 @@
 				"type": "localPath",
 				"required": true
 			},
-			"projectRoot": {
+			"servedUIDir": {
 				"type": "localPath",
 				"required": true
-			},
-			"servedui": {
-				"type": "localPath",
-				"required": false
 			},
 			"electronPreloadPath": {
 				"type": "localPath",

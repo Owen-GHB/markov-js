@@ -15,7 +15,7 @@ for (let i = 0; i < args.length; i += 2) {
 }
 
 const commandRoot = argMap['command-root'];
-const servedui = argMap['servedui'];
+const servedUIDir = argMap['servedui'];
 const electronPreloadPath = argMap['electron-preload-path'];
 
 // Create and start the Electron application using Vertex executor
@@ -26,7 +26,7 @@ const electronPreloadPath = argMap['electron-preload-path'];
 
 		// Directly instantiate and start ElectronApp with the executor
 		const electronApp = new ElectronApp();
-		await electronApp.start(servedui, electronPreloadPath, vertex);
+		await electronApp.start(servedUIDir, electronPreloadPath, vertex);
 	} catch (error) {
 		console.error('❌ Error in Electron main process:', error.message);
 		process.exit(1);

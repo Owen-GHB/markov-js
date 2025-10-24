@@ -96,12 +96,8 @@ export class ElectronApp {
 
 	setupIPC() {
 		ipcMain.handle('execute-command', async (event, command) => {
-			try {
-				const result = await this.vertex.executeCommand(command);
-				return { error: null, output: result };
-			} catch (error) {
-				return { error: error.message, output: null };
-			}
+			const result = await this.vertex.executeCommand(command);
+			return result;
 		});
 	}
 

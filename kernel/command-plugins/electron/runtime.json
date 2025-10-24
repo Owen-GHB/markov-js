@@ -4,16 +4,13 @@
 			"commandRoot": {
 				"runtimeFallback": "commandRoot"
 			},
-			"projectRoot": {
-				"runtimeFallback": "projectRoot"
-			},
-			"servedui": {
+			"servedUIDir": {
 				"runtimeFallback": "servedUIDir"
 			},
 			"electronPreloadPath": {
 				"runtimeFallback": "electronPreloadPath"
 			}
 		},
-		"successOutput": "🖥️ Electron desktop app launched!\n   UI: {{input.servedui}}\n   Preload: {{input.electronPreloadPath}}"
+		"successOutput": "🖥️ Electron desktop app launched!\n   UI: {{input.servedUIDir}}\n   Preload: {{input.electronPreloadPath}}"
 	}
 }

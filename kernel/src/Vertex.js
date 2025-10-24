@@ -2,7 +2,7 @@ import { Processor } from './Processor.js';
 import { Evaluator } from './Evaluator.js';
 import { Runner } from './Runner.js';
 import { StateManager } from './StateManager.js';
-import { manifestReader } from './manifestReader.js';
+import { loadManifest } from './loaders/manifestLoader.js';
 import { HelpHandler } from './utils/help.js';
 import { Specifier } from './Specifier.js';
 
@@ -12,7 +12,7 @@ export class Vertex {
 		this.contextFilePath = options.contextFilePath || null;
 		this.defaultTemplate = options.template || null;
 
-		this.manifest = manifestReader(this.commandRoot);
+		this.manifest = loadManifest(this.commandRoot);
 		this.runner = new Runner(this.commandRoot);
 
 		this.state = this.contextFilePath

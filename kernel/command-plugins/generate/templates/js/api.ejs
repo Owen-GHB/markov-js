@@ -18,7 +18,7 @@
         
         const cmdManifest = commandManifests[commandName];
         if (!cmdManifest) {
-            window.VertexUI.showResults({ error: 'Command not found: ' + commandName }, 'error');
+            window.VertexUI.showResults(`Command not found: ${commandName}`, 'error');
             return;
         }
         
@@ -66,7 +66,7 @@
                 handleCommandResult(commandName, args, result, cmdManifest);
             }
         } catch (error) {
-            window.VertexUI.showResults({ error: 'Network Error: ' + error.message }, 'error');
+            window.VertexUI.showResults(error.message, 'error');
         }
     }
     
@@ -90,7 +90,7 @@
                 handleCommandResult(commandName, args, result, cmdManifest);
             }
         } catch (error) {
-            window.VertexUI.showResults({ error: 'Network Error: ' + error.message }, 'error');
+            window.VertexUI.showResults(error.message, 'error');
         }
     }
     
@@ -228,7 +228,7 @@
         window.VertexUI.state = updateState(window.VertexUI.state, { name: commandName, args }, result, cmdManifest);
         
         // Show results
-        window.VertexUI.showResults(result, result.error ? 'error' : 'success');
+        window.VertexUI.showResults(result);
     }
     
     // Update state based on command side effects (simplified)

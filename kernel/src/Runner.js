@@ -1,9 +1,9 @@
 import { Handler } from './Handler.js';
 import { Evaluator } from './Evaluator.js';
 import { Validator } from './Validator.js';
-import { manifestReader } from './manifestReader.js';
+import { loadManifest } from './loaders/manifestLoader.js';
 import { StateManager } from './StateManager.js';
-import { ResourceLoader } from './ResourceLoader.js';
+import { ResourceLoader } from './loaders/ResourceLoader.js';
 import { Specifier } from './Specifier.js';
 
 /**
@@ -13,7 +13,7 @@ export class Runner {
 	constructor(commandRoot) {
 		this.resourceLoader = new ResourceLoader(commandRoot);
 		this.handler = new Handler();
-		this.manifest = manifestReader(commandRoot); // Need manifest for next command lookup
+		this.manifest = loadManifest(commandRoot); // Need manifest for next command lookup
 	}
 
 	/**

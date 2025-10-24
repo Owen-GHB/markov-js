@@ -1,4 +1,4 @@
-// File: src/manifestReader.js
+// File: src/manifestLoader.js
 import fs from 'fs';
 import path from 'path';
 
@@ -50,7 +50,7 @@ function loadSourcesRecursive(projectRoot, currentRoot, currentNamespace) {
                 const resolvedPath = validateSourcePath(sourcePath, currentRoot);
                 if (fs.existsSync(resolvedPath)) {
                     const childResult = loadSourcesRecursive(projectRoot, resolvedPath, currentNamespace);
-                    merged = deepMergeSources(merged, childResult);
+                    merged = deepMergeSources(childResult, merged);
                 }
             } catch (error) {
                 console.warn(`⚠️ Failed to merge source '${sourcePath}': ${error.message}`);
@@ -67,10 +67,10 @@ function loadSourcesRecursive(projectRoot, currentRoot, currentNamespace) {
                     // Load targets but merge them into sources (global namespace)
                     const targetResult = loadTargetsRecursive(projectRoot, resolvedPath, namespace);
                     
-                    // Merge target commands into sources (sources win for same names)
-                    merged.commands = { ...targetResult.commands, ...merged.commands };
-                    merged.help = { ...targetResult.help, ...merged.help };
-                    merged.routes = { ...targetResult.routes, ...merged.routes };
+                    // Merge target commands into sources
+                    merged.commands = { ...merged.commands, ...targetResult.commands };
+                    merged.help = { ...merged.help, ...targetResult.help };
+                    merged.routes = { ...merged.routes, ...targetResult.routes };
                 }
             } catch (error) {
                 console.warn(`⚠️ Failed to load source target '${namespace}': ${error.message}`);
@@ -113,9 +113,9 @@ function loadTargetsRecursive(projectRoot, currentRoot, currentNamespace) {
                 if (fs.existsSync(resolvedPath)) {
                     // Load sources but treat them as targets (3-file merge, namespaced)
                     const childResult = loadTargetsRecursive(projectRoot, resolvedPath, currentNamespace);
-                    merged.commands = { ...childResult.commands, ...merged.commands }; // Parent wins
-                    merged.help = { ...childResult.help, ...merged.help };
-                    merged.routes = { ...childResult.routes, ...merged.routes };
+                    merged.commands = { ...merged.commands, ...childResult.commands }; // Parent wins
+                    merged.help = { ...merged.help, ...childResult.help };
+                    merged.routes = { ...merged.routes, ...childResult.routes };
                 }
             } catch (error) {
                 console.warn(`⚠️ Failed to merge target source '${sourcePath}': ${error.message}`);
@@ -326,9 +326,4 @@ function validateSourcePath(sourcePath, currentRoot) {
         throw new Error(`Source path cannot escape root: ${sourcePath}`);
     }
     return resolvedPath;
-}
-
-// Legacy alias
-export function manifestReader(projectRoot) {
-    return loadManifest(projectRoot);
 }

@@ -8,10 +8,16 @@
     let state = <%- JSON.stringify(initialState, null, 2) %>;
     
     // Available commands
-    const commands = <%- JSON.stringify(commands, null, 2) %>;
+    const commands = <%- JSON.stringify(
+        Object.values(commands).filter(cmd => !cmd.name.includes('/')), 
+        null, 2
+    ) %>;
     
     // Map of command manifests by name for quick lookup
-    const commandManifests = commands;
+    const commandManifests = {};
+    commands.forEach(cmd => {
+        commandManifests[cmd.name] = cmd;
+    });
     
     // DOM elements
     const commandSelector = document.getElementById('commandSelector');

@@ -105,6 +105,12 @@ export class UI {
 		const commandForms = [];
 
 		for (const command of Object.values(commandManifests)) {
+			// Skip namespaced commands
+			if (command.name && command.name.includes('/')) {
+				console.log(`Skipping namespaced command: ${command.name}`);
+				continue;
+			}
+
 			try {
 				const formHtml = await this.renderCommandForm(
 					command,

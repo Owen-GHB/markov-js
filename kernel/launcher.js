@@ -77,21 +77,20 @@ export async function launch(args) {
  */
 function showMetaHelp() {
 	console.log(`
-🧠 Vertex Application Host
+🧠 Vertex Launcher
 ===============================================
 
 USAGE:
-  [your-entrypoint.js] [app-commands...]           # Run user application commands
-  [your-entrypoint.js] --kernel [kernel-commands...] # Run kernel management commands
-  [your-entrypoint.js] --help                      # Show this help
+  vertex [app-commands...]           # Run user application commands
+  vertex --kernel [kernel-commands...] # Run kernel management commands
+  vertex --help                      # Show this help
 
 EXAMPLES:
-  [your-entrypoint.js] --kernel help               # Kernel help (via kernel CLI)
-  [your-entrypoint.js] help                        # Application help (via user CLI)
+  vertex --kernel help               # Kernel help (via kernel CLI)
+  vertex help                        # Application help (via user CLI)
 
 META-HELP:
   • User commands operate on your application domain
   • Kernel commands manage the Vertex hosting system
-  • Both interfaces are bootstrapped by Vertex itself
   `);
 }

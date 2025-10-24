@@ -237,33 +237,13 @@ export class HTTPServer {
 		});
 	}
 
-	/**
-	 * Send a response with appropriate status code
-	 * @param {Object} res - HTTP response object
-	 * @param {Object} output - Command result object
-	 * @param {number} defaultStatusCode - Default status code if not in result
-	 */
-	sendSuccessResponse(res, output) {
-		const result = {
-			output: output,
-			error: null,
-		};
-		res.writeHead(200, { 'Content-Type': 'application/json' });
+	sendSuccessResponse(res, result) {
+		res.writeHead(200, { 'Content-Type': 'application/json' }); // more content types later
 		res.end(JSON.stringify(result));
 	}
 
-	/**
-	 * Send an error response
-	 * @param {Object} res - HTTP response object
-	 * @param {string} error - Error message
-	 * @param {number} statusCode - HTTP status code
-	 */
 	sendErrorResponse(res, error, statusCode = 400) {
-		const result = {
-			output: null,
-			error: error.message || error,
-		};
 		res.writeHead(statusCode, { 'Content-Type': 'application/json' });
-		res.end(JSON.stringify(result));
+		res.end(JSON.stringify(error.message || error));
 	}
 }

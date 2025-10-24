@@ -9,9 +9,6 @@
 			"commandRoot": {
 				"description": "Root directory for command manifests"
 			},
-			"projectRoot": {
-				"description": "Root directory for the project"
-			},
 			"servedui": {
 				"description": "UI directory to load in Electron window"
 			},

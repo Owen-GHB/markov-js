@@ -20,7 +20,9 @@
 						<select id="commandSelector" class="command-selector">
 							<option value="">Select a command...</option>
 							<% commands.forEach(function(cmd) { %>
-								<option value="<%= cmd.name %>"><%= cmd.name %></option>
+								<% if (!cmd.name.includes('/')) { %>
+									<option value="<%= cmd.name %>"><%= cmd.name %></option>
+								<% } %>
 							<% }); %>
 						</select>
 					</div>
