@@ -3,16 +3,14 @@ import { Evaluator } from './Evaluator.js';
 import { Validator } from './Validator.js';
 import { loadManifest } from './loaders/manifestLoader.js';
 import { StateManager } from './StateManager.js';
-import { ResourceLoader } from './loaders/ResourceLoader.js';
-import { Specifier } from './Specifier.js';
+import { Processor } from './Processor.js';
 
 /**
  * Runs the command chain
  */
 export class Runner {
 	constructor(commandRoot) {
-		this.resourceLoader = new ResourceLoader(commandRoot);
-		this.handler = new Handler();
+		this.handler = new Handler(commandRoot);
 		this.manifest = loadManifest(commandRoot); // Need manifest for next command lookup
 	}
 
@@ -33,12 +31,7 @@ export class Runner {
 		if (!originalCommand) originalCommand = command;
 
 		// Execute current command
-		const resourceMethod = await this.resolveResource(command, commandSpec);
-		const result = await this.handler.handleCommand(
-			command,
-			commandSpec,
-			resourceMethod,
-		);
+		const result = await this.handler.handleCommand(command, commandSpec);
 
 		// Build template context for chaining
 		const templateContext = {
@@ -59,7 +52,7 @@ export class Runner {
 
 		// If there's a next command, recursively execute the chain
 		if (nextCommand) {
-			const nextCommandSpec = Specifier.specifyCommand(nextCommand, this.manifest, true);
+			const nextCommandSpec = Processor.getSpec(nextCommand, this.manifest, true);
 			if (!nextCommandSpec) {
 				throw new Error(`Unknown next command: ${nextCommand.name}`);
 			}
@@ -74,18 +67,6 @@ export class Runner {
 
 		// End of chain, return final result
 		return result;
-	}
-
-	async resolveResource(command, commandSpec) {
-		if (!commandSpec.methodName) {
-			return null;
-		}
-
-		const sourcePath = commandSpec.source || './';
-		return await this.resourceLoader.getResourceMethod(
-			sourcePath,
-			commandSpec.methodName,
-		);
 	}
 
 	/**

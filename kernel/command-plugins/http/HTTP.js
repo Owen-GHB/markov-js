@@ -197,17 +197,24 @@ export class HTTPServer {
 						return resolve();
 					}
 
-					// Build file args
-					const fileArgs = {};
-					formData.files.forEach((file) => {
-						fileArgs[file.fieldName] = file.data;
-					});
-
-					// Create array input: [commandString, fileArgs] for parseInput to merge
-					const commandInput = [commandString, fileArgs];
+					// Parse the command JSON
+					const command = JSON.parse(commandString);
+					
+					// Merge file args into the command object
+					if (command.args && typeof command.args === 'object') {
+						formData.files.forEach((file) => {
+							command.args[file.fieldName] = file.data;
+						});
+					} else {
+						// If no args object exists, create one with file data
+						command.args = {};
+						formData.files.forEach((file) => {
+							command.args[file.fieldName] = file.data;
+						});
+					}
 
 					try {
-						const result = await this.vertex.executeCommand(commandInput);
+						const result = await this.vertex.executeCommand(command);
 						this.sendSuccessResponse(res, result);
 					} catch (err) {
 						this.sendErrorResponse(res, err, 500);
