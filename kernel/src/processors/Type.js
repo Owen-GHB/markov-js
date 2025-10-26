@@ -1,13 +1,13 @@
 // Import all type handlers (we'll need to get these from the existing types directory)
-import blobType from '../types/blob.js';
-import bufferType from '../types/buffer.js';
-import integerType from '../types/integer.js';
-import numberType from '../types/number.js';
-import booleanType from '../types/boolean.js';
-import arrayType from '../types/array.js';
-import objectType from '../types/object.js';
-import stringType from '../types/string.js';
-import localPathType from '../types/localPath.js';
+import blobType from './types/blob.js';
+import bufferType from './types/buffer.js';
+import integerType from './types/integer.js';
+import numberType from './types/number.js';
+import booleanType from './types/boolean.js';
+import arrayType from './types/array.js';
+import objectType from './types/object.js';
+import stringType from './types/string.js';
+import localPathType from './types/localPath.js';
 
 export class Type {
   static properties = ['type'];
