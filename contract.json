@@ -1,18 +1,257 @@
 {
-	"name": "markov-text-generator", 
-	"version": "0.0.0",
-	"description": "Markov chain text generation engine with multiple model types",
-	"prompt": "markov> ",
-	"stateDefaults": {
-		"currentModel": null,
-		"defaultCorpus": "sample.txt"
-	},
-	"sources": {
-		"dataOps": "./dataOps",
-		"gutendex": "./gutendex"
-	},
-	"targets": {
-		"fileOps": "./fileOps",
-		"textgen": "./textgen"
-	}
+  "name": "markov-text-generator",
+  "version": "0.0.0",
+  "description": "Markov chain text generation engine with multiple model types",
+  "prompt": "markov> ",
+  "stateDefaults": {
+    "currentModel": null,
+    "defaultCorpus": "sample.txt"
+  },
+  "sources": {
+    "dataOps": "./dataOps",
+    "gutendex": "./gutendex"
+  },
+  "targets": {
+    "fileOps": "./fileOps",
+    "textgen": "./textgen"
+  },
+  "commands": {
+    "use": {
+      "name": "use",
+      "commandType": "native-method",
+      "parameters": {
+        "modelName": {
+          "type": "string",
+          "required": true,
+          "description": "Name of the model to set as current"
+        }
+      },
+      "description": "Set the current model to use",
+      "syntax": "use(modelName)",
+      "examples": [
+        "use(\"current_model.json\")"
+      ],
+      "sideEffects": {
+        "setState": {
+          "currentModel": "{{input.modelName}}"
+        }
+      },
+      "successOutput": "✅ Using model: {{input.modelName}}"
+    },
+    "generate": {
+      "name": "generate",
+      "combineArguments": true,
+      "parameters": {
+        "modelName": {
+          "type": "string",
+          "required": true,
+          "description": "Model file to use for generation",
+          "runtimeFallback": "currentModel"
+        },
+        "length": {
+          "type": "integer",
+          "required": false,
+          "description": "Maximum number of tokens to generate",
+          "default": 100,
+          "min": 1
+        },
+        "min_tokens": {
+          "type": "integer",
+          "required": false,
+          "description": "Minimum number of tokens to generate",
+          "default": 50,
+          "min": 1
+        },
+        "temperature": {
+          "type": "number",
+          "required": false,
+          "description": "Randomness factor (lower = more predictable)",
+          "default": 1,
+          "min": 0,
+          "max": 2
+        },
+        "prompt": {
+          "type": "string",
+          "required": false,
+          "description": "Starting text for generation"
+        },
+        "stop": {
+          "type": "array",
+          "required": false,
+          "description": "Stop tokens that end generation",
+          "default": [
+            ".",
+            "!",
+            "?"
+          ]
+        },
+        "samples": {
+          "type": "integer",
+          "required": false,
+          "description": "Number of samples to generate",
+          "default": 1,
+          "min": 1
+        },
+        "allowRepetition": {
+          "type": "boolean",
+          "required": false,
+          "description": "Allow immediate token repetition",
+          "default": true
+        }
+      },
+      "sideEffects": {
+        "setState": {
+          "currentModel": "{{input.modelName}}"
+        }
+      },
+      "successOutput": "🎲 Generated text:\n──────────────────────────────────────────────────\n{{output.text}}\n(Length: {{output.length}} tokens)\n──────────────────────────────────────────────────\n(Finish reason: {{output.finish_reason}})",
+      "next": {
+        "fileOps/getModel": {
+          "parameters": {
+            "path": {
+              "resolve": "./data/models/{{input.modelName}}"
+            }
+          }
+        }
+      }
+    },
+    "train": {
+      "name": "train",
+      "combineArguments": true,
+      "parameters": {
+        "file": {
+          "type": "string",
+          "required": true,
+          "description": "Corpus file to train from",
+          "runtimeFallback": "defaultCorpus"
+        },
+        "modelType": {
+          "type": "string",
+          "required": true,
+          "description": "Type of model to train",
+          "enum": [
+            "markov",
+            "vlmm",
+            "hmm"
+          ]
+        },
+        "order": {
+          "type": "integer",
+          "required": false,
+          "description": "Markov order (n-gram size)",
+          "default": 2,
+          "min": 1,
+          "max": 10
+        },
+        "modelName": {
+          "type": "string",
+          "required": true,
+          "description": "Filename to save the trained model",
+          "kind": "implicit"
+        },
+        "caseSensitive": {
+          "type": "boolean",
+          "required": false,
+          "description": "Whether to preserve case during tokenization",
+          "default": false
+        },
+        "trackStartStates": {
+          "type": "boolean",
+          "required": false,
+          "description": "Whether to track sentence start states",
+          "default": true
+        }
+      },
+      "sideEffects": {
+        "setState": {
+          "currentModel": "{{output.modelName}}"
+        }
+      },
+      "successOutput": "📚 Trained from \"{{input.file}}\" → \"{{input.modelName}}\"\n📊 Vocabulary: {{output.vocabularySize}}",
+      "next": {
+        "fileOps/getCorpus": {
+          "parameters": {
+            "path": {
+              "resolve": "./data/corpus/{{input.file}}"
+            }
+          }
+        }
+      }
+    },
+    "fileOps/getModel": {
+      "name": "fileOps/getModel",
+      "next": {
+        "textgen/generate": {
+          "parameters": {
+            "modelData": {
+              "resolve": "{{output.data}}"
+            },
+            "length": {
+              "resolve": "{{original.length}}"
+            },
+            "min_tokens": {
+              "resolve": "{{original.min_tokens}}"
+            },
+            "temperature": {
+              "resolve": "{{original.temperature}}"
+            },
+            "prompt": {
+              "resolve": "{{original.prompt}}"
+            },
+            "stop": {
+              "resolve": "{{original.stop}}"
+            },
+            "samples": {
+              "resolve": "{{original.samples}}"
+            },
+            "allowRepetition": {
+              "resolve": "{{original.allowRepetition}}"
+            }
+          }
+        }
+      }
+    },
+    "fileOps/getCorpus": {
+      "name": "fileOps/getCorpus",
+      "next": {
+        "textgen/train": {
+          "parameters": {
+            "file": {
+              "resolve": "{{output.data}}"
+            },
+            "modelType": {
+              "resolve": "{{original.modelType}}"
+            },
+            "order": {
+              "resolve": "{{original.order}}"
+            },
+            "modelName": {
+              "resolve": "{{original.modelName}}"
+            },
+            "caseSensitive": {
+              "resolve": "{{original.caseSensitive}}"
+            },
+            "trackStartStates": {
+              "resolve": "{{original.trackStartStates}}"
+            }
+          }
+        }
+      }
+    },
+    "textgen/train": {
+      "name": "textgen/train",
+      "next": {
+        "fileOps/saveToModels": {
+          "parameters": {
+            "data": {
+              "resolve": "{{output.model}}"
+            },
+            "filename": {
+              "resolve": "{{input.modelName}}"
+            }
+          }
+        }
+      }
+    }
+  }
 }

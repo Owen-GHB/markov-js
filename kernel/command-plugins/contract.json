@@ -1,17 +1,54 @@
 {
-	"name": "vertex-command-plugins",
-	"version": "0.0.0",
-	"description": "Universal Command Engine - Plugin Ecosystem",
-	"sources": {
-		"generate": "./generate",
-		"http": "./http",
-		"electron": "./electron",
-		"cli": "./cli",
-		"repl": "./repl"
-	},
-	"stateDefaults": {
-		"contextFilePath": "./context/state.json",
-		"replHistoryFilePath": "./context/repl-history.txt",
-		"maxReplHistory": 100
-	}
+  "name": "vertex-command-plugins",
+  "version": "0.0.0",
+  "description": "Universal Command Engine - Plugin Ecosystem",
+  "sources": {
+    "generate": "./generate",
+    "http": "./http",
+    "electron": "./electron",
+    "cli": "./cli",
+    "repl": "./repl"
+  },
+  "stateDefaults": {
+    "contextFilePath": "./context/state.json",
+    "replHistoryFilePath": "./context/repl-history.txt",
+    "maxReplHistory": 100
+  },
+  "commands": {
+    "set": {
+      "commandType": "native-method",
+      "description": "Set kernel state values at runtime",
+      "parameters": {
+        "configstate": {
+          "type": "string",
+          "required": true,
+          "description": "State key to set (supports dot notation for nested objects)"
+        },
+        "value": {
+          "type": "string|integer|number|boolean|array|object",
+          "required": true,
+          "description": "Value to set (auto-converted from string if needed)"
+        },
+        "persist": {
+          "type": "boolean",
+          "required": false,
+          "default": true,
+          "description": "Whether to persist the change to context file"
+        }
+      },
+      "examples": [
+        "set(\"serverPort\", 3000)",
+        "set(configstate=\"servedUIDir\", value=\"./dist\")",
+        "set({configstate: \"electron.showDevTools\", value: false})",
+        "set(\"userTemplateDir\", \"./custom-templates\", persist=false)"
+      ],
+      "notes": "Dynamically modifies kernel state. Supports nested keys with dot notation. Changes are persisted by default. Use persist=false for temporary changes.",
+      "sideEffects": {
+        "setState": {
+          "{{input.configstate}}": "{{input.value}}"
+        }
+      },
+      "successOutput": "✅ Set {{input.configstate}} = {{input.value}}"
+    }
+  }
 }

@@ -1,6 +1,79 @@
 {
-	"name": "fileOps",
-	"version": "0.0.0",
-	"description": "File operations for data management",
-	"prompt": "fileOps> "
+  "name": "fileOps",
+  "version": "0.0.0",
+  "description": "File operations for data management",
+  "prompt": "fileOps> ",
+  "commands": {
+    "getModel": {
+      "name": "getModel",
+      "methodName": "returnObjectFromJSONFile",
+      "combineArguments": true,
+      "parameters": {
+        "path": {
+          "type": "string",
+          "required": true,
+          "description": "Path to JSON file relative to project root"
+        }
+      },
+      "description": "Read and parse a JSON model file",
+      "syntax": "getModel(path)",
+      "examples": [
+        "getModel(\"./data/models/my_model.json\")",
+        "getModel({path: \"models/story.json\"})"
+      ],
+      "successOutput": "📁 Loaded model from: {{input.path}} ({{output.size}} bytes)"
+    },
+    "saveToCorpus": {
+      "name": "saveToCorpus",
+      "methodName": "saveBufferToCorpus",
+      "combineArguments": true,
+      "parameters": {
+        "buffer": {
+          "type": "buffer",
+          "required": true,
+          "description": "Buffer data to save"
+        },
+        "filename": {
+          "type": "string",
+          "required": true,
+          "description": "Filename to save as"
+        }
+      },
+      "description": "Save buffer data to corpus directory",
+      "syntax": "saveToCorpus(buffer, filename)",
+      "examples": [
+        "saveToCorpus(bufferData, \"my_corpus.txt\")"
+      ],
+      "successOutput": "💾 Saved to corpus: {{output.filename}} ({{output.bytesWritten}} bytes)"
+    },
+    "getCorpus": {
+      "name": "getCorpus",
+      "methodName": "returnTextFromFile",
+      "combineArguments": true,
+      "parameters": {
+        "path": {
+          "type": "string",
+          "required": true,
+          "description": "Path to text file relative to project root"
+        }
+      }
+    },
+    "saveToModels": {
+      "name": "saveToModels",
+      "methodName": "saveObjectToModels",
+      "combineArguments": true,
+      "parameters": {
+        "data": {
+          "type": "object",
+          "required": true,
+          "description": "Model data object to save"
+        },
+        "filename": {
+          "type": "string",
+          "required": true,
+          "description": "Model filename to save as"
+        }
+      }
+    }
+  }
 }

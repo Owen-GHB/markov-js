@@ -1,12 +1,48 @@
 {
-	"name": "http-plugin",
-	"version": "0.0.0",
-	"description": "HTTP Server with UI & API Endpoints",
-	"stateDefaults": {
-		"commandRoot": "./",
-		"projectRoot": "./",
-		"serverPort": 8080,
-		"servedUIDir": "./generated-ui",
-		"apiEndpoint": "/api"
-	}
+  "name": "http-plugin",
+  "version": "0.0.0",
+  "description": "HTTP Server with UI & API Endpoints",
+  "stateDefaults": {
+    "commandRoot": "./",
+    "projectRoot": "./",
+    "serverPort": 8080,
+    "servedUIDir": "./generated-ui",
+    "apiEndpoint": "/api"
+  },
+  "commands": {
+    "http": {
+      "methodName": "start",
+      "parameters": {
+        "commandRoot": {
+          "type": "localPath",
+          "required": true,
+          "description": "Root directory for command manifests",
+          "runtimeFallback": "commandRoot"
+        },
+        "serverPort": {
+          "type": "integer",
+          "required": false,
+          "description": "Port number for the server",
+          "runtimeFallback": "serverPort"
+        },
+        "servedUIDir": {
+          "type": "localPath",
+          "required": false,
+          "description": "Directory containing UI files to serve",
+          "runtimeFallback": "servedUIDir"
+        },
+        "apiEndpoint": {
+          "type": "string",
+          "required": false,
+          "description": "API endpoint path",
+          "runtimeFallback": "apiEndpoint"
+        }
+      },
+      "description": "Start HTTP server serving UI and API",
+      "examples": [
+        "http(commandRoot=\"./command-plugins\", projectRoot=\".\", serverPort=3000)",
+        "http(commandRoot=\"./command-plugins\", projectRoot=\".\", servedUIDir=\"./dist\")"
+      ]
+    }
+  }
 }

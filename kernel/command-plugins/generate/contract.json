@@ -1,10 +1,44 @@
 {
-	"name": "generate-plugin",
-	"version": "0.0.0",
-	"description": "EJS-based UI Generation System",
-	"stateDefaults": {
-		"commandRoot": "./",
-		"userTemplateDir": "./ejs-templates",
-		"generatedUIDir": "./generated-ui"
-	}
+  "name": "generate-plugin",
+  "version": "0.0.0",
+  "description": "EJS-based UI Generation System",
+  "stateDefaults": {
+    "commandRoot": "./",
+    "userTemplateDir": "./ejs-templates",
+    "generatedUIDir": "./generated-ui"
+  },
+  "commands": {
+    "generate": {
+      "methodName": "run",
+      "parameters": {
+        "commandRoot": {
+          "type": "localPath",
+          "required": true,
+          "description": "Root directory for command manifests",
+          "runtimeFallback": "commandRoot"
+        },
+        "userTemplateDir": {
+          "type": "localPath",
+          "required": false,
+          "description": "Custom template directory (uses built-in if not provided)",
+          "runtimeFallback": "userTemplateDir"
+        },
+        "generatedUIDir": {
+          "type": "localPath",
+          "required": false,
+          "description": "Output directory for generated UI files",
+          "runtimeFallback": "generatedUIDir"
+        },
+        "projectRoot": {
+          "description": "Root directory for the project"
+        }
+      },
+      "description": "Generate web UI from contract using EJS templates",
+      "examples": [
+        "generate(commandRoot=\"./command-plugins\", projectRoot=\".\", userTemplateDir=\"./my-templates\")",
+        "generate(commandRoot=\"./command-plugins\", projectRoot=\".\", generatedUIDir=\"./dist\")"
+      ],
+      "successOutput": "🎨 UI generated successfully!\n   Output: {{input.generatedUIDir}}\n   Templates: {{input.userTemplateDir}} ? {{input.userTemplateDir}} : 'built-in'"
+    }
+  }
 }

@@ -1,11 +1,44 @@
 {
-	"name": "electron-plugin",
-	"version": "0.0.0",
-	"description": "Electron Desktop Application",
-	"stateDefaults": {
-		"commandRoot": "./",
-		"projectRoot": "./",
-		"servedUIDir": "./generated-ui",
-		"electronPreloadPath": "./electron-preload.js"
-	}
+  "name": "electron-plugin",
+  "version": "0.0.0",
+  "description": "Electron Desktop Application",
+  "stateDefaults": {
+    "commandRoot": "./",
+    "projectRoot": "./",
+    "servedUIDir": "./generated-ui",
+    "electronPreloadPath": "./electron-preload.js"
+  },
+  "commands": {
+    "electron": {
+      "methodName": "start",
+      "parameters": {
+        "commandRoot": {
+          "type": "localPath",
+          "required": true,
+          "description": "Root directory for command manifests",
+          "runtimeFallback": "commandRoot"
+        },
+        "servedUIDir": {
+          "type": "localPath",
+          "required": true,
+          "runtimeFallback": "servedUIDir"
+        },
+        "electronPreloadPath": {
+          "type": "localPath",
+          "required": false,
+          "description": "Path to Electron preload script",
+          "runtimeFallback": "electronPreloadPath"
+        },
+        "servedui": {
+          "description": "UI directory to load in Electron window"
+        }
+      },
+      "description": "Launch Electron desktop application",
+      "examples": [
+        "electron(commandRoot=\"./command-plugins\", projectRoot=\".\")",
+        "electron(commandRoot=\"./command-plugins\", projectRoot=\".\", servedui=\"./dist\")"
+      ],
+      "successOutput": "🖥️ Electron desktop app launched!\n   UI: {{input.servedUIDir}}\n   Preload: {{input.electronPreloadPath}}"
+    }
+  }
 }

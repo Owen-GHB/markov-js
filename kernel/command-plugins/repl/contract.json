@@ -1,11 +1,46 @@
 {
-	"name": "repl-plugin",
-	"version": "0.0.0",
-	"description": "Read-Eval-Print Loop Interface",
-	"stateDefaults": {
-		"commandRoot": "./",
-		"contextFilePath": "./context/state.json",
-		"replHistoryFilePath": "./context/repl-history.txt",
-		"maxReplHistory": 100
-	}
+  "name": "repl-plugin",
+  "version": "0.0.0",
+  "description": "Read-Eval-Print Loop Interface",
+  "stateDefaults": {
+    "commandRoot": "./",
+    "contextFilePath": "./context/state.json",
+    "replHistoryFilePath": "./context/repl-history.txt",
+    "maxReplHistory": 100
+  },
+  "commands": {
+    "repl": {
+      "methodName": "start",
+      "parameters": {
+        "commandRoot": {
+          "type": "localPath",
+          "required": true,
+          "description": "[Internal] Root directory for command manifests",
+          "runtimeFallback": "commandRoot"
+        },
+        "contextFilePath": {
+          "type": "localPath",
+          "required": true,
+          "description": "[Internal] Path to context file for state persistence",
+          "runtimeFallback": "contextFilePath"
+        },
+        "historyFilePath": {
+          "type": "localPath",
+          "required": true,
+          "description": "[Internal] Path to REPL history file",
+          "runtimeFallback": "replHistoryFilePath"
+        },
+        "maxHistory": {
+          "type": "integer",
+          "required": false,
+          "description": "[Internal] Maximum number of history entries to keep",
+          "runtimeFallback": "maxReplHistory"
+        }
+      },
+      "description": "Read-Eval-Print Loop Interface",
+      "examples": [
+        "repl()"
+      ]
+    }
+  }
 }

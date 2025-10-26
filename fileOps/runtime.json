@@ -1,8 +1,0 @@
-{
-  "getModel": {
-    "successOutput": "📁 Loaded model from: {{input.path}} ({{output.size}} bytes)"
-  },
-  "saveToCorpus": {
-    "successOutput": "💾 Saved to corpus: {{output.filename}} ({{output.bytesWritten}} bytes)"
-  }
-}

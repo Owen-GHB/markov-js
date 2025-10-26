@@ -1,6 +1,70 @@
 {
-	"name": "gutendex-api",
-	"version": "0.0.0",
-	"description": "Module to interface with the Gutendex API for fetching texts",
-	"prompt": "gutendex> "
+  "name": "gutendex-api",
+  "version": "0.0.0",
+  "description": "Module to interface with the Gutendex API for fetching texts",
+  "prompt": "gutendex> ",
+  "commands": {
+    "pgb_download": {
+      "name": "pgb_download",
+      "methodName": "downloadBookBuffer",
+      "combineArguments": true,
+      "parameters": {
+        "id_or_title": {
+          "type": "string|integer",
+          "required": true,
+          "description": "Book ID or title to download"
+        },
+        "file": {
+          "type": "string",
+          "required": false,
+          "description": "Filename to save the downloaded text",
+          "default": null
+        }
+      },
+      "description": "Download a book from Project Gutenberg",
+      "syntax": "pgb_download(id|title, [options])",
+      "examples": [
+        "pgb_download(1342)",
+        "pgb_download(\"Moby Dick\", file=\"whale.txt\")"
+      ],
+      "successOutput": "📚 Downloaded \"{{output.bookInfo.title}}\" to {{output.filename}} ({{output.bytesWritten}} bytes)"
+    },
+    "pgb_info": {
+      "name": "pgb_info",
+      "methodName": "getGutenbergInfo",
+      "combineArguments": true,
+      "parameters": {
+        "id_or_title": {
+          "type": "string|integer",
+          "required": true,
+          "description": "Book ID or title to get information about"
+        }
+      },
+      "description": "Get book details from Project Gutenberg",
+      "syntax": "pgb_info(id_or_title)",
+      "examples": [
+        "pgb_info(1342)",
+        "pgb_info(\"Pride and Prejudice\")",
+        "pgb_info({id: 1342})",
+        "pgb_info({title: \"Pride and Prejudice\"})"
+      ]
+    },
+    "pgb_search": {
+      "name": "pgb_search",
+      "methodName": "searchGutenberg",
+      "combineArguments": true,
+      "parameters": {
+        "query": {
+          "type": "string",
+          "required": true,
+          "description": "Search query for Project Gutenberg"
+        }
+      },
+      "description": "Search Project Gutenberg by title/author",
+      "syntax": "pgb_search(query)",
+      "examples": [
+        "pgb_search(\"Sherlock Holmes\")"
+      ]
+    }
+  }
 }

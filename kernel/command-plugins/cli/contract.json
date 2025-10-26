@@ -1,9 +1,38 @@
 {
-	"name": "cli-plugin",
-	"version": "0.0.0",
-	"description": "Command Line Interface",
-	"stateDefaults": {
-		"commandRoot": "./",
-		"contextFilePath": "./context/state.json"
-	}
+  "name": "cli-plugin",
+  "version": "0.0.0",
+  "description": "Command Line Interface",
+  "stateDefaults": {
+    "commandRoot": "./",
+    "contextFilePath": "./context/state.json"
+  },
+  "commands": {
+    "cli": {
+      "methodName": "run",
+      "parameters": {
+        "commandRoot": {
+          "type": "localPath",
+          "required": true,
+          "description": "Root directory for command manifests",
+          "runtimeFallback": "commandRoot"
+        },
+        "contextFilePath": {
+          "type": "localPath",
+          "required": true,
+          "description": "Path to context file for state persistence",
+          "runtimeFallback": "contextFilePath"
+        },
+        "args": {
+          "type": "array",
+          "required": false,
+          "description": "Command line arguments to execute"
+        }
+      },
+      "description": "Command Line Interface",
+      "examples": [
+        "cli(args=[\"help\"])",
+        "cli(args=[\"generate\", \"userTemplateDir=./templates\"])"
+      ]
+    }
+  }
 }

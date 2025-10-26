@@ -1,8 +1,9 @@
 {
-	"name": "vertex",
-	"version": "0.0.0",
-	"description": "Vertex Application Host",
-	"sources": {
-		"vertex-command-plugins": "./command-plugins"
-	}
+  "name": "vertex",
+  "version": "0.0.0",
+  "description": "Vertex Application Host",
+  "sources": {
+    "vertex-command-plugins": "./command-plugins"
+  },
+  "commands": {}
 }

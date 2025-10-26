@@ -1,9 +1,144 @@
 {
-	"name": "markov-generator-core",
-	"version": "0.0.0",
-	"description": "Markov chain text generation engine with multiple model types",
-	"prompt": "markov> ",
-	"stateDefaults": {
-		"defaultCorpus": "sample.txt"
-	}
+  "name": "markov-generator-core",
+  "version": "0.0.0",
+  "description": "Markov chain text generation engine with multiple model types",
+  "prompt": "markov> ",
+  "stateDefaults": {
+    "defaultCorpus": "sample.txt"
+  },
+  "commands": {
+    "generate": {
+      "name": "generate",
+      "methodName": "generateText",
+      "combineArguments": true,
+      "parameters": {
+        "modelData": {
+          "type": "object",
+          "required": true
+        },
+        "length": {
+          "type": "integer",
+          "required": false,
+          "description": "Maximum number of tokens to generate",
+          "default": 100,
+          "min": 1
+        },
+        "min_tokens": {
+          "type": "integer",
+          "required": false,
+          "description": "Minimum number of tokens to generate",
+          "default": 50,
+          "min": 1
+        },
+        "temperature": {
+          "type": "number",
+          "required": false,
+          "description": "Randomness factor (lower = more predictable)",
+          "default": 1,
+          "min": 0,
+          "max": 2
+        },
+        "prompt": {
+          "type": "string",
+          "required": false,
+          "description": "Starting text for generation"
+        },
+        "stop": {
+          "type": "array",
+          "required": false,
+          "description": "Stop tokens that end generation",
+          "default": [
+            ".",
+            "!",
+            "?"
+          ]
+        },
+        "samples": {
+          "type": "integer",
+          "required": false,
+          "description": "Number of samples to generate",
+          "default": 1,
+          "min": 1
+        },
+        "allowRepetition": {
+          "type": "boolean",
+          "required": false,
+          "description": "Allow immediate token repetition",
+          "default": true
+        },
+        "modelName": {
+          "description": "Model file to use for generation"
+        }
+      },
+      "description": "Generate text from a trained model",
+      "syntax": "generate(modelName, [options])",
+      "examples": [
+        "generate(\"model.json\", length=50, temperature=0.8)",
+        "generate({modelName: \"story_model.json\", prompt: \"Once upon a time\"})"
+      ]
+    },
+    "train": {
+      "name": "train",
+      "methodName": "trainModel",
+      "combineArguments": true,
+      "parameters": {
+        "file": {
+          "type": "string",
+          "required": true,
+          "description": "Corpus file to train from",
+          "runtimeFallback": "defaultCorpus"
+        },
+        "modelType": {
+          "type": "string",
+          "required": true,
+          "description": "Type of model to train",
+          "enum": [
+            "markov",
+            "vlmm",
+            "hmm"
+          ]
+        },
+        "order": {
+          "type": "integer",
+          "required": false,
+          "description": "Markov order (n-gram size)",
+          "default": 2,
+          "min": 1,
+          "max": 10
+        },
+        "modelName": {
+          "type": "string",
+          "required": true,
+          "description": "Filename to save the trained model",
+          "kind": "implicit"
+        },
+        "caseSensitive": {
+          "type": "boolean",
+          "required": false,
+          "description": "Whether to preserve case during tokenization",
+          "default": false
+        },
+        "trackStartStates": {
+          "type": "boolean",
+          "required": false,
+          "description": "Whether to track sentence start states",
+          "default": true
+        }
+      },
+      "description": "Train a model from a text corpus file",
+      "syntax": "train(file, modelType, [options])",
+      "examples": [
+        "train(\"sample.txt\", \"markov\", order=2)",
+        "train({file: \"corpus.txt\", modelType: \"vlmm\", order: 3})"
+      ],
+      "sideEffects": {
+        "setState": {
+          "currentModel": "{{output.modelName}}",
+          "lastTrainedFile": "{{output.file}}",
+          "vocabularySize": "{{output.vocabularySize}}"
+        }
+      },
+      "successOutput": "📚 Trained from \"{{input.file}}\" → \"{{output.modelName}}\"\n📊 Vocabulary: {{output.vocabularySize}}"
+    }
+  }
 }

@@ -1,6 +1,89 @@
 {
-	"name": "markov-data-ops",
-	"version": "0.0.0",
-	"description": "Markov chain data operations module",
-	"prompt": "dataOps> "
+  "name": "markov-data-ops",
+  "version": "0.0.0",
+  "description": "Markov chain data operations module",
+  "prompt": "dataOps> ",
+  "commands": {
+    "delete": {
+      "name": "delete",
+      "methodName": "deleteModelFile",
+      "parameters": {
+        "modelName": {
+          "type": "string",
+          "required": true,
+          "description": "Name of the model file to delete"
+        }
+      },
+      "description": "Delete a saved model",
+      "syntax": "delete(modelName)",
+      "examples": [
+        "delete(\"old_model.json\")"
+      ],
+      "sideEffects": {
+        "clearStateIf": {
+          "currentModel": {
+            "fromParam": "modelName"
+          }
+        }
+      }
+    },
+    "listCorpus": {
+      "name": "listCorpus",
+      "methodName": "listCorpusFiles",
+      "parameters": {},
+      "description": "List all available corpus files",
+      "syntax": "listCorpus()",
+      "examples": [
+        "listCorpus()"
+      ]
+    },
+    "listModels": {
+      "name": "listModels",
+      "methodName": "listAvailableModels",
+      "parameters": {},
+      "description": "List all available saved models",
+      "syntax": "listModels()",
+      "examples": [
+        "listModels()"
+      ]
+    },
+    "uploadFile": {
+      "name": "uploadFile",
+      "methodName": "uploadCorpusFile",
+      "parameters": {
+        "file": {
+          "type": "buffer",
+          "required": true,
+          "description": "Text file to upload (from file picker or upload)"
+        },
+        "filename": {
+          "type": "string",
+          "required": false,
+          "description": "Optional custom filename (uses original name if not provided)"
+        }
+      },
+      "description": "Upload a text file to the corpus directory",
+      "syntax": "uploadFile(file, [filename])",
+      "examples": [
+        "uploadFile(fileObject)",
+        "uploadFile(fileObject, \"my_corpus.txt\")"
+      ]
+    },
+    "saveModel": {
+      "name": "saveModel",
+      "methodName": "saveModelFile",
+      "parameters": {
+        "file": {
+          "type": "buffer",
+          "required": true,
+          "description": "Model file to be saved"
+        },
+        "filename": {
+          "type": "string",
+          "required": false,
+          "description": "Filename for the model"
+        }
+      }
+    }
+  }
 }

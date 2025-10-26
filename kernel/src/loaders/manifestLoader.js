@@ -1,56 +1,73 @@
-// File: src/manifestLoader.js
-import fs from 'fs';
-import path from 'path';
+// loaders/manifestLoader.js
+import { FileSystemReader } from './FileSystemReader.js';
+import { ManifestMerger } from './ManifestMerger.js';
 
 /**
- * MAIN ENTRY POINT - Loads complete manifest with dual recursion strategy
+ * MAIN ENTRY POINT - Loads complete manifest
  */
 export function loadManifest(projectRoot) {
+    const reader = new FileSystemReader();
+    
     try {
-        // Load SOURCES (5-file merge, global namespace)
-        const sourcesResult = loadSourcesRecursive(projectRoot, projectRoot, "");
+        // Load SOURCES with parent-wins merge
+        const sourcesResult = loadSources(projectRoot, projectRoot, reader);
         
-        // Load TARGETS (3-file merge, namespaced)  
-        const targetsResult = loadTargetsRecursive(projectRoot, projectRoot, "");
+        // Load and merge TARGETS with target-wins precedence
+        const targetsResult = loadTargets(projectRoot, projectRoot, "", reader);
         
-        // COMBINE everything with proper precedence
-        return combineManifest(sourcesResult, targetsResult, projectRoot);
+        // SMART MERGE: Targets win for implementation, but preserve sources' unique properties
+        const finalCommands = { ...sourcesResult.commands };
+        for (const [targetName, targetCmd] of Object.entries(targetsResult.commands || {})) {
+            if (finalCommands[targetName]) {
+                // Merge with TARGET WINNING: child properties override, parent keeps unique ones
+                finalCommands[targetName] = {
+                    ...finalCommands[targetName], // Parent properties
+                    ...targetCmd                  // Child wins for any overlapping properties
+                };
+            } else {
+                finalCommands[targetName] = targetCmd;
+            }
+        }
+        
+        return {
+            ...sourcesResult,
+            commands: finalCommands
+        };
     } catch (error) {
         throw new Error(`Failed to load manifest: ${error.message}`);
     }
 }
 
 /**
- * SOURCES RECURSION - 5-file merging for user-facing commands
+ * SOURCES - Parent wins merge (no recursion into targets)
  */
-function loadSourcesRecursive(projectRoot, currentRoot, currentNamespace) {
-    // Load current level's 5 files
-    const contract = loadJSONFile(currentRoot, 'contract.json', {});
-    const commands = loadJSONFile(currentRoot, 'commands.json', {});
-    const help = loadJSONFile(currentRoot, 'help.json', {});
-    const runtime = loadJSONFile(currentRoot, 'runtime.json', {});
-    const routes = loadJSONFile(currentRoot, 'routes.json', {});
+function loadSources(projectRoot, currentRoot, reader) {
+    // Load current manifest
+    const manifest = reader.loadJSONFile(currentRoot, 'contract.json', {});
     
     // Transform command sources with projectRoot context
-    const transformedCommands = transformCommandSources(commands, currentRoot, projectRoot);
+    const transformedCommands = ManifestMerger.transformCommandSources(
+        manifest.commands || {}, 
+        currentRoot, 
+        projectRoot, 
+        reader
+    );
     
+    // Start with current manifest, replacing commands with transformed ones
     let merged = {
-        contract: { ...contract },
-        commands: { ...transformedCommands },
-        help: { ...help },
-        runtime: { ...runtime }, 
-        routes: { ...routes },
-        stateDefaults: contract.stateDefaults || {}
+        ...manifest,
+        commands: { ...transformedCommands }
     };
     
-    // Recursively merge from SOURCES (full 5-file merge)
-    if (contract.sources) {
-        for (const sourcePath of Object.values(contract.sources)) {
+    // Flat merge of sources (parent wins)
+    if (manifest.sources) {
+        for (const sourcePath of Object.values(manifest.sources)) {
             try {
-                const resolvedPath = validateSourcePath(sourcePath, currentRoot);
-                if (fs.existsSync(resolvedPath)) {
-                    const childResult = loadSourcesRecursive(projectRoot, resolvedPath, currentNamespace);
-                    merged = deepMergeSources(childResult, merged);
+                const resolvedPath = reader.validateSourcePath(sourcePath, currentRoot);
+                if (reader.existsSync(resolvedPath)) {
+                    const childResult = loadSources(projectRoot, resolvedPath, reader);
+                    // PARENT WINS for sources
+                    merged = ManifestMerger.deepMerge(childResult, merged);
                 }
             } catch (error) {
                 console.warn(`⚠️ Failed to merge source '${sourcePath}': ${error.message}`);
@@ -58,82 +75,53 @@ function loadSourcesRecursive(projectRoot, currentRoot, currentNamespace) {
         }
     }
     
-    // Sources should also recurse into their TARGETS
-    if (contract.targets) {
-        for (const [namespace, targetPath] of Object.entries(contract.targets)) {
-            try {
-                const resolvedPath = validateSourcePath(targetPath, currentRoot);
-                if (fs.existsSync(resolvedPath)) {
-                    // Load targets but merge them into sources (global namespace)
-                    const targetResult = loadTargetsRecursive(projectRoot, resolvedPath, namespace);
-                    
-                    // Merge target commands into sources
-                    merged.commands = { ...merged.commands, ...targetResult.commands };
-                    merged.help = { ...merged.help, ...targetResult.help };
-                    merged.routes = { ...merged.routes, ...targetResult.routes };
-                }
-            } catch (error) {
-                console.warn(`⚠️ Failed to load source target '${namespace}': ${error.message}`);
-            }
-        }
-    }
-    
     return merged;
 }
 
 /**
- * TARGETS RECURSION - 3-file merging for internal commands
+ * TARGETS - Target wins merge with recursion
  */
-/**
- * TARGETS RECURSION - 3-file merging for internal commands
- */
-function loadTargetsRecursive(projectRoot, currentRoot, currentNamespace) {
-    const contract = loadJSONFile(currentRoot, 'contract.json', {});
-    const commands = loadJSONFile(currentRoot, 'commands.json', {});
-    const help = loadJSONFile(currentRoot, 'help.json', {});
-    const routes = loadJSONFile(currentRoot, 'routes.json', {});
+function loadTargets(projectRoot, currentRoot, currentNamespace, reader) {
+    // Load current manifest
+    const manifest = reader.loadJSONFile(currentRoot, 'contract.json', {});
     
-    // Transform and namespace commands
-    const transformedCommands = transformCommandSources(commands, currentRoot, projectRoot);
-    const namespacedCommands = namespaceCommands(transformedCommands, currentNamespace);
-    const namespacedHelp = namespaceCommands(help, currentNamespace);
-    const namespacedRoutes = namespaceRoutes(routes, currentNamespace);
+    // Start with this target's own commands
+    const sourceCommands = manifest.commands || {};
+    const transformedCommands = ManifestMerger.transformCommandSources(
+        sourceCommands, 
+        currentRoot, 
+        projectRoot, 
+        reader
+    );
+    const namespacedCommands = ManifestMerger.namespaceCommands(
+        transformedCommands, 
+        currentNamespace
+    );
     
-    let merged = {
-        commands: { ...namespacedCommands },
-        help: { ...namespacedHelp },
-        routes: { ...namespacedRoutes }
-    };
+    let mergedCommands = { ...namespacedCommands };
     
-    // Sources within targets should be 3-file merged into target namespace
-    if (contract.sources) {
-        for (const sourcePath of Object.values(contract.sources)) {
+    // Process child targets with SMART MERGE
+    if (manifest.targets) {
+        for (const [namespace, targetPath] of Object.entries(manifest.targets)) {
             try {
-                const resolvedPath = validateSourcePath(sourcePath, currentRoot);
-                if (fs.existsSync(resolvedPath)) {
-                    // Load sources but treat them as targets (3-file merge, namespaced)
-                    const childResult = loadTargetsRecursive(projectRoot, resolvedPath, currentNamespace);
-                    merged.commands = { ...merged.commands, ...childResult.commands }; // Parent wins
-                    merged.help = { ...merged.help, ...childResult.help };
-                    merged.routes = { ...merged.routes, ...childResult.routes };
-                }
-            } catch (error) {
-                console.warn(`⚠️ Failed to merge target source '${sourcePath}': ${error.message}`);
-            }
-        }
-    }
-    
-    // Recursively process TARGETS within targets (namespaced merge)
-    if (contract.targets) {
-        for (const [namespace, targetPath] of Object.entries(contract.targets)) {
-            try {
-                const resolvedPath = validateSourcePath(targetPath, currentRoot);
-                if (fs.existsSync(resolvedPath)) {
+                const resolvedPath = reader.validateSourcePath(targetPath, currentRoot);
+                if (reader.existsSync(resolvedPath)) {
                     const newNamespace = currentNamespace ? `${currentNamespace}/${namespace}` : namespace;
-                    const childResult = loadTargetsRecursive(projectRoot, resolvedPath, newNamespace);
-                    merged.commands = { ...childResult.commands, ...merged.commands }; // Parent wins
-                    merged.help = { ...childResult.help, ...merged.help };
-                    merged.routes = { ...childResult.routes, ...merged.routes };
+                    const childResult = loadTargets(projectRoot, resolvedPath, newNamespace, reader);
+                    
+                    // SMART MERGE: Child wins for implementation, but preserve parent's unique properties
+                    for (const [childName, childCmd] of Object.entries(childResult.commands || {})) {
+                        if (mergedCommands[childName]) {
+                            // Merge with CHILD WINNING: child properties override, parent keeps unique ones
+                            mergedCommands[childName] = {
+                                ...mergedCommands[childName], // Parent properties
+                                ...childCmd                  // Child wins for any overlapping properties
+                            };
+                        } else {
+                            // New command from child
+                            mergedCommands[childName] = childCmd;
+                        }
+                    }
                 }
             } catch (error) {
                 console.warn(`⚠️ Failed to load target '${namespace}': ${error.message}`);
@@ -141,189 +129,7 @@ function loadTargetsRecursive(projectRoot, currentRoot, currentNamespace) {
         }
     }
     
-    return merged;
-}
-
-/**
- * Apply namespace prefix to commands
- */
-function namespaceCommands(commands, namespace) {
-    if (!namespace) return { ...commands };
-    
-    const namespaced = {};
-    for (const [commandName, commandSpec] of Object.entries(commands)) {
-        const fullPath = `${namespace}/${commandName}`;
-        namespaced[fullPath] = { ...commandSpec, name: fullPath };
-    }
-    return namespaced;
-}
-
-/**
- * Apply namespace prefix to route next commands
- */
-function namespaceRoutes(routes, namespace) {
-    if (!namespace) return { ...routes };
-    
-    const namespaced = {};
-    for (const [routeName, routeConfig] of Object.entries(routes)) {
-        if (routeConfig.next) {
-            const namespacedNext = {};
-            for (const [nextCommand, nextConfig] of Object.entries(routeConfig.next)) {
-                const fullNextPath = nextCommand.includes('/') ? nextCommand : `${namespace}/${nextCommand}`;
-                namespacedNext[fullNextPath] = nextConfig;
-            }
-            namespaced[routeName] = { ...routeConfig, next: namespacedNext };
-        } else {
-            namespaced[routeName] = routeConfig;
-        }
-    }
-    return namespaced;
-}
-
-/**
- * Combine sources and targets into final manifest
- */
-function combineManifest(sourcesResult, targetsResult, projectRoot) {
-    // Merge commands with parent precedence (sources win over targets for same name)
-    const allCommands = {
-        ...targetsResult.commands,
-        ...sourcesResult.commands  // Sources override targets
-    };
-    
-    // Apply runtime and help overrides to commands
-    const finalCommands = {};
-    for (const [commandName, commandSpec] of Object.entries(allCommands)) {
-        finalCommands[commandName] = {
-            name: commandName,
-            ...commandSpec,
-            ...(sourcesResult.runtime[commandName] || {}),
-            ...(sourcesResult.help[commandName] || targetsResult.help[commandName] || {}),
-            ...(sourcesResult.routes[commandName] || targetsResult.routes[commandName] || {}),
-            parameters: mergeParameters(
-                commandSpec.parameters,
-                sourcesResult.runtime[commandName]?.parameters,
-                sourcesResult.help[commandName]?.parameters,
-                targetsResult.help[commandName]?.parameters
-            ),
-        };
-    }
-    
     return {
-        ...sourcesResult.contract,
-        stateDefaults: sourcesResult.stateDefaults,
-        commands: finalCommands
+        commands: mergedCommands
     };
-}
-
-// ============================================================================
-// 🛠️ KEEP ALL EXISTING UTILITIES (they work great!)
-// ============================================================================
-
-/**
- * TRANSFORM COMMAND SOURCES - Your existing working code
- */
-function transformCommandSources(commands, childRoot, projectRoot) {
-    const transformed = {};
-    for (const [commandName, commandSpec] of Object.entries(commands)) {
-        transformed[commandName] = {
-            ...commandSpec,
-            source: resolveSourcePath(commandSpec.source, childRoot, projectRoot),
-        };
-    }
-    return transformed;
-}
-
-/**
- * RESOLVE SOURCE PATHS - Your existing working code  
- */
-function resolveSourcePath(childSource, childRoot, projectRoot) {
-    if (!childSource) {
-        return path.relative(projectRoot, childRoot);
-    }
-    if (childSource.startsWith('./') || childSource.startsWith('../')) {
-        const absolutePath = path.resolve(childRoot, childSource);
-        return path.relative(projectRoot, absolutePath);
-    }
-    return childSource;
-}
-
-/**
- * DEEP MERGE SOURCES - Enhanced for dual structure
- */
-function deepMergeSources(target, source) {
-    return {
-        contract: deepMerge(target.contract, source.contract),
-        commands: { ...source.commands, ...target.commands }, // Parent wins
-        help: { ...source.help, ...target.help },
-        runtime: { ...source.runtime, ...target.runtime },
-        routes: { ...source.routes, ...target.routes },
-        stateDefaults: deepMerge(target.stateDefaults, source.stateDefaults)
-    };
-}
-
-/**
- * DEEP MERGE OBJECTS - Your existing working code
- */
-function deepMerge(target, source) {
-    const result = { ...target };
-    for (const key in source) {
-        if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
-            result[key] = deepMerge(result[key] || {}, source[key]);
-        } else {
-            result[key] = source[key];
-        }
-    }
-    return result;
-}
-
-/**
- * MERGE PARAMETERS - Your existing working code
- */
-function mergeParameters(...paramSources) {
-    const merged = {};
-    for (const params of paramSources) {
-        if (!params || typeof params !== 'object') continue;
-        for (const [paramName, paramSpec] of Object.entries(params)) {
-            if (merged[paramName]) {
-                merged[paramName] = deepMerge(merged[paramName], paramSpec);
-            } else {
-                merged[paramName] = { ...paramSpec };
-            }
-        }
-    }
-    return merged;
-}
-
-/**
- * LOAD JSON FILE - Your existing working code
- */
-function loadJSONFile(projectRoot, filename, defaultValue = null) {
-    const filePath = path.join(projectRoot, filename);
-    if (!fs.existsSync(filePath)) {
-        if (defaultValue !== null) return defaultValue;
-        if (filename === 'contract.json' || filename === 'commands.json') {
-            throw new Error(`Required file not found: ${filename}`);
-        }
-        return {};
-    }
-    try {
-        return JSON.parse(fs.readFileSync(filePath, 'utf8'));
-    } catch (error) {
-        throw new Error(`Failed to parse ${filename}: ${error.message}`);
-    }
-}
-
-/**
- * VALIDATE SOURCE PATH - Your existing working code
- */
-function validateSourcePath(sourcePath, currentRoot) {
-    if (typeof sourcePath !== 'string') {
-        throw new Error(`Invalid source path: ${typeof sourcePath}`);
-    }
-    const resolvedPath = path.resolve(currentRoot, sourcePath);
-    const relativeToRoot = path.relative(currentRoot, resolvedPath);
-    if (relativeToRoot.startsWith('..') || path.isAbsolute(relativeToRoot)) {
-        throw new Error(`Source path cannot escape root: ${sourcePath}`);
-    }
-    return resolvedPath;
 }
